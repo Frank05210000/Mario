@@ -6,7 +6,7 @@ hardcoding background paths, spawn points, or collision values in C++.
 ## Design Goals
 
 - Keep the coordinate system explicit: top-left origin, `x` right, `y` down.
-- Separate source asset data from world-space data after scaling.
+- Use pre-scaled background assets so runtime code does not need map scaling.
 - Support a minimal playable level now.
 - Leave stable extension points for enemies, objects, and richer collision.
 
@@ -34,16 +34,15 @@ hardcoding background paths, spawn points, or collision values in C++.
 ```json
 "background": {
   "image": "image/stage/1-1.png",
-  "sourceSize": {
-    "width": 3376,
-    "height": 480
+  "assetSize": {
+    "width": 6752,
+    "height": 960
   },
-  "scale": 2.0,
   "viewport": {
     "x": 0,
     "y": 0,
-    "width": 3376,
-    "height": 240
+    "width": 6752,
+    "height": 480
   },
   "worldSize": {
     "width": 6752,
@@ -55,10 +54,9 @@ hardcoding background paths, spawn points, or collision values in C++.
 Field meaning:
 
 - `image`: asset path relative to `Mario/Asset/`
-- `sourceSize`: original image size before scaling
-- `scale`: world-space scale applied to the source image
-- `viewport`: source-image crop rectangle before scaling
-- `worldSize`: final world-space size after `viewport` and `scale`
+- `assetSize`: actual file size of the already scaled background image
+- `viewport`: crop rectangle taken directly from the already scaled image
+- `worldSize`: final world-space size used by gameplay and camera
 
 ## Player
 

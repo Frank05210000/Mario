@@ -14,9 +14,8 @@ Map::Map()
     : m_Background(
           MakeAssetPath("image/stage/1-1.png"),
           {0.0F, 0.0F},
-          {3376.0F, 240.0F},
-          SDL_Rect {0, 0, 3376, 240},
-          {2.0F, 2.0F}) {}
+          {6752.0F, 480.0F},
+          SDL_Rect {0, 0, 6752, 480}) {}
 
 void Map::load() {
     m_Background.load();

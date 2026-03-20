@@ -14,8 +14,7 @@ public:
     Background(std::string assetPath,
                glm::vec2 topLeft,
                glm::vec2 size,
-               SDL_Rect cropRect,
-               glm::vec2 scale);
+               SDL_Rect cropRect);
 
     void load();
     void render(float cameraX);
@@ -29,7 +28,6 @@ private:
     glm::vec2 m_TopLeft;
     glm::vec2 m_Size;
     SDL_Rect m_CropRect;
-    glm::vec2 m_Scale;
     std::shared_ptr<Util::GameObject> m_Object;
 };
 

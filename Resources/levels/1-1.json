@@ -8,16 +8,15 @@
   },
   "background": {
     "image": "image/stage/1-1.png",
-    "sourceSize": {
-      "width": 3376,
-      "height": 480
+    "assetSize": {
+      "width": 6752,
+      "height": 960
     },
-    "scale": 2.0,
     "viewport": {
       "x": 0,
       "y": 0,
-      "width": 3376,
-      "height": 240
+      "width": 6752,
+      "height": 480
     },
     "worldSize": {
       "width": 6752,
