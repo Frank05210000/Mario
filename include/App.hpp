@@ -3,6 +3,8 @@
 
 #include "pch.hpp" // IWYU pragma: export
 
+#include "Game.hpp"
+
 class App {
 public:
     enum class State {
@@ -24,6 +26,7 @@ private:
 
 private:
     State m_CurrentState = State::START;
+    Game m_Game;
 };
 
 #endif
