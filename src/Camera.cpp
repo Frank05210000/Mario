@@ -5,7 +5,7 @@
 #include "config.hpp"
 
 void Camera::Update(float playerX, float worldWidth) {
-    const float viewportWidth = static_cast<float>(RENDER_WIDTH);
+    const float viewportWidth = static_cast<float>(WINDOW_WIDTH);
     const float maxCameraX = std::max(0.0F, worldWidth - viewportWidth);
     const float playerScreenX = playerX - m_X;
 

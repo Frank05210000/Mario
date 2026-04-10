@@ -1,0 +1,14 @@
+# Target labels
+ ptsd-populate
+# Source files and their labels
+/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-codex/_deps/ptsd-subbuild/CMakeFiles/ptsd-populate
+/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-codex/_deps/ptsd-subbuild/CMakeFiles/ptsd-populate.rule
+/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-codex/_deps/ptsd-subbuild/CMakeFiles/ptsd-populate-complete.rule
+/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-codex/_deps/ptsd-subbuild/ptsd-populate-prefix/src/ptsd-populate-stamp/ptsd-populate-build.rule
+/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-codex/_deps/ptsd-subbuild/ptsd-populate-prefix/src/ptsd-populate-stamp/ptsd-populate-configure.rule
+/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-codex/_deps/ptsd-subbuild/ptsd-populate-prefix/src/ptsd-populate-stamp/ptsd-populate-download.rule
+/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-codex/_deps/ptsd-subbuild/ptsd-populate-prefix/src/ptsd-populate-stamp/ptsd-populate-install.rule
+/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-codex/_deps/ptsd-subbuild/ptsd-populate-prefix/src/ptsd-populate-stamp/ptsd-populate-mkdir.rule
+/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-codex/_deps/ptsd-subbuild/ptsd-populate-prefix/src/ptsd-populate-stamp/ptsd-populate-patch.rule
+/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-codex/_deps/ptsd-subbuild/ptsd-populate-prefix/src/ptsd-populate-stamp/ptsd-populate-test.rule
+/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-codex/_deps/ptsd-subbuild/ptsd-populate-prefix/src/ptsd-populate-stamp/ptsd-populate-update.rule

@@ -1,15 +1,19 @@
 set(SRC_FILES
-    App.cpp
+    AppEnd.cpp
+    AppStart.cpp
+    AppUpdate.cpp
     AssetCatalog.cpp
     Background.cpp
     Block.cpp
     Camera.cpp
     Collision.cpp
+    CollisionSystem.cpp
     CroppedImage.cpp
     Enemy.cpp
     Entity.cpp
     Game.cpp
     Level.cpp
+    LevelLoader.cpp
     Map.cpp
     Player.cpp
 )
@@ -18,15 +22,21 @@ set(INCLUDE_FILES
     App.hpp
     AssetCatalog.hpp
     Background.hpp
+    BackgroundRenderer.h
     Block.hpp
     Camera.hpp
     Collision.hpp
+    CollisionSystem.h
     CroppedImage.hpp
     Enemy.hpp
     Entity.hpp
     Game.hpp
+    IRenderer.h
     Level.hpp
+    LevelLoader.h
+    LevelTypes.h
     Map.hpp
+    ObjectRenderer.h
     Player.hpp
 )
 

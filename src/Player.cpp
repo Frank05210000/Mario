@@ -1,6 +1,7 @@
 #include "Player.hpp"
 
 #include "AssetCatalog.hpp"
+#include "CollisionSystem.h"
 #include "Core/Context.hpp"
 #include "Util/Image.hpp"
 #include "Util/Input.hpp"
@@ -15,7 +16,9 @@ Player::Player() {
     m_OnGround = true;
 }
 
-void Player::update() {
+void Player::update(const Map& map) {
+    const auto previousX = m_Position.x;
+
     if (Util::Input::IsKeyPressed(Util::Keycode::LEFT)) {
         m_Position.x -= m_Speed;
     }
@@ -24,10 +27,18 @@ void Player::update() {
         m_Position.x += m_Speed;
     }
 
+    ResolveHorizontalCollisions(map, previousX);
+
+    if (m_OnGround && !HasGroundSupport(map)) {
+        m_OnGround = false;
+    }
+
     ApplyJump();
+
+    const auto previousY = m_Position.y;
     ApplyGravity();
-    ResolveGroundCollision();
-    ClampToWorldBounds();
+    ResolveVerticalCollisions(map, previousY);
+    ClampToWorldBounds(map.GetWorldWidth());
 }
 
 void Player::render(float cameraX) {
@@ -41,12 +52,17 @@ void Player::ClampToCameraBounds(float cameraX) {
     }
 }
 
-void Player::ClampToWorldBounds() {
+void Player::SetSpawnPosition(Vec2 position) {
+    m_Position = position;
+    m_VelocityY = 0.0F;
+}
+
+void Player::ClampToWorldBounds(float worldWidth) {
     if (m_Position.x < 0.0F) {
         m_Position.x = 0.0F;
     }
 
-    const auto maxX = Map::kWorldSize.x - m_Size.x;
+    const auto maxX = worldWidth - m_Size.x;
     if (m_Position.x > maxX) {
         m_Position.x = maxX;
     }
@@ -72,14 +88,73 @@ void Player::ApplyGravity() {
     m_Position.y += m_VelocityY;
 }
 
-void Player::ResolveGroundCollision() {
-    if (m_Position.y + m_Size.y < m_GroundY) {
-        return;
+void Player::ResolveHorizontalCollisions(const Map& map, float previousX) {
+    const Rect playerBox {m_Position.x, m_Position.y, m_Size.x, m_Size.y};
+    const auto movingRight = m_Position.x > previousX;
+    const auto movingLeft = m_Position.x < previousX;
+
+    for (const auto* object : map.GetSolidObjects()) {
+        if (!CollisionSystem::Intersects(playerBox, object->collider)) {
+            continue;
+        }
+
+        if (movingRight) {
+            m_Position.x = object->collider.x - m_Size.x;
+        } else if (movingLeft) {
+            m_Position.x = object->collider.x + object->collider.w;
+        }
+    }
+}
+
+void Player::ResolveVerticalCollisions(const Map& map, float previousY) {
+    const Rect currentBox {m_Position.x, m_Position.y, m_Size.x, m_Size.y};
+    const Rect previousBox {m_Position.x, previousY, m_Size.x, m_Size.y};
+    bool landed = false;
+
+    for (const auto* object : map.GetSolidObjects()) {
+        if (!CollisionSystem::Intersects(currentBox, object->collider)) {
+            continue;
+        }
+
+        const auto previousBottom = previousBox.y + previousBox.h;
+        const auto currentBottom = currentBox.y + currentBox.h;
+        const auto previousTop = previousBox.y;
+        const auto currentTop = currentBox.y;
+
+        if (m_VelocityY >= 0.0F &&
+            previousBottom <= object->collider.y &&
+            currentBottom >= object->collider.y) {
+            m_Position.y = object->collider.y - m_Size.y;
+            m_VelocityY = 0.0F;
+            landed = true;
+            continue;
+        }
+
+        if (m_VelocityY < 0.0F &&
+            previousTop >= object->collider.y + object->collider.h &&
+            currentTop <= object->collider.y + object->collider.h) {
+            m_Position.y = object->collider.y + object->collider.h;
+            m_VelocityY = 0.0F;
+        }
     }
 
-    m_Position.y = m_GroundY - m_Size.y;
-    m_VelocityY = 0.0F;
-    m_OnGround = true;
+    m_OnGround = landed || HasGroundSupport(map);
+}
+
+bool Player::HasGroundSupport(const Map& map) const {
+    const Rect feetBox {
+        m_Position.x + 2.0F,
+        m_Position.y + m_Size.y,
+        m_Size.x - 4.0F,
+        2.0F,
+    };
+
+    for (const auto* object : map.GetSolidObjects()) {
+        if (CollisionSystem::Intersects(feetBox, object->collider)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 glm::vec2 Player::ToScenePosition(float cameraX) const {

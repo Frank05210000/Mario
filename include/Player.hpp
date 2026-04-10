@@ -6,6 +6,8 @@
 #include "Entity.hpp"
 #include "Util/GameObject.hpp"
 
+class Map;
+
 class Player {
 public:
     enum class Form {
@@ -16,9 +18,10 @@ public:
 
     Player();
 
-    void update();
+    void update(const Map& map);
     void render(float cameraX);
     void ClampToCameraBounds(float cameraX);
+    void SetSpawnPosition(Vec2 position);
 
     Vec2 GetPosition() const { return m_Position; }
     Vec2 GetSize() const { return m_Size; }
@@ -28,8 +31,10 @@ public:
 private:
     void ApplyJump();
     void ApplyGravity();
-    void ResolveGroundCollision();
-    void ClampToWorldBounds();
+    void ResolveHorizontalCollisions(const Map& map, float previousX);
+    void ResolveVerticalCollisions(const Map& map, float previousY);
+    bool HasGroundSupport(const Map& map) const;
+    void ClampToWorldBounds(float worldWidth);
     glm::vec2 ToScenePosition(float cameraX) const;
     void EnsureGameObject();
 
@@ -39,7 +44,6 @@ private:
     float m_VelocityY = 0.0F;
     float m_Gravity = 0.8F;
     float m_JumpStrength = 16.0F;
-    float m_GroundY = 417.92F;
     bool m_OnGround = true;
     Form m_Form = Form::SMALL;
     std::shared_ptr<Util::GameObject> m_Object;

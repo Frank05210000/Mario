@@ -7,7 +7,7 @@
 #include "Core/UniformBuffer.hpp"
 #include "Core/VertexArray.hpp"
 
-class CroppedImage final : public Core::Drawable {
+class final : public Core::Drawable {
 public:
     CroppedImage(const std::string& filepath, const SDL_Rect& cropRect);
 
