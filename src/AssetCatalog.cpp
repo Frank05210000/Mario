@@ -48,3 +48,26 @@ std::string AssetCatalog::GetBlockSprite(Block::Type type) {
     }
     return "";
 }
+
+std::string AssetCatalog::GetLevelObjectSprite(ObjectType type) {
+    switch (type) {
+        case ObjectType::Ground:
+            return MakeAssetPath("image/Scenery/Ground.gif");
+        case ObjectType::Brick:
+            return MakeAssetPath("image/Item/Bricks.gif");
+        case ObjectType::QuestionBlock:
+            return MakeAssetPath("image/Item/Question Block.gif");
+        case ObjectType::Pipe:
+            return MakeAssetPath("image/Item/Pipe.gif");
+        case ObjectType::Flag:
+            return MakeAssetPath("image/Item/Goal Flag.gif");
+        case ObjectType::Stair:
+            return MakeAssetPath("image/Scenery/Ground.gif");
+        case ObjectType::SpawnPoint:
+        case ObjectType::EnemySpawn:
+        case ObjectType::Trigger:
+        case ObjectType::Unknown:
+            break;
+    }
+    return "";
+}

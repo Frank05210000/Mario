@@ -12,8 +12,8 @@ Rect Collision::MakeBlockBounds(const Block& block) {
 }
 
 bool Collision::Intersects(const Rect& a, const Rect& b) {
-    return a.x < b.x + b.width &&
-           a.x + a.width > b.x &&
-           a.y < b.y + b.height &&
-           a.y + a.height > b.y;
+    return a.x < b.x + b.w &&
+           a.x + a.w > b.x &&
+           a.y < b.y + b.h &&
+           a.y + a.h > b.y;
 }

@@ -8,6 +8,15 @@ cmake_policy(SET CMP0135 NEW)
 include(FetchContent)
 set(FETCHCONTENT_QUIET FALSE)
 
+find_package(nlohmann_json CONFIG QUIET)
+if(NOT nlohmann_json_FOUND)
+    FetchContent_Declare(
+        nlohmann_json
+        URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+    )
+    FetchContent_MakeAvailable(nlohmann_json)
+endif()
+
 FetchContent_Declare(
     ptsd
 
@@ -34,7 +43,7 @@ list(TRANSFORM INCLUDE_FILES PREPEND ${INCLUDE_DIR}/)
 add_executable(${PROJECT_NAME}
     ${SRC_DIR}/main.cpp
     ${SRC_FILES}
-    ${HEADER_FILES}
+    ${INCLUDE_FILES}
 )
 
 if(MSVC)
@@ -57,4 +66,28 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/i
 target_link_libraries(${PROJECT_NAME}
     SDL2::SDL2main
     PTSD
+    nlohmann_json::nlohmann_json
 )
+
+add_executable(LevelSkeletonDemo
+    ${SRC_DIR}/LevelSkeletonMain.cpp
+    ${SRC_DIR}/LevelLoader.cpp
+    ${SRC_DIR}/BackgroundRenderer.cpp
+    ${SRC_DIR}/ObjectRenderer.cpp
+    ${SRC_DIR}/CollisionSystem.cpp
+    ${INCLUDE_DIR}/LevelTypes.h
+    ${INCLUDE_DIR}/LevelLoader.h
+    ${INCLUDE_DIR}/IRenderer.h
+    ${INCLUDE_DIR}/BackgroundRenderer.h
+    ${INCLUDE_DIR}/ObjectRenderer.h
+    ${INCLUDE_DIR}/CollisionSystem.h
+)
+
+if(MSVC)
+    target_compile_options(LevelSkeletonDemo PRIVATE /W4)
+else()
+    target_compile_options(LevelSkeletonDemo PRIVATE -Wall -Wextra -pedantic)
+endif()
+
+target_include_directories(LevelSkeletonDemo PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(LevelSkeletonDemo PRIVATE nlohmann_json::nlohmann_json)
