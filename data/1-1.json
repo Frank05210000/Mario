@@ -1,0 +1,115 @@
+{
+  "backgroundImage": "Asset/image/stage/1-1.png",
+  "levelWidth": 6752,
+  "levelHeight": 480,
+  "objects": [
+    {
+      "id": "ground_01",
+      "type": "Ground",
+      "x": 0.0,
+      "y": 320.0,
+      "width": 256.0,
+      "height": 32.0,
+      "visible": false,
+      "solid": true,
+      "collider": { "x": 0.0, "y": 320.0, "w": 256.0, "h": 32.0 },
+      "render": { "spriteName": "ground" }
+    },
+    {
+      "id": "ground_02",
+      "type": "Ground",
+      "x": 256.0,
+      "y": 320.0,
+      "width": 256.0,
+      "height": 32.0,
+      "visible": false,
+      "solid": true,
+      "collider": { "x": 256.0, "y": 320.0, "w": 256.0, "h": 32.0 },
+      "render": { "spriteName": "ground" }
+    },
+    {
+      "id": "brick_01",
+      "type": "Brick",
+      "x": 192.0,
+      "y": 224.0,
+      "width": 32.0,
+      "height": 32.0,
+      "visible": true,
+      "solid": true,
+      "collider": { "x": 192.0, "y": 224.0, "w": 32.0, "h": 32.0 },
+      "render": { "spriteName": "brick" }
+    },
+    {
+      "id": "question_01",
+      "type": "QuestionBlock",
+      "x": 160.0,
+      "y": 224.0,
+      "width": 32.0,
+      "height": 32.0,
+      "visible": true,
+      "solid": true,
+      "collider": { "x": 160.0, "y": 224.0, "w": 32.0, "h": 32.0 },
+      "render": { "spriteName": "question_block" }
+    },
+    {
+      "id": "pipe_01",
+      "type": "Pipe",
+      "x": 320.0,
+      "y": 224.0,
+      "width": 64.0,
+      "height": 96.0,
+      "visible": true,
+      "solid": true,
+      "collider": { "x": 320.0, "y": 224.0, "w": 64.0, "h": 96.0 },
+      "render": { "spriteName": "pipe" }
+    },
+    {
+      "id": "flag_01",
+      "type": "Flag",
+      "x": 480.0,
+      "y": 160.0,
+      "width": 32.0,
+      "height": 160.0,
+      "visible": false,
+      "solid": false,
+      "collider": { "x": 480.0, "y": 160.0, "w": 32.0, "h": 160.0 },
+      "render": { "spriteName": "flag" }
+    },
+    {
+      "id": "spawn_player",
+      "type": "SpawnPoint",
+      "x": 64.0,
+      "y": 256.0,
+      "width": 32.0,
+      "height": 64.0,
+      "visible": false,
+      "solid": false,
+      "collider": { "x": 64.0, "y": 256.0, "w": 32.0, "h": 64.0 },
+      "render": null
+    },
+    {
+      "id": "enemy_goomba_01",
+      "type": "EnemySpawn",
+      "x": 256.0,
+      "y": 288.0,
+      "width": 32.0,
+      "height": 32.0,
+      "visible": false,
+      "solid": false,
+      "collider": { "x": 256.0, "y": 288.0, "w": 32.0, "h": 32.0 },
+      "render": null
+    },
+    {
+      "id": "goal_trigger_01",
+      "type": "Trigger",
+      "x": 512.0,
+      "y": 160.0,
+      "width": 32.0,
+      "height": 160.0,
+      "visible": false,
+      "solid": false,
+      "collider": { "x": 512.0, "y": 160.0, "w": 32.0, "h": 160.0 },
+      "render": null
+    }
+  ]
+}
