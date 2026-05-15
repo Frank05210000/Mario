@@ -591,6 +591,9 @@ void GameManager::CheckBlockCollision() {
             const float previousTop = pPrev.y;
             const float previousBottom = pPrev.y + pSize.y;
             const float currentBottom = pPos.y + pSize.y;
+            const float overlapLeft = std::max(pPos.x, bPos.x);
+            const float overlapRight = std::min(pPos.x + pSize.x, bPos.x + bSize.x);
+            const float overlapX = std::max(0.0f, overlapRight - overlapLeft);
             const float blockTop = bPos.y;
             const float blockBottom = bPos.y + bSize.y;
 
@@ -598,12 +601,18 @@ void GameManager::CheckBlockCollision() {
                 pVel.y >= 0.0f &&
                 previousBottom <= blockTop + SURFACE_TOLERANCE &&
                 currentBottom >= blockTop;
+            const bool standingOverlap =
+                pVel.y >= 0.0f &&
+                block->GetType() == Block::Type::Ground &&
+                dy < 0.0f &&
+                penY <= TILE_SIZE + 4.0f &&
+                overlapX >= pSize.x * 0.5f;
             const bool hitFromBelow =
                 pVel.y < 0.0f &&
                 previousTop >= blockBottom - SURFACE_TOLERANCE &&
                 pPos.y <= blockBottom;
 
-            if (landedFromAbove) {
+            if (landedFromAbove || standingOverlap) {
                 pPos.y -= penY;
                 if (pVel.y > 0.0f) pVel.y = 0.0f;
                 onGround = true;
