@@ -1,3 +1,0 @@
-/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-level-skeleton/_deps/nlohmann_json-subbuild/CMakeFiles/nlohmann_json-populate.dir
-/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-level-skeleton/_deps/nlohmann_json-subbuild/CMakeFiles/edit_cache.dir
-/Users/frank/Documents/uni/114_2/OOPL/OOPL_Mario/Mario/build-level-skeleton/_deps/nlohmann_json-subbuild/CMakeFiles/rebuild_cache.dir
