@@ -1,0 +1,131 @@
+classDiagram
+
+    %% ════════════════════════════════════════════════════════
+    %% GameObject（PTSD 框架提供）
+    %% ════════════════════════════════════════════════════════
+    class GameObject {
+        +m_Transform          // 位置/縮放/旋轉；設 m_Transform.translation 移動物件
+        +m_ZIndex float       // 決定繪製順序，數字越大越在前景
+        +m_Visible bool       // false 時 Draw() 不畫出來
+        +SetDrawable()        // 傳入圖片/動畫資源（Core::Drawable）
+        +SetZIndex()
+        +Draw()               // 框架每幀呼叫，依 Transform 畫出 Drawable
+    }
+
+    %% ════════════════════════════════════════════════════════
+    %% Character（抽象）
+    %%   所有角色的共用基底，繼承 GameObject。
+    %%   Update / Draw 為純虛擬，子類別必須各自實作。
+    %% ════════════════════════════════════════════════════════
+    class Character {
+        <<abstract>>
+        #m_Position vec2      // 遊戲世界座標
+        #m_Velocity vec2      // 移動速度（像素/秒）
+        #m_Size vec2          // 碰撞盒寬高
+        #m_IsAlive bool       // false = 死亡
+        #m_Gravity float      // 重力加速度，預設 900（像素/秒²）
+        +ApplyGravity(float)  // 每幀：m_Velocity.y += m_Gravity * dt
+        +GetPosition() vec2
+        +GetSize() vec2
+        +IsAlive() bool
+        +SetAlive(bool)
+        +Update(float)*       // 純虛擬：子類別負責輸入 / AI
+        +Draw(float)*         // 純虛擬：換算 cameraX → m_Transform
+    }
+
+    %% ════════════════════════════════════════════════════════
+    %% Player
+    %%   繼承 Character，實作鍵盤輸入、跳躍、座標換算。
+    %%   Form enum 決定馬力歐形態（SMALL / SUPER / FIRE）。
+    %% ════════════════════════════════════════════════════════
+    class Player {
+        -m_MoveSpeed float    // 水平速度，預設 200（像素/秒）
+        -m_JumpStrength float // 跳躍初速，預設 550；跳時設 m_Velocity.y
+        -m_OnGround bool      // 落地才能起跳；每幀碰撞後更新
+        -m_Form Form          // enum SMALL/SUPER/FIRE；影響圖片與碰撞箱
+        +Update(float)        // override：HandleInput → ApplyGravity → 更新位置
+        +Draw(float cameraX)  // override：ToScreenPosition → m_Transform
+        +SetSpawnPosition(vec2) // 載入關卡時重設位置與速度
+        +ClampToCameraBounds(float) // 防止玩家跑到鏡頭左邊
+        -HandleInput(float)   // 讀鍵盤：WASD/方向鍵移動，Space 跳躍
+        -Jump()               // m_OnGround==true 才執行，給初速
+        -ToScreenPosition(float) // 世界座標 - cameraX = 螢幕座標
+    }
+
+    %% ════════════════════════════════════════════════════════
+    %% Enemy（抽象）
+    %%   繼承 Character，加入共用走路邏輯。
+    %%   Stomp() 為純虛擬，子類別各自決定被踩後的行為。
+    %% ════════════════════════════════════════════════════════
+    class Enemy {
+        <<abstract>>
+        #m_WalkSpeed float    // 行走速度，預設 80（像素/秒）
+        +Update(float)        // ApplyGravity → 水平移動
+        +Draw(float cameraX)  // ToScreenPosition → m_Transform
+        +ReverseDirection()   // 反轉 m_Velocity.x（碰牆掉頭）
+        +Stomp()*             // 純虛擬：被踩後的行為由子類別決定
+        -ToScreenPosition(float)
+    }
+
+    %% ════════════════════════════════════════════════════════
+    %% Goomba（栗寶寶）
+    %%   繼承 Enemy，Stomp() 直接死亡。
+    %%   走路邏輯沿用 Enemy::Update()，不需要覆寫。
+    %% ════════════════════════════════════════════════════════
+    class Goomba {
+        +Goomba(float x, float y)
+        +Stomp()              // SetAlive(false)，直接消失
+    }
+
+    %% ════════════════════════════════════════════════════════
+    %% Koopa（烏龜）
+    %%   繼承 Enemy，Stomp() 縮進殼裡（不立即死亡）。
+    %%   縮殼狀態下停止走路，覆寫 Update()。
+    %% ════════════════════════════════════════════════════════
+    class Koopa {
+        -m_InShell bool       // true = 已縮進殼裡
+        +Koopa(float x, float y)
+        +Update(float)        // override：縮殼時只套重力，不走路
+        +Stomp()              // m_InShell = true，換殼的圖片
+        +IsInShell() bool
+    }
+
+    %% ════════════════════════════════════════════════════════
+    %% GameManager（遊戲管理器）
+    %%   持有 Player 和所有 Enemy。
+    %%   每幀：更新所有角色 → 碰撞判斷 → 同步畫面 → 渲染。
+    %%   不繼承任何人（管理者，不是角色）。
+    %% ════════════════════════════════════════════════════════
+    class GameManager {
+        -m_Player Player
+        -m_Enemies shared_ptr~Enemy~[]  // 多型：可放 Goomba 或 Koopa
+        -m_CameraX float
+        -m_Renderer Renderer
+        +Start()
+        +Update()
+        -CheckStompCollision()          // 判斷 Player 是否踩到 Enemy
+        -BuildScene()
+    }
+
+    %% ════════════════════════════════════════════════════════
+    %% App（PTSD 框架進入點）
+    %% ════════════════════════════════════════════════════════
+    class App {
+        -m_CurrentState State
+        -m_GameManager GameManager
+        +Start()
+        +Update()
+        +End()
+    }
+
+    %% ── 繼承關係（is-a）──────────────────────────────────────
+    GameObject <|-- Character : 繼承
+    Character  <|-- Player   : 繼承
+    Character  <|-- Enemy    : 繼承
+    Enemy      <|-- Goomba   : 繼承
+    Enemy      <|-- Koopa    : 繼承
+
+    %% ── 組合關係（has-a）────────────────────────────────────
+    App         *-- GameManager : 持有
+    GameManager *-- Player      : 持有
+    GameManager *-- Enemy       : 持有（多型）

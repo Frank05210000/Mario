@@ -68,26 +68,3 @@ target_link_libraries(${PROJECT_NAME}
     PTSD
     nlohmann_json::nlohmann_json
 )
-
-add_executable(LevelSkeletonDemo
-    ${SRC_DIR}/LevelSkeletonMain.cpp
-    ${SRC_DIR}/LevelLoader.cpp
-    ${SRC_DIR}/BackgroundRenderer.cpp
-    ${SRC_DIR}/ObjectRenderer.cpp
-    ${SRC_DIR}/CollisionSystem.cpp
-    ${INCLUDE_DIR}/LevelTypes.h
-    ${INCLUDE_DIR}/LevelLoader.h
-    ${INCLUDE_DIR}/IRenderer.h
-    ${INCLUDE_DIR}/BackgroundRenderer.h
-    ${INCLUDE_DIR}/ObjectRenderer.h
-    ${INCLUDE_DIR}/CollisionSystem.h
-)
-
-if(MSVC)
-    target_compile_options(LevelSkeletonDemo PRIVATE /W4)
-else()
-    target_compile_options(LevelSkeletonDemo PRIVATE -Wall -Wextra -pedantic)
-endif()
-
-target_include_directories(LevelSkeletonDemo PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(LevelSkeletonDemo PRIVATE nlohmann_json::nlohmann_json)

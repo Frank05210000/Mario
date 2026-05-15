@@ -47,6 +47,9 @@
 
 # CMake
 cmake-build-*/
+[Bb]uild*/
+CMakeUserPresets.json
+compile_commands.json
 
 # Mongo Explorer plugin
 .idea/**/mongoSettings.xml

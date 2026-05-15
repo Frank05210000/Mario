@@ -1,43 +1,54 @@
 set(SRC_FILES
-    AppEnd.cpp
-    AppStart.cpp
-    AppUpdate.cpp
-    AssetCatalog.cpp
-    Background.cpp
+    App.cpp
     Block.cpp
+    BrickBlock.cpp
     Camera.cpp
-    Collision.cpp
-    CollisionSystem.cpp
-    CroppedImage.cpp
+    Character.cpp
     Enemy.cpp
-    Entity.cpp
-    Game.cpp
-    Level.cpp
+    FlagBlock.cpp
+    GameManager.cpp
+    Goomba.cpp
+    GroundBlock.cpp
+    HUD.cpp
+    Item.cpp
+    Koopa.cpp
     LevelLoader.cpp
-    Map.cpp
+    MushroomItem.cpp
+    CoinItem.cpp
+    FireFlowerItem.cpp
+    Fireball.cpp
+    PipeBlock.cpp
     Player.cpp
+    QuestionBlock.cpp
+    WallBlock.cpp
 )
 
 set(INCLUDE_FILES
     App.hpp
-    AssetCatalog.hpp
-    Background.hpp
-    BackgroundRenderer.h
+    AssetPath.hpp
     Block.hpp
+    BrickBlock.hpp
     Camera.hpp
-    Collision.hpp
-    CollisionSystem.h
-    CroppedImage.hpp
+    Character.hpp
     Enemy.hpp
-    Entity.hpp
-    Game.hpp
-    IRenderer.h
-    Level.hpp
-    LevelLoader.h
-    LevelTypes.h
-    Map.hpp
-    ObjectRenderer.h
+    FlagBlock.hpp
+    Item.hpp
+    MushroomItem.hpp
+    CoinItem.hpp
+    FireFlowerItem.hpp
+    Fireball.hpp
+    GameConstants.hpp
+    GameManager.hpp
+    Goomba.hpp
+    GroundBlock.hpp
+    HUD.hpp
+    Koopa.hpp
+    LevelData.hpp
+    LevelLoader.hpp
+    PipeBlock.hpp
     Player.hpp
+    QuestionBlock.hpp
+    WallBlock.hpp
 )
 
 set(TEST_FILES

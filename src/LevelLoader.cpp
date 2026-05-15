@@ -1,109 +1,67 @@
-#include "LevelLoader.h"
+#include "LevelLoader.hpp"
 
 #include <fstream>
 #include <stdexcept>
-#include <string>
 
 #include <nlohmann/json.hpp>
 
-namespace {
-using json = nlohmann::json;
-
-template <typename T>
-T ReadRequired(const json& object, const char* key) {
-    if (!object.contains(key)) {
-        throw std::runtime_error(std::string("Missing required field: ") + key);
-    }
-    return object.at(key).get<T>();
-}
-
-Rect ParseRect(const json& object) {
-    return {
-        ReadRequired<float>(object, "x"),
-        ReadRequired<float>(object, "y"),
-        ReadRequired<float>(object, "w"),
-        ReadRequired<float>(object, "h"),
-    };
-}
-
-LevelObject ParseObject(const json& object) {
-    LevelObject levelObject;
-    levelObject.id = ReadRequired<std::string>(object, "id");
-    levelObject.type = LevelLoader::ParseObjectType(ReadRequired<std::string>(object, "type"));
-    levelObject.x = ReadRequired<float>(object, "x");
-    levelObject.y = ReadRequired<float>(object, "y");
-    levelObject.width = ReadRequired<float>(object, "width");
-    levelObject.height = ReadRequired<float>(object, "height");
-    levelObject.visible = ReadRequired<bool>(object, "visible");
-    levelObject.solid = ReadRequired<bool>(object, "solid");
-    levelObject.collider = ParseRect(object.at("collider"));
-
-    if (object.contains("render") && !object.at("render").is_null()) {
-        levelObject.render = RenderData {
-            ReadRequired<std::string>(object.at("render"), "spriteName"),
-        };
+LevelData LevelLoader::Load(const std::string& jsonPath) {
+    // 1. 開檔
+    std::ifstream file(jsonPath);
+    if (!file.is_open()) {
+        throw std::runtime_error("LevelLoader: 無法開啟檔案: " + jsonPath);
     }
 
-    return levelObject;
-}
-}
+    nlohmann::json j;
+    file >> j;
 
-LevelData LevelLoader::LoadFromFile(const std::string& path) const {
-    std::ifstream input(path);
-    if (!input.is_open()) {
-        throw std::runtime_error("Failed to open level file: " + path);
-    }
+    LevelData data;
 
-    json root;
-    try {
-        input >> root;
-    } catch (const json::parse_error& error) {
-        throw std::runtime_error("Failed to parse JSON: " + std::string(error.what()));
-    }
-
-    LevelData level;
-    level.backgroundImagePath = ReadRequired<std::string>(root, "backgroundImage");
-    level.levelWidth = ReadRequired<int>(root, "levelWidth");
-    level.levelHeight = ReadRequired<int>(root, "levelHeight");
-
-    if (!root.contains("objects") || !root.at("objects").is_array()) {
-        throw std::runtime_error("Missing or invalid objects array");
+    // 2. 讀背景圖路徑
+    //    JSON 格式：{ "backgroundImage": "Asset/image/stage/1-1.png" }
+    //    存入 LevelData 時去掉 "Asset/" 前綴，讓 MakeAssetPath() 直接接受
+    std::string rawPath = j.value("backgroundImage", "");
+    const std::string prefix = "Asset/";
+    if (rawPath.size() >= prefix.size() &&
+        rawPath.substr(0, prefix.size()) == prefix) {
+        data.backgroundImagePath = rawPath.substr(prefix.size());
+    } else {
+        data.backgroundImagePath = rawPath;
     }
 
-    for (const auto& object : root.at("objects")) {
-        level.objects.push_back(ParseObject(object));
+    data.levelWidth  = j.value("levelWidth",  0);
+    data.levelHeight = j.value("levelHeight", 0);
+    data.theme       = j.value("theme", "ground");
+
+    // 解析玩家出生點
+    if (j.contains("playerSpawn")) {
+        data.playerSpawn.x = j["playerSpawn"].value("x", 64.0f);
+        data.playerSpawn.y = j["playerSpawn"].value("y", 300.0f);
     }
 
-    return level;
-}
+    // 3. 讀物件清單
+    if (j.contains("objects") && j["objects"].is_array()) {
+        for (const auto& obj : j["objects"]) {
+            ObjectData od;
+            od.type      = obj.value("type",      "");
+            od.enemyType = obj.value("enemyType", "");
+            od.itemType  = obj.value("itemType",  "");
+            od.targetLevel = obj.value("targetLevel", "");
+            od.exitToLevel = obj.value("exitToLevel", "");
+            od.x         = obj.value("x",         0.0f);
+            od.y         = obj.value("y",         0.0f);
+            od.width     = obj.value("width",     16.0f);
+            od.height    = obj.value("height",    16.0f);
+            od.opening   = obj.value("opening",   "up");
+            od.enterable = obj.value("enterable", false);
+            if (obj.contains("targetSpawn")) {
+                od.targetSpawn.x = obj["targetSpawn"].value("x", 0.0f);
+                od.targetSpawn.y = obj["targetSpawn"].value("y", 0.0f);
+                od.hasTargetSpawn = true;
+            }
+            data.objects.push_back(od);
+        }
+    }
 
-ObjectType LevelLoader::ParseObjectType(const std::string& type) {
-    if (type == "Ground") {
-        return ObjectType::Ground;
-    }
-    if (type == "Brick") {
-        return ObjectType::Brick;
-    }
-    if (type == "QuestionBlock") {
-        return ObjectType::QuestionBlock;
-    }
-    if (type == "Pipe") {
-        return ObjectType::Pipe;
-    }
-    if (type == "Flag") {
-        return ObjectType::Flag;
-    }
-    if (type == "Stair") {
-        return ObjectType::Stair;
-    }
-    if (type == "SpawnPoint") {
-        return ObjectType::SpawnPoint;
-    }
-    if (type == "EnemySpawn") {
-        return ObjectType::EnemySpawn;
-    }
-    if (type == "Trigger") {
-        return ObjectType::Trigger;
-    }
-    return ObjectType::Unknown;
+    return data;
 }
