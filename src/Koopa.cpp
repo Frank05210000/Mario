@@ -5,11 +5,17 @@
 
 #include <vector>
 
-Koopa::Koopa(float startX, float startY) {
+Koopa::Koopa(float startX, float startY, Variant variant) : m_Variant(variant) {
     m_Position = {startX, startY - TILE_SIZE};
     m_Size     = {TILE_SIZE, TILE_SIZE * 2.0f};  // 世界尺寸：16x32
     m_Transform.scale = {GAME_SCALE, GAME_SCALE};
 
+    LoadSprites("ground");
+    UpdateDrawable();
+}
+
+void Koopa::LoadSprites(const std::string& theme) {
+    (void)theme;
     m_WalkLeftAnim = std::make_shared<Util::Animation>(
         std::vector<std::string>{
             MakeAssetPath("enemy/Koopa/ground/normal/walk/walk-1.png"),
@@ -28,8 +34,6 @@ Koopa::Koopa(float startX, float startY) {
         true);
     m_ShellImage = std::make_shared<Util::Image>(
         MakeAssetPath("enemy/Koopa/ground/normal/shell/shell.png"));
-
-    UpdateDrawable();
 }
 
 void Koopa::Update(float deltaTime) {

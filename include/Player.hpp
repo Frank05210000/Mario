@@ -50,6 +50,8 @@ public:
 
     void StartDamageInvincibility(float duration = 2.0f);
     bool IsDamageInvincible() const { return m_DamageInvincibleTimer > 0.0f; }
+    void ActivateStarInvincibility(float duration = 10.0f);
+    bool IsStarInvincible() const { return m_StarTimer > 0.0f; }
 
     // 取得死亡狀態
     bool IsDying() const { return m_IsDying; }
@@ -114,6 +116,7 @@ private:
     void InitAnimations();
 
     void UpdateDamageInvincibility(float deltaTime);
+    void UpdateStarInvincibility(float deltaTime);
 
 
 
@@ -139,6 +142,7 @@ private:
     float m_DamageInvincibleTimer = 0.0f;
     float m_DamageBlinkTimer = 0.0f;
     bool  m_DamageBlinkVisible = true;
+    float m_StarTimer = 0.0f;
 
     Form m_Form = Form::SMALL;     // 預設小馬力歐
     // ─── 動畫資源（三套形態，right 方向；Draw() 裡用 scaleX 翻轉） ──

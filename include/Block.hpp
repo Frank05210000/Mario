@@ -26,6 +26,8 @@ public:
         Wall,
         MovingPlatform,
         TreePlatform,
+        Hidden,
+        MultiCoin,
     };
 
     Block(glm::vec2 position, glm::vec2 size);

@@ -87,6 +87,7 @@ void Player::Update(float deltaTime) {
     }
 
     UpdateDamageInvincibility(deltaTime);
+    UpdateStarInvincibility(deltaTime);
 
     if (m_ShootingTimer > 0.0f) {
         m_ShootingTimer -= deltaTime;
@@ -162,6 +163,15 @@ void Player::UpdateDamageInvincibility(float deltaTime) {
         m_DamageBlinkTimer = 0.0f;
         m_DamageBlinkVisible = !m_DamageBlinkVisible;
         SetVisible(m_DamageBlinkVisible);
+    }
+}
+
+void Player::UpdateStarInvincibility(float deltaTime) {
+    if (m_StarTimer <= 0.0f) return;
+
+    m_StarTimer -= deltaTime;
+    if (m_StarTimer < 0.0f) {
+        m_StarTimer = 0.0f;
     }
 }
 
@@ -370,6 +380,7 @@ void Player::SetSpawnPosition(glm::vec2 position) {
     m_DamageInvincibleTimer = 0.0f;
     m_DamageBlinkTimer = 0.0f;
     m_DamageBlinkVisible = true;
+    m_StarTimer = 0.0f;
     SetVisible(true);
 }
 
@@ -409,6 +420,13 @@ void Player::StartDamageInvincibility(float duration) {
     m_DamageBlinkTimer = 0.0f;
     m_DamageBlinkVisible = true;
     SetVisible(true);
+}
+
+void Player::ActivateStarInvincibility(float duration) {
+    if (duration <= 0.0f || m_IsDying || m_IsLevelCleared) return;
+    m_StarTimer = duration;
+    SetVisible(true);
+    LOG_INFO("Player star invincibility activated for {} seconds.", duration);
 }
 
 // ─── SetForm：切換形態，同時調整碰撞體大小 ──────────────────────────
@@ -455,6 +473,7 @@ void Player::Downgrade() {
             m_DamageInvincibleTimer = 0.0f;
             m_DamageBlinkTimer = 0.0f;
             m_DamageBlinkVisible = true;
+            m_StarTimer = 0.0f;
             m_Velocity = {0.0f, 0.0f};
             SetDrawable(m_DeadImage);
             SetVisible(true);

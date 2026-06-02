@@ -17,10 +17,12 @@
  */
 class Koopa : public Enemy {
 public:
+    enum class Variant { Green, Red };
+
     /* 建構子
      * startX / startY：出生的世界座標位置。
      */
-    Koopa(float startX, float startY);
+    Koopa(float startX, float startY, Variant variant = Variant::Green);
 
     /* 每幀更新（覆寫 Enemy::Update）
      * 縮殼狀態下停止水平移動；其他時候和普通敵人一樣。
@@ -43,9 +45,11 @@ public:
     bool IsInShell() const { return m_InShell; }
     // 查詢殼是否在滑行中
     bool IsSliding() const { return m_IsSliding; }
+    Variant GetVariant() const { return m_Variant; }
 
-private:
+protected:
     void UpdateDrawable();
+    void LoadSprites(const std::string& theme = "ground");
 
     std::shared_ptr<Util::Animation> m_WalkLeftAnim;
     std::shared_ptr<Util::Animation> m_WalkRightAnim;
@@ -53,6 +57,7 @@ private:
 
     bool m_InShell   = false;  // true = 已縮進殼裡
     bool m_IsSliding = false;  // true = 殼被踢出，正在橫向滑行
+    Variant m_Variant = Variant::Green;
 };
 
 #endif
