@@ -149,11 +149,57 @@ Common item types used by the current game code:
 Coin
 PowerUp
 Mushroom
+FireFlower
+OneUp
+Star
 None
 ```
 
 `PowerUp` spawns a mushroom when Mario is small, and a fire flower when Mario is
 already powered up.
+
+### HiddenBlock
+
+An invisible solid 16x16 block. It is revealed when Mario hits it from below,
+then spawns its `itemType`.
+
+```json
+{
+  "type": "HiddenBlock",
+  "x": 1024.0,
+  "y": 144.0,
+  "itemType": "OneUp"
+}
+```
+
+Useful item types include `Coin`, `PowerUp`, `OneUp`, and `Star`.
+
+### MultiCoinBlock
+
+A solid 16x16 block that can spawn several coins before becoming a used block.
+If `coinCount` is omitted, it defaults to 10.
+
+```json
+{
+  "type": "MultiCoinBlock",
+  "x": 512.0,
+  "y": 144.0,
+  "coinCount": 10
+}
+```
+
+### Coin / CollectibleCoin
+
+A placed level coin. It starts active in the level and is collected by player
+contact, unlike `CoinItem`, which is the short animation spawned from blocks.
+
+```json
+{
+  "type": "Coin",
+  "x": 640.0,
+  "y": 112.0
+}
+```
 
 ### EnemySpawn
 
@@ -174,11 +220,28 @@ Supported enemy types:
 ```text
 Goomba
 Koopa
+KoopaParatroopa
 PiranhaPlant
 ```
 
 `PiranhaPlant` is useful for pipe areas. It has its own movement and does not
 use normal block collision.
+
+Koopa fields:
+
+- `variant`: `green` or `red`. Red Koopas turn around at platform edges.
+- `flightMode`: for `KoopaParatroopa`, `hop` or `verticalPatrol`.
+
+```json
+{
+  "type": "EnemySpawn",
+  "x": 768.0,
+  "y": 160.0,
+  "enemyType": "KoopaParatroopa",
+  "variant": "red",
+  "flightMode": "hop"
+}
+```
 
 ### Pipe
 
@@ -223,8 +286,7 @@ The end-of-level flag pole. The JSON position is the top of the flag pole.
 
 ### MovingPlatform
 
-A visible solid platform that moves back and forth. The first version is solid
-and moving; player carry behavior can be refined separately if needed.
+A visible solid platform that moves and carries the player when stood on.
 
 ```json
 {
@@ -234,6 +296,7 @@ and moving; player carry behavior can be refined separately if needed.
   "width": 48.0,
   "height": 8.0,
   "moveAxis": "horizontal",
+  "moveMode": "oscillate",
   "moveDistance": 64.0,
   "moveSpeed": 35.0
 }
@@ -242,6 +305,7 @@ and moving; player carry behavior can be refined separately if needed.
 Fields:
 
 - `moveAxis`: `horizontal` or `vertical`.
+- `moveMode`: `oscillate` or `verticalWrap`.
 - `moveDistance`: how far the platform moves from its starting point.
 - `moveSpeed`: movement speed in world pixels per second.
 

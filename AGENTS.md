@@ -133,10 +133,17 @@ cmake --build build
   - JSON y 是旗杆頂端；碰撞高度由 `FLAG_POLE_TILES` 決定。
   - `GetContactScore()` 依碰撞高度給 5000/2000/800/400/100。
 - `MovingPlatformBlock`
-  - solid，沿 horizontal/vertical 在 start 到 distance 間往返。
-  - 目前玩家站在平台上不會被平台主動 carry，只有碰撞推出。
+  - solid，沿 horizontal/vertical 移動。
+  - 支援 `moveMode`：`oscillate`、`verticalWrap`。
+  - 玩家站在平台上會套用平台 frame delta 進行 carry。
 - `TreePlatformBlock`
   - solid，使用多段 tree top sprite 組成 1-3 風格平台。
+- `HiddenBlock`
+  - 初始 invisible 但 solid。
+  - 玩家從下方撞擊後顯示 used block 並依 `itemType` spawn item。
+- `MultiCoinBlock`
+  - 16x16 solid，可用 `coinCount` 控制可敲出 coin 數量，預設 10。
+  - 耗盡後變 used block。
 
 ### Items / Fireballs / Effects
 
@@ -151,6 +158,14 @@ cmake --build build
 - `FireFlowerItem`
   - 從方塊冒出後靜止。
   - 玩家接觸後 `Player::SetForm(FIRE)`。
+- `LevelCoinItem`
+  - JSON 直接放置的 open coin。
+  - 初始 Active，不受重力；玩家接觸後加 coin/score。
+- `OneUpMushroomItem`
+  - 行為接近 mushroom，收集後 `GameSession::AddLife()`。
+- `StarmanItem`
+  - 從方塊冒出後移動並彈跳。
+  - 收集後 `Player::ActivateStarInvincibility()`；star 狀態碰敵人會直接擊殺敵人。
 - `Fireball`
   - FIRE Mario 射出。
   - 受重力，碰地反彈，撞牆/天花板爆炸。
@@ -191,11 +206,16 @@ cmake --build build
 - `Flag`
 - `MovingPlatform`
 - `TreePlatform`
+- `HiddenBlock`
+- `MultiCoinBlock`
+- `Coin`
+- `CollectibleCoin`
 
 支援 enemy types：
 
 - `Goomba`
 - `Koopa`
+- `KoopaParatroopa`
 - `PiranhaPlant`
 
 常見 item types：
@@ -203,6 +223,9 @@ cmake --build build
 - `Coin`
 - `PowerUp`
 - `Mushroom`
+- `FireFlower`
+- `OneUp`
+- `Star`
 - `None`
 
 `PowerUp` 在 `GameManager::SpawnItem()` 內依玩家形態決定：SMALL 產生 mushroom，SUPER/FIRE 產生 fire flower。
@@ -280,4 +303,3 @@ cmake --build build
 ## 目前驗證
 
 - `cmake --build build`：通過。
-
