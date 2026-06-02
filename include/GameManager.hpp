@@ -7,19 +7,24 @@
 #include <vector>
 
 #include "Block.hpp"
+#include "BrickDebris.hpp"
 #include "BrickBlock.hpp"
 #include "Camera.hpp"
 #include "FlagBlock.hpp"
 #include "Goomba.hpp"
 #include "GroundBlock.hpp"
+#include "GameSession.hpp"
 #include "Koopa.hpp"
 #include "LevelData.hpp"
+#include "MovingPlatformBlock.hpp"
 #include "PipeBlock.hpp"
+#include "PiranhaPlant.hpp"
 #include "Player.hpp"
 #include "Enemy.hpp"
 #include "Block.hpp"
 #include "Item.hpp"
 #include "QuestionBlock.hpp"
+#include "TreePlatformBlock.hpp"
 #include "WallBlock.hpp"
 #include "Fireball.hpp"
 #include "HUD.hpp"
@@ -57,7 +62,9 @@ public:
 private:
     enum class FlowState {
         Title,
+        LevelIntro,
         Playing,
+        TimeUp,
         LevelClearTransition,
     };
 
@@ -69,12 +76,20 @@ private:
     void ResetSceneObjects();
     void StartNewGame();
     void EnterTitleScreen();
+    void EnterLevelIntro();
+    void EnterPlaying();
+    void EnterTimeUp();
     void EnterLevelClearTransition();
     void BuildTitleOverlay();
+    void BuildLevelIntroOverlay();
+    void BuildTimeUpOverlay();
     void BuildLevelClearOverlay();
     void AddOverlayText(const std::string& text, int fontSize, glm::vec2 position, float zIndex = 30.0f);
+    void AddOverlayImage(const std::string& assetPath, glm::vec2 position, glm::vec2 scale, float zIndex = 30.0f);
     void UpdateTitle(float dt);
+    void UpdateLevelIntro(float dt);
     void UpdatePlaying(float dt);
+    void UpdateTimeUp(float dt);
     void UpdateLevelClearTransition(float dt);
     void DrawScene(bool updateHud);
     bool CheckPipeTransition();
@@ -100,6 +115,10 @@ private:
 
     void SpawnFireball(glm::vec2 position, bool movingLeft);
     void CheckFireballCollision();
+    void SpawnBrickDebris(glm::vec2 position);
+    void SavePlayerProgress();
+    void ApplyPlayerProgress();
+    void HandleLifeLost();
 
     /* 踩踏碰撞判斷
      * 檢查 Player 是否從上方踩到任何 Enemy。
@@ -126,6 +145,7 @@ private:
     std::vector<std::shared_ptr<Item>> m_Items;    
     std::vector<std::shared_ptr<Block>>  m_Blocks;     // 所有靜態場景物件
     std::vector<std::shared_ptr<Fireball>> m_Fireballs;
+    std::vector<std::shared_ptr<BrickDebris>> m_BrickDebris;
 
     Camera     m_Camera;                               // 鏡頭（追蹤玩家，計算捲動偏移）
     LevelData  m_Level;                                // 關卡資料（供 Camera 取得 levelWidth）
@@ -134,11 +154,12 @@ private:
 
     Util::Renderer m_Renderer;                         // PTSD 渲染器，負責把物件畫到螢幕上
 
+    GameSession m_Session;
     FlowState m_FlowState = FlowState::Title;
+    float m_StateTimer = 0.0f;
     float m_LevelClearTransitionTimer = 0.0f;
     std::vector<std::shared_ptr<Util::GameObject>> m_OverlayObjects;
 
-    int   m_Score = 0;          // 玩家當前分數
     bool  m_LevelCleared = false; // 是否已觸碰旗杆（防止重複計分）
 
     // ─── HUD ──────────────────────────────────────────────────────

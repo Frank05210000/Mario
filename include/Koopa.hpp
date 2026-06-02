@@ -1,7 +1,11 @@
 #ifndef KOOPA_HPP
 #define KOOPA_HPP
 
+#include <memory>
+
 #include "Enemy.hpp"
+#include "Util/Animation.hpp"
+#include "Util/Image.hpp"
 
 /*
  * Koopa：烏龜
@@ -41,6 +45,12 @@ public:
     bool IsSliding() const { return m_IsSliding; }
 
 private:
+    void UpdateDrawable();
+
+    std::shared_ptr<Util::Animation> m_WalkLeftAnim;
+    std::shared_ptr<Util::Animation> m_WalkRightAnim;
+    std::shared_ptr<Util::Image> m_ShellImage;
+
     bool m_InShell   = false;  // true = 已縮進殼裡
     bool m_IsSliding = false;  // true = 殼被踢出，正在橫向滑行
 };

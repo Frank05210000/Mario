@@ -24,6 +24,8 @@ public:
         Pipe,
         Flag,
         Wall,
+        MovingPlatform,
+        TreePlatform,
     };
 
     Block(glm::vec2 position, glm::vec2 size);

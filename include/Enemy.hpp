@@ -46,6 +46,8 @@ public:
      */
     virtual void Stomp() = 0;
 
+    virtual bool UsesBlockCollision() const { return true; }
+
 protected:
     float m_WalkSpeed = 40.0f;  // 行走速度（像素/秒），子類別可覆蓋（原版 NES 栗寶寶 ≈ 0.75 tiles/s × 16 × 3 ≈ 36，取 40）
 

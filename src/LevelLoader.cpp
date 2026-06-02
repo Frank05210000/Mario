@@ -54,6 +54,10 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
             od.height    = obj.value("height",    16.0f);
             od.opening   = obj.value("opening",   "up");
             od.enterable = obj.value("enterable", false);
+            od.moveAxis = obj.value("moveAxis", "horizontal");
+            od.moveDistance = obj.value("moveDistance", 0.0f);
+            od.moveSpeed = obj.value("moveSpeed", 0.0f);
+            od.segments = obj.value("segments", 3);
             if (obj.contains("targetSpawn")) {
                 od.targetSpawn.x = obj["targetSpawn"].value("x", 0.0f);
                 od.targetSpawn.y = obj["targetSpawn"].value("y", 0.0f);

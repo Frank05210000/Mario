@@ -368,6 +368,12 @@
         "x": 2608.0,
         "y": 144.0
       }
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 200.0,
+      "y": 152.0,
+      "enemyType": "PiranhaPlant"
     }
   ],
   "playerSpawn": {
