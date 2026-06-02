@@ -1,7 +1,7 @@
 {
   "backgroundImage": "level_image/1-1/ground.png",
   "theme": "ground",
-  "levelWidth": 640,
+  "levelWidth": 768,
   "levelHeight": 240,
   "playerSpawn": {
     "x": 32.0,
@@ -12,7 +12,7 @@
       "type": "Ground",
       "x": 0.0,
       "y": 208.0,
-      "width": 640.0,
+      "width": 768.0,
       "height": 32.0
     },
     {
@@ -59,23 +59,39 @@
       }
     },
     {
+      "type": "TreePlatform",
+      "x": 432.0,
+      "y": 128.0,
+      "segments": 4
+    },
+    {
+      "type": "MovingPlatform",
+      "x": 528.0,
+      "y": 152.0,
+      "width": 48.0,
+      "height": 8.0,
+      "moveAxis": "horizontal",
+      "moveDistance": 64.0,
+      "moveSpeed": 35.0
+    },
+    {
       "type": "Wall",
-      "x": 480.0,
+      "x": 640.0,
       "y": 192.0
     },
     {
       "type": "Wall",
-      "x": 496.0,
+      "x": 656.0,
       "y": 176.0
     },
     {
       "type": "Wall",
-      "x": 512.0,
+      "x": 672.0,
       "y": 160.0
     },
     {
       "type": "Flag",
-      "x": 576.0,
+      "x": 720.0,
       "y": 32.0
     }
   ]

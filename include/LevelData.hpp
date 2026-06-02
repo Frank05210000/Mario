@@ -27,6 +27,10 @@ struct ObjectData {
     float height = 16.0f;
     std::string opening = "up"; // 開口方向: "up", "down", "left", "right"
     bool enterable = false; // 水管是否可進入
+    std::string moveAxis = "horizontal"; // MovingPlatform: "horizontal" / "vertical"
+    float moveDistance = 0.0f;           // MovingPlatform: 最大移動距離
+    float moveSpeed = 0.0f;              // MovingPlatform: 速度 px/s
+    int segments = 3;                    // TreePlatform: 平台長度（幾個 16px tile）
 };
 
 /*

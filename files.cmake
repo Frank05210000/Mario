@@ -2,11 +2,13 @@ set(SRC_FILES
     App.cpp
     Block.cpp
     BrickBlock.cpp
+    BrickDebris.cpp
     Camera.cpp
     Character.cpp
     Enemy.cpp
     FlagBlock.cpp
     GameManager.cpp
+    GameSession.cpp
     Goomba.cpp
     GroundBlock.cpp
     HUD.cpp
@@ -14,12 +16,15 @@ set(SRC_FILES
     Koopa.cpp
     LevelLoader.cpp
     MushroomItem.cpp
+    MovingPlatformBlock.cpp
     CoinItem.cpp
     FireFlowerItem.cpp
     Fireball.cpp
     PipeBlock.cpp
+    PiranhaPlant.cpp
     Player.cpp
     QuestionBlock.cpp
+    TreePlatformBlock.cpp
     WallBlock.cpp
 )
 
@@ -28,6 +33,7 @@ set(INCLUDE_FILES
     AssetPath.hpp
     Block.hpp
     BrickBlock.hpp
+    BrickDebris.hpp
     Camera.hpp
     Character.hpp
     Enemy.hpp
@@ -39,6 +45,7 @@ set(INCLUDE_FILES
     Fireball.hpp
     GameConstants.hpp
     GameManager.hpp
+    GameSession.hpp
     Goomba.hpp
     GroundBlock.hpp
     HUD.hpp
@@ -46,8 +53,11 @@ set(INCLUDE_FILES
     LevelData.hpp
     LevelLoader.hpp
     PipeBlock.hpp
+    MovingPlatformBlock.hpp
+    PiranhaPlant.hpp
     Player.hpp
     QuestionBlock.hpp
+    TreePlatformBlock.hpp
     WallBlock.hpp
 )
 

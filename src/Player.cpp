@@ -21,13 +21,12 @@ Player::Player() {
     // 建立三套動畫／圖片資源
     InitAnimations();
 
-    // 預設顯示 Super Mario 待機圖（InitAnimations 之後才有值）
-    SetDrawable(m_SuperIdleImage);
+    // 預設顯示 Small Mario 待機圖（InitAnimations 之後才有值）
+    SetDrawable(m_SmallIdleImage);
 }
 
 void Player::ResetForNewGame() {
-    m_Coins = 0;
-    SetForm(Form::SUPER);
+    SetForm(Form::SMALL);
 }
 
 // ─── 初始化所有動畫資源 ───────────────────────────────────────────────
@@ -54,6 +53,7 @@ void Player::InitAnimations() {
     m_FireWalkAnim  = std::make_shared<Util::Animation>(kFireWalk, true, 120, true);
     m_FireClimbAnim = std::make_shared<Util::Animation>(kFireClimb, true, 150, true);
     m_FireSkidImage = std::make_shared<Util::Image>(kFireSkid);
+    m_FireShootImage = std::make_shared<Util::Image>(kFireShoot);
 
     LOG_INFO("Player::InitAnimations done (Small / Super / Fire)");
 }
@@ -245,11 +245,7 @@ void Player::UpdateAnimation() {
     }
 
     if (m_Form == Form::FIRE && m_ShootingTimer > 0.0f) {
-        // TODO: 應該新增 fire shoot picture    
-        // 發射期間短暫切換至發射姿勢
-        // （由於目前資源中沒有獨立的 Shoot.png，這裡先暫用 Jump.png 代表發射姿勢，
-        //  等之後如果有圖片，可以新增 m_FireShootImage 來替換）
-        SetDrawable(m_FireJumpImage);
+        SetDrawable(m_FireShootImage);
         return;
     }
 

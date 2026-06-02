@@ -54,10 +54,6 @@ public:
     // 取得死亡狀態
     bool IsDying() const { return m_IsDying; }
 
-    // 金幣計分
-    void AddCoin() { m_Coins++; LOG_INFO("Coins: {}", m_Coins); }
-    int  GetCoins() const { return m_Coins; }
-
     bool IsFacingLeft() const { return m_FacingLeft; }
     bool IsOnGround() const { return m_OnGround; }
     glm::vec2 GetPreviousPosition() const { return m_PreviousPosition; }
@@ -144,9 +140,7 @@ private:
     float m_DamageBlinkTimer = 0.0f;
     bool  m_DamageBlinkVisible = true;
 
-    Form m_Form = Form::SUPER;     // 預設大馬力歐
-    int  m_Coins = 0;              // 金幣數
-
+    Form m_Form = Form::SMALL;     // 預設小馬力歐
     // ─── 動畫資源（三套形態，right 方向；Draw() 裡用 scaleX 翻轉） ──
 
     // SMALL Mario
@@ -170,6 +164,7 @@ private:
     std::shared_ptr<Util::Image>     m_FireJumpImage;
     std::shared_ptr<Util::Animation> m_FireClimbAnim;
     std::shared_ptr<Util::Image>     m_FireSkidImage;
+    std::shared_ptr<Util::Image>     m_FireShootImage;
 
     // ── 過關動畫狀態 ──
     bool  m_IsLevelCleared    = false;

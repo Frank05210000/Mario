@@ -13,6 +13,8 @@
 #include "Util/Text.hpp"
 #include "Util/Time.hpp"
 
+#include <algorithm>
+#include <array>
 #include <iomanip>
 #include <sstream>
 
@@ -47,8 +49,14 @@ void GameManager::Update() {
         case FlowState::Title:
             UpdateTitle(dt);
             break;
+        case FlowState::LevelIntro:
+            UpdateLevelIntro(dt);
+            break;
         case FlowState::Playing:
             UpdatePlaying(dt);
+            break;
+        case FlowState::TimeUp:
+            UpdateTimeUp(dt);
             break;
         case FlowState::LevelClearTransition:
             UpdateLevelClearTransition(dt);
@@ -68,6 +76,16 @@ void GameManager::UpdateTitle(float dt) {
     DrawScene(false);
 }
 
+void GameManager::UpdateLevelIntro(float dt) {
+    m_StateTimer += dt;
+    if (m_StateTimer >= 2.0f) {
+        EnterPlaying();
+        return;
+    }
+
+    m_Renderer.Update();
+}
+
 void GameManager::UpdatePlaying(float dt) {
     // 1. 更新所有角色邏輯
     m_Player.Update(dt);
@@ -78,6 +96,12 @@ void GameManager::UpdatePlaying(float dt) {
         for (auto& block : m_Blocks)  block->Update(dt);
         for (auto& item : m_Items)    item->Update(dt);
         for (auto& fireball : m_Fireballs) fireball->Update(dt);
+        for (auto& debris : m_BrickDebris) debris->Update(dt);
+
+        m_BrickDebris.erase(
+            std::remove_if(m_BrickDebris.begin(), m_BrickDebris.end(),
+                           [](const auto& debris) { return debris->IsDead(); }),
+            m_BrickDebris.end());
 
         if (m_Player.ConsumeShootRequest()) {
             // 限制畫面上最多只能同時有 2 顆火球
@@ -115,8 +139,9 @@ void GameManager::UpdatePlaying(float dt) {
     const float killZ = m_Level.levelHeight + 50.0f;
     if (m_Player.IsAlive() && m_Player.GetPosition().y > killZ) {
         m_Player.SetAlive(false);
-        LOG_INFO("Player fell into the void! (Death triggered)");
-        // TODO: 播放瑪利歐死亡音樂、觸發死亡彈跳動畫、延遲幾秒後重新載入關卡
+        LOG_INFO("Player fell into the void! Life lost.");
+        HandleLifeLost();
+        return;
     }
 
     // 順便把掉出畫面的敵人也清除
@@ -135,10 +160,24 @@ void GameManager::UpdatePlaying(float dt) {
 
     if (!m_LevelCleared && m_Player.IsAlive()) {
         m_TimeRemaining -= dt;
-        if (m_TimeRemaining < 0.0f) m_TimeRemaining = 0.0f;
+        if (m_TimeRemaining <= 0.0f) {
+            m_TimeRemaining = 0.0f;
+            EnterTimeUp();
+            return;
+        }
     }
 
     DrawScene(true);
+}
+
+void GameManager::UpdateTimeUp(float dt) {
+    m_StateTimer += dt;
+    if (m_StateTimer >= 2.0f) {
+        HandleLifeLost();
+        return;
+    }
+
+    m_Renderer.Update();
 }
 
 void GameManager::UpdateLevelClearTransition(float dt) {
@@ -159,6 +198,7 @@ void GameManager::DrawScene(bool updateHud) {
     for (auto& block : m_Blocks)  block->Draw(m_Camera);
     for (auto& item : m_Items)    item->Draw(m_Camera);
     for (auto& fireball : m_Fireballs) fireball->Draw(m_Camera);
+    for (auto& debris : m_BrickDebris) debris->Draw(m_Camera);
 
     // 5. 處理背景圖座標換算與縮放
     if (m_Background) {
@@ -170,7 +210,8 @@ void GameManager::DrawScene(bool updateHud) {
 
     // 6. 更新 HUD（倒數計時器 + 文字內容）
     if (updateHud) {
-        m_Hud.Update(m_Score, m_Player.GetCoins(), static_cast<int>(m_TimeRemaining));
+        const auto& progress = m_Session.CurrentPlayer();
+        m_Hud.Update(progress.score, progress.coins, static_cast<int>(m_TimeRemaining));
     }
 
     // 7. 渲染到畫面上
@@ -183,6 +224,7 @@ void GameManager::ResetSceneObjects() {
     m_Items.clear();
     m_Blocks.clear();
     m_Fireballs.clear();
+    m_BrickDebris.clear();
     m_OverlayObjects.clear();
     m_Background.reset();
     m_Renderer = Util::Renderer();
@@ -190,24 +232,51 @@ void GameManager::ResetSceneObjects() {
 
 void GameManager::StartNewGame() {
     ResetSceneObjects();
-    m_Score = 0;
-    m_TimeRemaining = 400.0f;
-    m_LevelCleared = false;
+    m_Session.ResetNewGame(1);
     m_Player.ResetForNewGame();
 
+    EnterLevelIntro();
+    LOG_INFO("New game started.");
+}
+
+void GameManager::EnterLevelIntro() {
+    ResetSceneObjects();
+    m_StateTimer = 0.0f;
+    m_TimeRemaining = 400.0f;
+    m_LevelCleared = false;
+
+    m_Hud.Init(m_Renderer);
+    const auto& progress = m_Session.CurrentPlayer();
+    m_Hud.Update(progress.score, progress.coins, static_cast<int>(m_TimeRemaining));
+    BuildLevelIntroOverlay();
+
+    m_FlowState = FlowState::LevelIntro;
+    LOG_INFO("Entered level intro: player='{}' lives={}",
+             m_Session.GetCurrentPlayerName(),
+             progress.lives);
+}
+
+void GameManager::EnterPlaying() {
+    ResetSceneObjects();
+    m_TimeRemaining = 400.0f;
+    m_LevelCleared = false;
+
     LoadLevel(kLevel1_1);
+    ApplyPlayerProgress();
     m_Camera.Update(m_Player.GetPosition().x, static_cast<float>(m_Level.levelWidth));
     BuildScene();
     m_Hud.Init(m_Renderer);
 
     m_FlowState = FlowState::Playing;
-    LOG_INFO("New game started.");
+    LOG_INFO("Entered playing state.");
 }
 
 void GameManager::EnterTitleScreen() {
     ResetSceneObjects();
     m_LevelCleared = false;
+    m_StateTimer = 0.0f;
     m_LevelClearTransitionTimer = 0.0f;
+    m_Player.ResetForNewGame();
 
     LoadLevel(kLevel1_1);
     m_Camera.Update(m_Player.GetPosition().x, static_cast<float>(m_Level.levelWidth));
@@ -218,7 +287,23 @@ void GameManager::EnterTitleScreen() {
     LOG_INFO("Entered title screen.");
 }
 
+void GameManager::EnterTimeUp() {
+    ResetSceneObjects();
+    m_StateTimer = 0.0f;
+    m_TimeRemaining = 0.0f;
+    m_LevelCleared = false;
+
+    m_Hud.Init(m_Renderer);
+    const auto& progress = m_Session.CurrentPlayer();
+    m_Hud.Update(progress.score, progress.coins, 0);
+    BuildTimeUpOverlay();
+
+    m_FlowState = FlowState::TimeUp;
+    LOG_INFO("Entered time up state.");
+}
+
 void GameManager::EnterLevelClearTransition() {
+    SavePlayerProgress();
     ResetSceneObjects();
     m_LevelClearTransitionTimer = 0.0f;
     BuildLevelClearOverlay();
@@ -230,8 +315,27 @@ void GameManager::BuildTitleOverlay() {
     const auto context = Core::Context::GetInstance();
     const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
 
-    AddOverlayText("SUPER MARIO BROS", 24, {0.0f, halfH - 170.0f});
-    AddOverlayText("PRESS ENTER OR SPACE", 16, {0.0f, halfH - 270.0f});
+    AddOverlayImage("ui/title/logo.png", {0.0f, halfH - 180.0f}, {2.5f, 2.5f});
+    AddOverlayText("PRESS ENTER OR SPACE", 16, {0.0f, halfH - 310.0f});
+}
+
+void GameManager::BuildLevelIntroOverlay() {
+    const auto context = Core::Context::GetInstance();
+    const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
+
+    AddOverlayText("WORLD  1-1", 22, {0.0f, halfH - 260.0f});
+
+    std::ostringstream livesText;
+    livesText << m_Session.GetCurrentPlayerName()
+              << " x " << m_Session.CurrentPlayer().lives;
+    AddOverlayText(livesText.str(), 18, {0.0f, halfH - 380.0f});
+}
+
+void GameManager::BuildTimeUpOverlay() {
+    const auto context = Core::Context::GetInstance();
+    const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
+
+    AddOverlayText("TIME UP", 24, {0.0f, halfH - 430.0f});
 }
 
 void GameManager::BuildLevelClearOverlay() {
@@ -239,7 +343,8 @@ void GameManager::BuildLevelClearOverlay() {
     const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
 
     std::ostringstream scoreText;
-    scoreText << "SCORE " << std::setw(6) << std::setfill('0') << m_Score;
+    scoreText << "SCORE " << std::setw(6) << std::setfill('0')
+              << m_Session.CurrentPlayer().score;
 
     AddOverlayText("WORLD CLEAR", 24, {0.0f, halfH - 190.0f});
     AddOverlayText(scoreText.str(), 16, {0.0f, halfH - 260.0f});
@@ -260,6 +365,41 @@ void GameManager::AddOverlayText(const std::string& text, int fontSize, glm::vec
 
     m_OverlayObjects.push_back(obj);
     m_Renderer.AddChild(obj);
+}
+
+void GameManager::AddOverlayImage(const std::string& assetPath, glm::vec2 position, glm::vec2 scale, float zIndex) {
+    auto drawable = std::make_shared<Util::Image>(MakeAssetPath(assetPath));
+
+    auto obj = std::make_shared<Util::GameObject>(drawable, zIndex);
+    obj->m_Transform.translation = position;
+    obj->m_Transform.scale = scale;
+    obj->SetVisible(true);
+
+    m_OverlayObjects.push_back(obj);
+    m_Renderer.AddChild(obj);
+}
+
+void GameManager::SavePlayerProgress() {
+    auto& progress = m_Session.CurrentPlayer();
+    progress.form = m_Player.GetForm();
+}
+
+void GameManager::ApplyPlayerProgress() {
+    m_Player.SetForm(m_Session.CurrentPlayer().form);
+}
+
+void GameManager::HandleLifeLost() {
+    SavePlayerProgress();
+    m_Session.LoseLife();
+
+    if (m_Session.IsGameOver()) {
+        LOG_INFO("Game over. Returning to title.");
+        EnterTitleScreen();
+        return;
+    }
+
+    m_Session.SwitchToNextAlivePlayer();
+    EnterLevelIntro();
 }
 
 // ─── LoadLevel ────────────────────────────────────────────────────────────
@@ -315,6 +455,18 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
                 obj.targetSpawn,
                 obj.hasTargetSpawn,
                 m_Level.theme));
+        } else if (obj.type == "MovingPlatform") {
+            glm::vec2 platformSize = size;
+            if (platformSize.x <= 0.0f) platformSize.x = TILE_SIZE * 3.0f;
+            if (platformSize.y <= 0.0f) platformSize.y = TILE_SIZE * 0.5f;
+            m_Blocks.push_back(std::make_shared<MovingPlatformBlock>(
+                pos,
+                platformSize,
+                obj.moveAxis,
+                obj.moveDistance,
+                obj.moveSpeed));
+        } else if (obj.type == "TreePlatform") {
+            m_Blocks.push_back(std::make_shared<TreePlatformBlock>(pos, obj.segments));
         } else if (obj.type == "Wall") {
             m_Blocks.push_back(std::make_shared<WallBlock>(pos, m_Level.theme));
         } else if (obj.type == "Flag") {
@@ -477,8 +629,9 @@ void GameManager::CheckEnemySpawnQueue() {
 void GameManager::SpawnEnemy(const ObjectData& data) {
     std::shared_ptr<Enemy> newEnemy;
 
-    if      (data.enemyType == "Goomba") newEnemy = std::make_shared<Goomba>(data.x, data.y);
-    else if (data.enemyType == "Koopa")  newEnemy = std::make_shared<Koopa>(data.x, data.y);
+    if      (data.enemyType == "Goomba")       newEnemy = std::make_shared<Goomba>(data.x, data.y);
+    else if (data.enemyType == "Koopa")        newEnemy = std::make_shared<Koopa>(data.x, data.y);
+    else if (data.enemyType == "PiranhaPlant") newEnemy = std::make_shared<PiranhaPlant>(data.x, data.y);
 
     if (newEnemy) {
         m_Enemies.push_back(newEnemy);
@@ -523,7 +676,9 @@ void GameManager::CheckStompCollision() {
             // TODO研究程式碼
             if (isStationaryShell) {
                 // 從上方踩到縮殼中的龜 → 踢殼！
-                const bool kickLeft = (pPos.x + pSize.x * 0.5f) < (ePos.x + eSize.x * 0.5f);
+                const bool playerIsLeftOfShell =
+                    (pPos.x + pSize.x * 0.5f) < (ePos.x + eSize.x * 0.5f);
+                const bool kickLeft = !playerIsLeftOfShell;
                 koopa->Kick(kickLeft);
                 LOG_INFO("Koopa shell kicked {} from top!", kickLeft ? "left" : "right");
             } else {
@@ -539,7 +694,9 @@ void GameManager::CheckStompCollision() {
             // ── 側碰 / 從下方衝入 ──
             if (isStationaryShell) {
                 // 從側面碰到靜止的龜殼 → 直接踢飛，且不會有往上的彈跳！
-                const bool kickLeft = (pPos.x + pSize.x * 0.5f) < (ePos.x + eSize.x * 0.5f);
+                const bool playerIsLeftOfShell =
+                    (pPos.x + pSize.x * 0.5f) < (ePos.x + eSize.x * 0.5f);
+                const bool kickLeft = !playerIsLeftOfShell;
                 koopa->Kick(kickLeft);
                 LOG_INFO("Koopa shell kicked {} from side!", kickLeft ? "left" : "right");
             } else {
@@ -623,6 +780,7 @@ void GameManager::CheckBlockCollision() {
                 BlockHitResult hitRes = block->OnHit(&m_Player);
 
                 if (hitRes.isDestroyed) {
+                    SpawnBrickDebris(bPos);
                     block->SetVisible(false);
                     blocksToRemove.push_back(block);
                 }
@@ -651,6 +809,7 @@ void GameManager::CheckBlockCollision() {
 void GameManager::CheckEnemyBlockCollision() {
     for (auto& enemy : m_Enemies) {
         if (!enemy->IsAlive()) continue;
+        if (!enemy->UsesBlockCollision()) continue;
 
         glm::vec2 ePos  = enemy->GetPosition();
         glm::vec2 eSize = enemy->GetSize();
@@ -718,6 +877,9 @@ void GameManager::BuildScene() {
 
     // 所有火球
     for (auto& fireball : m_Fireballs) m_Renderer.AddChild(fireball);
+
+    // 磚塊碎片
+    for (auto& debris : m_BrickDebris) m_Renderer.AddChild(debris);
 }
 
 // ─── SpawnItem ────────────────────────────────────────────────────────────
@@ -726,6 +888,7 @@ void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
 
     if (itemType == "Coin") {
         newItem = std::make_shared<CoinItem>(position);
+        m_Session.AddCoin();
     } else if (itemType == "PowerUp" || itemType == "Mushroom") {
         if (m_Player.GetForm() == Player::Form::SMALL) {
             newItem = std::make_shared<MushroomItem>(position);
@@ -832,6 +995,28 @@ void GameManager::SpawnFireball(glm::vec2 position, bool movingLeft) {
     LOG_INFO("GameManager spawned Fireball at {}", position);
 }
 
+void GameManager::SpawnBrickDebris(glm::vec2 position) {
+    const glm::vec2 center = position + glm::vec2(TILE_SIZE * 0.5f, TILE_SIZE * 0.5f);
+    const std::array<glm::vec2, 4> offsets = {
+        glm::vec2(-4.0f, -4.0f),
+        glm::vec2(4.0f, -4.0f),
+        glm::vec2(-4.0f, 4.0f),
+        glm::vec2(4.0f, 4.0f),
+    };
+    const std::array<glm::vec2, 4> velocities = {
+        glm::vec2(-90.0f, -280.0f),
+        glm::vec2(90.0f, -280.0f),
+        glm::vec2(-70.0f, -190.0f),
+        glm::vec2(70.0f, -190.0f),
+    };
+
+    for (std::size_t i = 0; i < offsets.size(); ++i) {
+        auto debris = std::make_shared<BrickDebris>(center + offsets[i], velocities[i], m_Level.theme);
+        m_BrickDebris.push_back(debris);
+        m_Renderer.AddChild(debris);
+    }
+}
+
 // ─── CheckFireballCollision ───────────────────────────────────────────────
 void GameManager::CheckFireballCollision() {
     std::vector<std::shared_ptr<Fireball>> fireballsToRemove;
@@ -935,7 +1120,7 @@ void GameManager::CheckFireballCollision() {
  * 掃描所有 Block，找出 Type::Flag 的旗杆。
  * 用 AABB 判斷玩家是否進入旗杆範圍，若是：
  *   1. 呼叫 GetContactScore(playerY) 計算分數（依接觸高度）
- *   2. 把分數加入 m_Score
+ *   2. 把分數加入目前玩家進度
  *   3. 標記過關（避免重複觸發）
  */
 void GameManager::CheckFlagCollision() {
@@ -963,13 +1148,15 @@ void GameManager::CheckFlagCollision() {
         if (!flagBlock) continue;
 
         const int score = flagBlock->GetContactScore(playerBottom);
-        m_Score += score;
+        m_Session.AddScore(score);
         m_LevelCleared = true;
         
         // 觸發玩家的過關下降演出
         m_Player.StartLevelClearSequence(fPos.x, fPos.y + fSize.y);
 
-        LOG_INFO("=== LEVEL CLEAR! Flag score: {}  Total score: {} ===", score, m_Score);
+        LOG_INFO("=== LEVEL CLEAR! Flag score: {}  Total score: {} ===",
+                 score,
+                 m_Session.CurrentPlayer().score);
         // TODO: 播放過關音樂、觸發旗子下降動畫、延遲幾秒後進下一關
         break;
     }
