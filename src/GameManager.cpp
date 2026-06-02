@@ -21,7 +21,13 @@
 #include "MushroomItem.hpp"
 #include "FireFlowerItem.hpp"
 #include "CoinItem.hpp"
+#include "HiddenBlock.hpp"
 #include "Koopa.hpp"
+#include "KoopaParatroopa.hpp"
+#include "LevelCoinItem.hpp"
+#include "MultiCoinBlock.hpp"
+#include "OneUpMushroomItem.hpp"
+#include "StarmanItem.hpp"
 
 // ─── 關卡 JSON 路徑 ────────────────────────────────────────────────────────
 // RESOURCE_DIR 定義在 CMakeLists.txt，指向 Mario/Resources/
@@ -444,6 +450,12 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
             auto b = std::make_shared<QuestionBlock>(pos, m_Level.theme);
             b->SetItemType(obj.itemType.empty() ? "Coin" : obj.itemType);
             m_Blocks.push_back(b);
+        } else if (obj.type == "HiddenBlock") {
+            auto b = std::make_shared<HiddenBlock>(pos, m_Level.theme);
+            b->SetItemType(obj.itemType.empty() ? "Coin" : obj.itemType);
+            m_Blocks.push_back(b);
+        } else if (obj.type == "MultiCoinBlock") {
+            m_Blocks.push_back(std::make_shared<MultiCoinBlock>(pos, m_Level.theme, obj.coinCount));
         } else if (obj.type == "Pipe") {
             m_Blocks.push_back(std::make_shared<PipeBlock>(
                 pos,
@@ -464,13 +476,16 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
                 platformSize,
                 obj.moveAxis,
                 obj.moveDistance,
-                obj.moveSpeed));
+                obj.moveSpeed,
+                obj.moveMode));
         } else if (obj.type == "TreePlatform") {
             m_Blocks.push_back(std::make_shared<TreePlatformBlock>(pos, obj.segments));
         } else if (obj.type == "Wall") {
             m_Blocks.push_back(std::make_shared<WallBlock>(pos, m_Level.theme));
         } else if (obj.type == "Flag") {
             m_Blocks.push_back(std::make_shared<FlagBlock>(pos));
+        } else if (obj.type == "Coin" || obj.type == "CollectibleCoin") {
+            m_Items.push_back(std::make_shared<LevelCoinItem>(pos));
         } else if (obj.type == "EnemySpawn") {
             // 不直接建立物件，改存進 queue，等鏡頭到達再生成
             m_EnemySpawnQueue.push_back(obj);
@@ -629,8 +644,17 @@ void GameManager::CheckEnemySpawnQueue() {
 void GameManager::SpawnEnemy(const ObjectData& data) {
     std::shared_ptr<Enemy> newEnemy;
 
+    const auto koopaVariant =
+        (data.variant == "red") ? Koopa::Variant::Red : Koopa::Variant::Green;
+    const auto flightMode =
+        (data.flightMode == "verticalPatrol") ? KoopaParatroopa::FlightMode::VerticalPatrol
+                                              : KoopaParatroopa::FlightMode::Hop;
+
     if      (data.enemyType == "Goomba")       newEnemy = std::make_shared<Goomba>(data.x, data.y);
-    else if (data.enemyType == "Koopa")        newEnemy = std::make_shared<Koopa>(data.x, data.y);
+    else if (data.enemyType == "Koopa")        newEnemy = std::make_shared<Koopa>(data.x, data.y, koopaVariant);
+    else if (data.enemyType == "KoopaParatroopa") {
+        newEnemy = std::make_shared<KoopaParatroopa>(data.x, data.y, koopaVariant, flightMode);
+    }
     else if (data.enemyType == "PiranhaPlant") newEnemy = std::make_shared<PiranhaPlant>(data.x, data.y);
 
     if (newEnemy) {
@@ -659,9 +683,18 @@ void GameManager::CheckStompCollision() {
         // 矩形重疊判斷（AABB）
         if (!CollisionUtils::CheckAABB(pPos, pSize, ePos, eSize)) continue;
 
+        if (m_Player.IsStarInvincible()) {
+            enemy->SetAlive(false);
+            enemy->SetVisible(false);
+            m_Session.AddScore(200);
+            LOG_INFO("Star invincibility defeated enemy.");
+            continue;
+        }
+
         // ── 判斷是否為靜止的龜殼 ──
         auto* koopa = dynamic_cast<Koopa*>(enemy.get());
         bool isStationaryShell = koopa && koopa->IsInShell() && !koopa->IsSliding();
+        const bool isPiranha = dynamic_cast<PiranhaPlant*>(enemy.get()) != nullptr;
 
         // ── 踩踏判定：必須是玩家從上方往下落到敵人頭上 ──
         const float previousBottom = pPrev.y + pSize.y;
@@ -672,7 +705,7 @@ void GameManager::CheckStompCollision() {
             previousBottom <= enemyTop + 6.0f &&
             playerBottom <= enemyTop + 12.0f;
 
-        if (fallingOntoEnemy) {
+        if (fallingOntoEnemy && !isPiranha) {
             // TODO研究程式碼
             if (isStationaryShell) {
                 // 從上方踩到縮殼中的龜 → 踢殼！
@@ -773,6 +806,9 @@ void GameManager::CheckBlockCollision() {
                 pPos.y -= penY;
                 if (pVel.y > 0.0f) pVel.y = 0.0f;
                 onGround = true;
+                if (auto* platform = dynamic_cast<MovingPlatformBlock*>(block.get())) {
+                    pPos += platform->GetFrameDelta();
+                }
             } else if (hitFromBelow) {
                 pPos.y += penY;
                 pVel.y = 0.0f;
@@ -853,6 +889,28 @@ void GameManager::CheckEnemyBlockCollision() {
             }
         }
 
+        if (auto* koopa = dynamic_cast<Koopa*>(enemy.get())) {
+            if (koopa->GetVariant() == Koopa::Variant::Red && !koopa->IsInShell()) {
+                const float lookAheadX = eVel.x < 0.0f ? ePos.x - 2.0f : ePos.x + eSize.x + 2.0f;
+                const glm::vec2 probePos = {lookAheadX, ePos.y + eSize.y + 1.0f};
+                const glm::vec2 probeSize = {2.0f, 2.0f};
+                bool hasSupportAhead = false;
+
+                for (const auto& block : m_Blocks) {
+                    if (!block->IsSolid()) continue;
+                    if (CollisionUtils::CheckAABB(probePos, probeSize, block->GetPosition(), block->GetSize())) {
+                        hasSupportAhead = true;
+                        break;
+                    }
+                }
+
+                if (!hasSupportAhead && eVel.y == 0.0f) {
+                    enemy->ReverseDirection();
+                    eVel = enemy->GetVelocity();
+                }
+            }
+        }
+
         enemy->SetPosition(ePos);
         enemy->SetVelocity(eVel);
     }
@@ -875,6 +933,9 @@ void GameManager::BuildScene() {
     // 所有方塊
     for (auto& block : m_Blocks)  m_Renderer.AddChild(block);
 
+    // 關卡載入時已存在的道具，例如 1-3 空中金幣
+    for (auto& item : m_Items) m_Renderer.AddChild(item);
+
     // 所有火球
     for (auto& fireball : m_Fireballs) m_Renderer.AddChild(fireball);
 
@@ -895,6 +956,12 @@ void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
         } else {
             newItem = std::make_shared<FireFlowerItem>(position);
         }
+    } else if (itemType == "FireFlower") {
+        newItem = std::make_shared<FireFlowerItem>(position);
+    } else if (itemType == "OneUp" || itemType == "1Up") {
+        newItem = std::make_shared<OneUpMushroomItem>(position);
+    } else if (itemType == "Star" || itemType == "Starman") {
+        newItem = std::make_shared<StarmanItem>(position);
     }
 
     if (newItem) {
@@ -919,7 +986,18 @@ void GameManager::CheckItemCollision() {
 
             if (CollisionUtils::CheckAABB(pPos, pSize, iPos, iSize)) {
                 // 吃掉！
+                const std::string itemType = item->GetType();
                 item->OnCollect(&m_Player);
+                if (item->GetState() == ItemState::Collected) {
+                    if (itemType == "LevelCoin") {
+                        m_Session.AddCoin();
+                        m_Session.AddScore(200);
+                    } else if (itemType == "OneUp") {
+                        m_Session.AddLife();
+                    } else if (itemType == "Mushroom" || itemType == "FireFlower" || itemType == "Star") {
+                        m_Session.AddScore(1000);
+                    }
+                }
             }
         }
 
@@ -977,7 +1055,13 @@ void GameManager::CheckItemBlockCollision() {
                     if (iVel.y < 0) iVel.y = 0.0f;
                 } else {
                     iPos.y -= penY;
-                    if (iVel.y > 0) iVel.y = 0.0f;
+                    if (iVel.y > 0) {
+                        if (item->GetType() == "Star") {
+                            iVel.y = -220.0f;
+                        } else {
+                            iVel.y = 0.0f;
+                        }
+                    }
                 }
             }
         }

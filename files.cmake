@@ -11,19 +11,25 @@ set(SRC_FILES
     GameSession.cpp
     Goomba.cpp
     GroundBlock.cpp
+    HiddenBlock.cpp
     HUD.cpp
     Item.cpp
     Koopa.cpp
+    KoopaParatroopa.cpp
     LevelLoader.cpp
+    LevelCoinItem.cpp
     MushroomItem.cpp
     MovingPlatformBlock.cpp
+    MultiCoinBlock.cpp
     CoinItem.cpp
     FireFlowerItem.cpp
     Fireball.cpp
+    OneUpMushroomItem.cpp
     PipeBlock.cpp
     PiranhaPlant.cpp
     Player.cpp
     QuestionBlock.cpp
+    StarmanItem.cpp
     TreePlatformBlock.cpp
     WallBlock.cpp
 )
@@ -48,15 +54,21 @@ set(INCLUDE_FILES
     GameSession.hpp
     Goomba.hpp
     GroundBlock.hpp
+    HiddenBlock.hpp
     HUD.hpp
     Koopa.hpp
+    KoopaParatroopa.hpp
     LevelData.hpp
     LevelLoader.hpp
+    LevelCoinItem.hpp
     PipeBlock.hpp
     MovingPlatformBlock.hpp
+    MultiCoinBlock.hpp
+    OneUpMushroomItem.hpp
     PiranhaPlant.hpp
     Player.hpp
     QuestionBlock.hpp
+    StarmanItem.hpp
     TreePlatformBlock.hpp
     WallBlock.hpp
 )

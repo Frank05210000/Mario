@@ -17,6 +17,8 @@ struct ObjectData {
     std::string type;       // "Ground" / "Brick" / "QuestionBlock" / "Pipe" / "Flag" / "Wall" / "EnemySpawn"
     std::string enemyType;  // 只有 type=="EnemySpawn" 才有值："Goomba" / "Koopa"
     std::string itemType;   // 夾帶的道具："None", "Coin", "PowerUp", "Mushroom", "Star", "CoinMulti"
+    std::string variant = "green"; // Koopa/Paratroopa: "green" / "red"
+    std::string flightMode = "hop"; // Paratroopa: "hop" / "verticalPatrol"
     std::string targetLevel; // 可進入水管的目標關卡，例如 "1-1_underground"
     std::string exitToLevel; // 地下出口水管可回到的關卡，例如 "1-1"
     glm::vec2 targetSpawn = {0.0f, 0.0f}; // 可選的傳送後出生點
@@ -28,9 +30,11 @@ struct ObjectData {
     std::string opening = "up"; // 開口方向: "up", "down", "left", "right"
     bool enterable = false; // 水管是否可進入
     std::string moveAxis = "horizontal"; // MovingPlatform: "horizontal" / "vertical"
+    std::string moveMode = "oscillate";  // MovingPlatform: "oscillate" / "verticalWrap" / "horizontalOscillate"
     float moveDistance = 0.0f;           // MovingPlatform: 最大移動距離
     float moveSpeed = 0.0f;              // MovingPlatform: 速度 px/s
     int segments = 3;                    // TreePlatform: 平台長度（幾個 16px tile）
+    int coinCount = 10;                  // MultiCoinBlock: 可敲出的金幣數
 };
 
 /*

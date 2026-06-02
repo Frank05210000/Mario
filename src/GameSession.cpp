@@ -32,7 +32,17 @@ void GameSession::AddScore(int amount) {
 
 void GameSession::AddCoin(int amount) {
     if (amount <= 0) return;
-    CurrentPlayer().coins += amount;
+    auto& player = CurrentPlayer();
+    player.coins += amount;
+    while (player.coins >= 100) {
+        player.coins -= 100;
+        AddLife();
+    }
+}
+
+void GameSession::AddLife(int amount) {
+    if (amount <= 0) return;
+    CurrentPlayer().lives += amount;
 }
 
 bool GameSession::LoseLife() {

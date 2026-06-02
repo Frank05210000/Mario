@@ -11,18 +11,22 @@ public:
                         glm::vec2 size,
                         const std::string& moveAxis,
                         float moveDistance,
-                        float moveSpeed);
+                        float moveSpeed,
+                        const std::string& moveMode = "oscillate");
 
     Type GetType() const override { return Type::MovingPlatform; }
     bool IsSolid() const override { return true; }
     void Update(float deltaTime) override;
+    glm::vec2 GetFrameDelta() const { return m_FrameDelta; }
 
 private:
     glm::vec2 m_StartPosition = {0.0f, 0.0f};
     std::string m_MoveAxis = "horizontal";
+    std::string m_MoveMode = "oscillate";
     float m_MoveDistance = 0.0f;
     float m_MoveSpeed = 0.0f;
     int m_Direction = 1;
+    glm::vec2 m_FrameDelta = {0.0f, 0.0f};
 };
 
 #endif

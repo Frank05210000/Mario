@@ -33,6 +33,7 @@ public:
 
     void AddScore(int amount);
     void AddCoin(int amount = 1);
+    void AddLife(int amount = 1);
     bool LoseLife();
     void SwitchToNextAlivePlayer();
     bool IsGameOver() const;

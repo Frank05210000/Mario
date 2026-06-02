@@ -11,7 +11,7 @@ public:
 
     void Update(float deltaTime) override;
     void OnCollect(Player* player) override;
-    std::string GetType() const override { return "PowerUp"; }
+    std::string GetType() const override { return "FireFlower"; }
 
 private:
     std::shared_ptr<Util::Animation> m_Animation;

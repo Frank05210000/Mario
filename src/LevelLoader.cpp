@@ -46,6 +46,8 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
             od.type      = obj.value("type",      "");
             od.enemyType = obj.value("enemyType", "");
             od.itemType  = obj.value("itemType",  "");
+            od.variant = obj.value("variant", "green");
+            od.flightMode = obj.value("flightMode", "hop");
             od.targetLevel = obj.value("targetLevel", "");
             od.exitToLevel = obj.value("exitToLevel", "");
             od.x         = obj.value("x",         0.0f);
@@ -55,9 +57,11 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
             od.opening   = obj.value("opening",   "up");
             od.enterable = obj.value("enterable", false);
             od.moveAxis = obj.value("moveAxis", "horizontal");
+            od.moveMode = obj.value("moveMode", "oscillate");
             od.moveDistance = obj.value("moveDistance", 0.0f);
             od.moveSpeed = obj.value("moveSpeed", 0.0f);
             od.segments = obj.value("segments", 3);
+            od.coinCount = obj.value("coinCount", 10);
             if (obj.contains("targetSpawn")) {
                 od.targetSpawn.x = obj["targetSpawn"].value("x", 0.0f);
                 od.targetSpawn.y = obj["targetSpawn"].value("y", 0.0f);
