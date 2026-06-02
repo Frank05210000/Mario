@@ -174,7 +174,11 @@ Supported enemy types:
 ```text
 Goomba
 Koopa
+PiranhaPlant
 ```
+
+`PiranhaPlant` is useful for pipe areas. It has its own movement and does not
+use normal block collision.
 
 ### Pipe
 
@@ -214,6 +218,44 @@ The end-of-level flag pole. The JSON position is the top of the flag pole.
   "type": "Flag",
   "x": 576.0,
   "y": 32.0
+}
+```
+
+### MovingPlatform
+
+A visible solid platform that moves back and forth. The first version is solid
+and moving; player carry behavior can be refined separately if needed.
+
+```json
+{
+  "type": "MovingPlatform",
+  "x": 528.0,
+  "y": 152.0,
+  "width": 48.0,
+  "height": 8.0,
+  "moveAxis": "horizontal",
+  "moveDistance": 64.0,
+  "moveSpeed": 35.0
+}
+```
+
+Fields:
+
+- `moveAxis`: `horizontal` or `vertical`.
+- `moveDistance`: how far the platform moves from its starting point.
+- `moveSpeed`: movement speed in world pixels per second.
+
+### TreePlatform
+
+A 1-3 style tree-top platform. `segments` controls how many 16px pieces are
+used across the top.
+
+```json
+{
+  "type": "TreePlatform",
+  "x": 432.0,
+  "y": 128.0,
+  "segments": 4
 }
 ```
 
