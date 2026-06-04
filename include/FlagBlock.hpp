@@ -6,15 +6,15 @@
 /*
  * FlagBlock：終點旗杆
  *
- * JSON 只記錄旗杆最高格的座標（左上角），
- * 程式自動根據 FLAG_POLE_TILES 往下延伸偵測範圍。
+ * JSON 只記錄旗杆底部的座標，
+ * 程式自動根據 FLAG_POLE_TILES 往上推算偵測範圍。
  *
  * 計分邏輯：
  *   玩家碰到旗杆時，依接觸高度回傳不同分數（越高越多）。
  */
 class FlagBlock : public Block {
 public:
-    explicit FlagBlock(glm::vec2 topPosition);
+    explicit FlagBlock(glm::vec2 bottomPosition);
 
     Type GetType() const override { return Type::Flag; }
     bool IsSolid() const override { return false; }

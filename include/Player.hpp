@@ -24,6 +24,14 @@ public:
      */
     enum class Form { SMALL, SUPER, FIRE };
 
+    enum class State {
+        Normal,
+        Dying,
+        LevelClear,
+        EnteringPipe,
+        ExitingPipe
+    };
+
     Player();
     void ResetForNewGame();
 
@@ -54,7 +62,7 @@ public:
     bool IsStarInvincible() const { return m_StarTimer > 0.0f; }
 
     // 取得死亡狀態
-    bool IsDying() const { return m_IsDying; }
+    bool IsDying() const { return m_State == State::Dying; }
 
     bool IsFacingLeft() const { return m_FacingLeft; }
     bool IsOnGround() const { return m_OnGround; }
@@ -92,6 +100,12 @@ public:
         return m_IsLevelCleared && !m_IsSlidingDown && !m_IsWalkingToCastle;
     }
 
+    // ─── 水管進出動畫方法 ───────────────────────────────────────────
+    State GetState() const { return m_State; }
+    void StartPipeEntry(glm::vec2 pipePosition, glm::vec2 pipeSize, const std::string& opening, float duration = 1.0f);
+    void StartPipeExit(glm::vec2 pipePosition, glm::vec2 pipeSize, const std::string& opening, float duration = 1.0f);
+    bool IsAnimationFinished() const { return m_AnimTimer >= m_AnimDuration; }
+
 private:
     /* 處理鍵盤輸入
      * 左右：A/D 或方向鍵；跳躍：Space / W / ↑（需站在地上）。
@@ -117,6 +131,7 @@ private:
 
     void UpdateDamageInvincibility(float deltaTime);
     void UpdateStarInvincibility(float deltaTime);
+    void ResetTransientState();
 
 
 
@@ -153,6 +168,7 @@ private:
     std::shared_ptr<Util::Image>     m_SmallJumpImage;
     std::shared_ptr<Util::Animation> m_SmallClimbAnim;
     std::shared_ptr<Util::Image>     m_SmallSkidImage;
+    std::shared_ptr<Util::Image>     m_SmallDuckImage;
     std::shared_ptr<Util::Image>     m_DeadImage;      // 瑪利歐死亡專用圖片
 
     // SUPER Mario
@@ -161,6 +177,7 @@ private:
     std::shared_ptr<Util::Image>     m_SuperJumpImage;
     std::shared_ptr<Util::Animation> m_SuperClimbAnim;
     std::shared_ptr<Util::Image>     m_SuperSkidImage;
+    std::shared_ptr<Util::Image>     m_SuperDuckImage;
 
     // FIRE Mario
     std::shared_ptr<Util::Image>     m_FireIdleImage;
@@ -169,6 +186,7 @@ private:
     std::shared_ptr<Util::Animation> m_FireClimbAnim;
     std::shared_ptr<Util::Image>     m_FireSkidImage;
     std::shared_ptr<Util::Image>     m_FireShootImage;
+    std::shared_ptr<Util::Image>     m_FireDuckImage;
 
     // ── 過關動畫狀態 ──
     bool  m_IsLevelCleared    = false;
@@ -180,6 +198,14 @@ private:
     // ── 死亡動畫狀態 ──
     bool  m_IsDying = false;
     float m_DeathTimer = 0.0f;
+
+    // ── 水管動畫狀態變數 ──
+    State m_State = State::Normal;
+    float m_AnimTimer = 0.0f;
+    float m_AnimDuration = 1.0f;
+    glm::vec2 m_AnimStartPos = {0.0f, 0.0f};
+    glm::vec2 m_AnimEndPos = {0.0f, 0.0f};
+    std::string m_PipeOpening = "up";
 };
 
 #endif

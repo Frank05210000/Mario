@@ -14,7 +14,7 @@
  * 建完遊戲物件後，ObjectData 本身就功成身退。
  */
 struct ObjectData {
-    std::string type;       // "Ground" / "Brick" / "QuestionBlock" / "Pipe" / "Flag" / "Wall" / "EnemySpawn"
+    std::string type;       // "Ground" / "Brick" / "UsedOnHitBrickBlock" / "QuestionBlock" / "HiddenQuestionBlock" / "EnterablePipe" / "PipeCollision" / "Flag" / "Wall" / "EnemySpawn"
     std::string enemyType;  // 只有 type=="EnemySpawn" 才有值："Goomba" / "Koopa"
     std::string itemType;   // 夾帶的道具："None", "Coin", "PowerUp", "Mushroom", "Star", "CoinMulti"
     std::string variant = "green"; // Koopa/Paratroopa: "green" / "red"
@@ -25,15 +25,17 @@ struct ObjectData {
     bool hasTargetSpawn = false;
     float x      = 0.0f;
     float y      = 0.0f;
-    float width  = 16.0f;  // 預設一格 tile（16px）
+    float width  = 16.0f;  // 部分物件使用；EnterablePipe 正式格式改用 segments
     float height = 16.0f;
     std::string opening = "up"; // 開口方向: "up", "down", "left", "right"
     bool enterable = false; // 水管是否可進入
     std::string moveAxis = "horizontal"; // MovingPlatform: "horizontal" / "vertical"
     std::string moveMode = "oscillate";  // MovingPlatform: "oscillate" / "verticalWrap" / "horizontalOscillate"
-    float moveDistance = 0.0f;           // MovingPlatform: 最大移動距離
+    std::string startDirection;          // MovingPlatform: "up" / "down" / "left" / "right"; empty means axis default
+    float moveDistance = 0.0f;           // 舊格式相容；MovingPlatform 正式格式改用 moveTiles
     float moveSpeed = 0.0f;              // MovingPlatform: 速度 px/s
-    int segments = 3;                    // TreePlatform: 平台長度（幾個 16px tile）
+    int moveTiles = 0;                   // MovingPlatform: 最大移動距離（幾個 16px tile）
+    int segments = 3;                    // TreePlatform/EnterablePipe: 長度（幾個 16px tile）
     int coinCount = 10;                  // MultiCoinBlock: 可敲出的金幣數
 };
 
@@ -44,7 +46,7 @@ struct ObjectData {
  * GameManager 依此建立場景。
  */
 struct LevelData {
-    std::string backgroundImagePath;  // MakeAssetPath() 接受的相對路徑
+    std::string backgroundImagePath;  // 相對於 Resources/Asset/ 的背景圖路徑
     std::string theme = "ground";     // block tile 主題: "ground" / "underground"
     int levelWidth  = 0;              // 地圖總寬（世界像素）
     int levelHeight = 0;              // 地圖總高（世界像素）
