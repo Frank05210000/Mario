@@ -1,0 +1,33 @@
+{
+  "backgroundImage": "level_image/1-2/1-2_ground_1.png",
+  "levelWidth": 384,
+  "levelHeight": 240,
+  "objects": [
+    {
+      "type": "PipeCollision",
+      "x": 192.0,
+      "y": 144.0,
+      "width": 32.0,
+      "height": 64.0
+    },
+    {
+      "type": "Ground",
+      "x": 0.0,
+      "y": 208.0,
+      "width": 384.0,
+      "height": 32.0
+    },
+    {
+      "type": "EnterablePipe",
+      "x": 160.0,
+      "y": 176.0,
+      "opening": "left",
+      "targetLevel": "1-2_underground_1",
+      "segments": 2
+    }
+  ],
+  "playerSpawn": {
+    "x": 32.0,
+    "y": 192.0
+  }
+}

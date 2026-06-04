@@ -45,13 +45,11 @@
       "enemyType": "Koopa"
     },
     {
-      "type": "Pipe",
+      "type": "EnterablePipe",
       "x": 352.0,
       "y": 176.0,
-      "width": 32.0,
-      "height": 32.0,
+      "segments": 2,
       "opening": "up",
-      "enterable": true,
       "targetLevel": "1-1_underground",
       "targetSpawn": {
         "x": 64.0,
@@ -68,10 +66,10 @@
       "type": "MovingPlatform",
       "x": 528.0,
       "y": 152.0,
-      "width": 48.0,
-      "height": 8.0,
+      "segments": 3,
       "moveAxis": "horizontal",
-      "moveDistance": 64.0,
+      "moveMode": "oscillate",
+      "moveTiles": 4,
       "moveSpeed": 35.0
     },
     {
@@ -92,7 +90,7 @@
     {
       "type": "Flag",
       "x": 720.0,
-      "y": 32.0
+      "y": 192.0
     }
   ]
 }
