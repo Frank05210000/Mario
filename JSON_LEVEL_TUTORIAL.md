@@ -1,6 +1,6 @@
 # JSON Level Tutorial
 
-This project loads playable level data from JSON files in `data/`. The current
+This project loads playable level data from JSON files in `Resources/data/`. The current
 runtime format is a compact object list: the background is one image, while
 collision, enemies, blocks, pipes, and the flag are described as JSON objects.
 
@@ -40,7 +40,7 @@ This means the object's top-left corner is 128 pixels from the left edge and
 }
 ```
 
-- `backgroundImage`: image path relative to `Asset/`.
+- `backgroundImage`: image path relative to `Resources/Asset/`.
 - `theme`: block sprite theme. Supported values currently used by the project are `ground` and `underground`.
 - `levelWidth`: total level width in world pixels.
 - `levelHeight`: total level height in world pixels.
@@ -55,12 +55,14 @@ This means the object's top-left corner is 128 pixels from the left edge and
 "theme": "ground"
 ```
 
-`Brick`, `QuestionBlock`, `Wall`, and `Pipe` will use assets such as:
+`Brick`, `QuestionBlock`, and `Wall` use theme assets. Pipe objects are
+invisible because pipe art is expected to be part of the background image.
+Example block assets:
 
 ```text
-Asset/block/ground/brick/brick.png
-Asset/block/ground/question_block/question_block-1.png
-Asset/block/ground/pipe/pipe_top/pipe_top.png
+Resources/Asset/block/ground/brick/brick.png
+Resources/Asset/block/ground/question_block/question_block-1.png
+Resources/Asset/block/ground/pipe/pipe_top/pipe_top.png
 ```
 
 For underground levels:
@@ -72,9 +74,9 @@ For underground levels:
 The same object types use:
 
 ```text
-Asset/block/underground/brick/brick.png
-Asset/block/underground/question_block/question_block-1.png
-Asset/block/underground/pipe/pipe_top/pipe_top.png
+Resources/Asset/block/underground/brick/brick.png
+Resources/Asset/block/underground/question_block/question_block-1.png
+Resources/Asset/block/underground/pipe/pipe_top/pipe_top.png
 ```
 
 ## Object Types
@@ -109,7 +111,7 @@ A visible solid 16x16 block. Useful for stairs, barriers, and terrain details.
 ### Brick
 
 A visible 16x16 brick block. If `itemType` is omitted, it behaves as a normal
-brick.
+breakable brick. Small Mario only bounces it; powered-up Mario breaks it.
 
 ```json
 {
@@ -127,6 +129,21 @@ Optional hidden item:
   "x": 208.0,
   "y": 144.0,
   "itemType": "Coin"
+}
+```
+
+### UsedOnHitBrickBlock
+
+A visible 16x16 brick block that does not disappear when hit. On the first hit
+from below, it bounces and turns into a used block. If `itemType` is set, it also
+spawns that item.
+
+```json
+{
+  "type": "UsedOnHitBrickBlock",
+  "x": 224.0,
+  "y": 144.0,
+  "itemType": "None"
 }
 ```
 
@@ -173,6 +190,20 @@ then spawns its `itemType`.
 ```
 
 Useful item types include `Coin`, `PowerUp`, `OneUp`, and `Star`.
+
+### HiddenQuestionBlock
+
+An invisible 16x16 question-style block. The player cannot see it before hit,
+but hitting it from below reveals a used block and spawns its `itemType`.
+
+```json
+{
+  "type": "HiddenQuestionBlock",
+  "x": 1024.0,
+  "y": 128.0,
+  "itemType": "PowerUp"
+}
+```
 
 ### MultiCoinBlock
 
@@ -243,44 +274,63 @@ Koopa fields:
 }
 ```
 
-### Pipe
+### EnterablePipe
 
-A solid pipe. It can also be enterable and transition to another JSON level.
+An invisible solid pipe trigger. The pipe art is expected to be part of the
+background image; this object only provides collision and level transition
+logic.
 
 ```json
 {
-  "type": "Pipe",
+  "type": "EnterablePipe",
   "x": 352.0,
   "y": 176.0,
-  "width": 32.0,
-  "height": 32.0,
+  "segments": 2,
   "opening": "up",
-  "enterable": true,
-  "targetLevel": "1-1_underground",
-  "targetSpawn": {
-    "x": 64.0,
-    "y": 160.0
-  }
+  "targetLevel": "1-1_underground"
 }
 ```
 
-Pipe fields:
+EnterablePipe fields:
 
 - `opening`: `up`, `down`, `left`, or `right`.
-- `enterable`: whether the player can use the pipe.
+- `segments`: pipe length in 16 px tiles. Vertical pipes are always 2 tiles wide; horizontal pipes are always 2 tiles tall.
 - `targetLevel`: target JSON file name without `.json`.
 - `exitToLevel`: alternate target field used by some exit pipes.
-- `targetSpawn`: optional player spawn point after transition.
+- `targetSpawn`: legacy optional player spawn override. The editor no longer emits this field; each scene should define exactly one top-level `playerSpawn`, and pipes should use the target scene's spawn.
+
+### PipeCollision
+
+An invisible solid collision box used for background pipe art that is not
+enterable. Adjacent 16x16 cells can be merged by the editor into a larger box.
+
+```json
+{
+  "type": "PipeCollision",
+  "x": 704.0,
+  "y": 176.0,
+  "width": 32.0,
+  "height": 48.0
+}
+```
+
+### Editor-only: PiranhaPipePreset
+
+`tilemap_editor.py` may save `PiranhaPipePreset` in project JSON as a design
+shortcut for an upward pipe with a piranha plant. It is not a runtime game JSON
+type. Object JSON export expands it into one `PipeCollision` object and one
+`EnemySpawn` with `enemyType: "PiranhaPlant"`.
 
 ### Flag
 
-The end-of-level flag pole. The JSON position is the top of the flag pole.
+The end-of-level flag pole. The JSON position is the bottom of the flag pole;
+the game computes the pole height from `FLAG_POLE_TILES`.
 
 ```json
 {
   "type": "Flag",
   "x": 576.0,
-  "y": 32.0
+  "y": 192.0
 }
 ```
 
@@ -293,21 +343,23 @@ A visible solid platform that moves and carries the player when stood on.
   "type": "MovingPlatform",
   "x": 528.0,
   "y": 152.0,
-  "width": 48.0,
-  "height": 8.0,
+  "segments": 3,
   "moveAxis": "horizontal",
   "moveMode": "oscillate",
-  "moveDistance": 64.0,
+  "startDirection": "right",
+  "moveTiles": 4,
   "moveSpeed": 35.0
 }
 ```
 
-Fields:
+MovingPlatform fields:
 
+- `segments`: platform length in 16 px tiles.
+- `moveTiles`: movement distance in 16 px tiles.
 - `moveAxis`: `horizontal` or `vertical`.
 - `moveMode`: `oscillate` or `verticalWrap`.
-- `moveDistance`: how far the platform moves from its starting point.
-- `moveSpeed`: movement speed in world pixels per second.
+- `startDirection`: `right`/`left` for horizontal movement, `down`/`up` for vertical movement.
+- `moveSpeed`: speed in pixels per second.
 
 ### TreePlatform
 
@@ -325,7 +377,7 @@ used across the top.
 
 ## Complete Example
 
-See `data/tutorial.json` for a small runnable example that includes every major
+See `Resources/data/tutorial.json` for a small runnable example that includes every major
 object type supported by the current loader.
 
 ## Loading Flow
