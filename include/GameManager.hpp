@@ -31,6 +31,7 @@
 #include "QuestionBlock.hpp"
 #include "StarmanItem.hpp"
 #include "TreePlatformBlock.hpp"
+#include "UsedOnHitBrickBlock.hpp"
 #include "WallBlock.hpp"
 #include "Fireball.hpp"
 #include "HUD.hpp"
@@ -86,6 +87,7 @@ private:
     void EnterPlaying();
     void EnterTimeUp();
     void EnterLevelClearTransition();
+    void SelectInitialLevel(const std::string& levelName, const std::string& worldLabel);
     void BuildTitleOverlay();
     void BuildLevelIntroOverlay();
     void BuildTimeUpOverlay();
@@ -167,10 +169,21 @@ private:
     std::vector<std::shared_ptr<Util::GameObject>> m_OverlayObjects;
 
     bool  m_LevelCleared = false; // 是否已觸碰旗杆（防止重複計分）
+    std::string m_SelectedInitialLevelName = "1-1";
+    std::string m_SelectedWorldLabel = "1-1";
+
+    // ─── 水管進出動畫緩衝變數 ───────────────────────────────────────────
+    std::string m_PendingLevel;
+    std::optional<glm::vec2> m_PendingSpawn;
 
     // ─── HUD ──────────────────────────────────────────────────────
     HUD   m_Hud;                  // 遊戲狀態列
     float m_TimeRemaining = 400.0f; // 關卡倒數時間（秒）
+
+    // ─── 效能優化：複用 per-frame 暫存容器，避免每幀 heap alloc ──────
+    std::vector<std::shared_ptr<Block>>    m_TmpBlocksToRemove;
+    std::vector<std::shared_ptr<Item>>     m_TmpItemsToRemove;
+    std::vector<std::shared_ptr<Fireball>> m_TmpFireballsToRemove;
 };
 
 #endif

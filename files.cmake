@@ -24,6 +24,7 @@ set(SRC_FILES
     CoinItem.cpp
     FireFlowerItem.cpp
     Fireball.cpp
+    GameLogger.cpp
     OneUpMushroomItem.cpp
     PipeBlock.cpp
     PiranhaPlant.cpp
@@ -31,6 +32,7 @@ set(SRC_FILES
     QuestionBlock.cpp
     StarmanItem.cpp
     TreePlatformBlock.cpp
+    UsedOnHitBrickBlock.cpp
     WallBlock.cpp
 )
 
@@ -49,6 +51,7 @@ set(INCLUDE_FILES
     CoinItem.hpp
     FireFlowerItem.hpp
     Fireball.hpp
+    GameLogger.hpp
     GameConstants.hpp
     GameManager.hpp
     GameSession.hpp
@@ -70,6 +73,7 @@ set(INCLUDE_FILES
     QuestionBlock.hpp
     StarmanItem.hpp
     TreePlatformBlock.hpp
+    UsedOnHitBrickBlock.hpp
     WallBlock.hpp
 )
 

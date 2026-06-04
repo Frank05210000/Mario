@@ -9,8 +9,8 @@
 // 旗杆總高度（像素），由常數自動計算
 static constexpr float POLE_HEIGHT = FLAG_POLE_TILES * TILE_SIZE;
 
-FlagBlock::FlagBlock(glm::vec2 topPosition)
-    : Block(topPosition, {TILE_SIZE, POLE_HEIGHT}) {
+FlagBlock::FlagBlock(glm::vec2 bottomPosition)
+    : Block({bottomPosition.x, bottomPosition.y - POLE_HEIGHT}, {TILE_SIZE, POLE_HEIGHT}) {
     // 只顯示旗杆頂端的球（旗杆本體可之後另外疊加圖層）
     SetSprite("item/flag/ball.png", 1.0f);
     
@@ -29,8 +29,8 @@ FlagBlock::FlagBlock(glm::vec2 topPosition)
 
 void FlagBlock::Draw(const Camera& camera) {
     // 覆寫 Draw，讓圖片不要置中於整個 10 格高的碰撞體，
-    // 而是固定畫在第二格（y + TILE_SIZE），因為 JSON 的 y 是碰撞範圍頂點，
-    // 但圖片視覺上要往下一格才對齊地圖上的旗杆球位置
+    // 而是固定畫在第二格（m_Position.y + TILE_SIZE）。
+    // JSON 的 y 是旗杆底部，m_Position.y 則是內部推算出的碰撞範圍頂點。
     glm::vec2 centerPos = {
         m_Position.x,                     // 往左移半格（原本是 + TILE_SIZE * 0.5f）
         m_Position.y + TILE_SIZE * 1.5f   // 往下移一格

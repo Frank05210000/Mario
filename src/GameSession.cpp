@@ -1,5 +1,7 @@
 #include "GameSession.hpp"
 
+#include "Util/Logger.hpp"
+
 #include <algorithm>
 
 void GameSession::ResetNewGame(int playerCount) {
@@ -11,6 +13,8 @@ void GameSession::ResetNewGame(int playerCount) {
 
     m_Players[1] = PlayerProgress{};
     m_Players[1].slot = PlayerSlot::Luigi;
+
+    LOG_INFO("GameSession reset: playerCount={}", m_PlayerCount);
 }
 
 PlayerProgress& GameSession::CurrentPlayer() {
@@ -28,12 +32,14 @@ std::string GameSession::GetCurrentPlayerName() const {
 void GameSession::AddScore(int amount) {
     if (amount <= 0) return;
     CurrentPlayer().score += amount;
+    LOG_INFO("Score added: amount={} total={}", amount, CurrentPlayer().score);
 }
 
 void GameSession::AddCoin(int amount) {
     if (amount <= 0) return;
     auto& player = CurrentPlayer();
     player.coins += amount;
+    LOG_INFO("Coin added: amount={} coins={}", amount, player.coins);
     while (player.coins >= 100) {
         player.coins -= 100;
         AddLife();
@@ -43,6 +49,7 @@ void GameSession::AddCoin(int amount) {
 void GameSession::AddLife(int amount) {
     if (amount <= 0) return;
     CurrentPlayer().lives += amount;
+    LOG_INFO("Life added: amount={} lives={}", amount, CurrentPlayer().lives);
 }
 
 bool GameSession::LoseLife() {
@@ -50,6 +57,7 @@ bool GameSession::LoseLife() {
     if (player.lives > 0) {
         --player.lives;
     }
+    LOG_INFO("Life lost: lives={}", player.lives);
     return player.lives > 0;
 }
 
@@ -60,6 +68,7 @@ void GameSession::SwitchToNextAlivePlayer() {
         const int candidate = (m_CurrentPlayerIndex + step) % m_PlayerCount;
         if (m_Players[candidate].lives > 0) {
             m_CurrentPlayerIndex = candidate;
+            LOG_INFO("Switched player: index={} name={}", m_CurrentPlayerIndex, GetCurrentPlayerName());
             return;
         }
     }

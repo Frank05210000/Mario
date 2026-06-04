@@ -30,7 +30,7 @@ public:
      *
      * @param renderer  PTSD 渲染器的參考
      */
-    void Init(Util::Renderer& renderer);
+    void Init(Util::Renderer& renderer, const std::string& worldLabel = "1-1");
 
     /*
      * 每幀更新文字內容
@@ -52,7 +52,7 @@ private:
 
     std::shared_ptr<Util::GameObject> m_ScoreObj;   // "MARIO\n000100"
     std::shared_ptr<Util::GameObject> m_CoinObj;    // "×03"
-    std::shared_ptr<Util::GameObject> m_WorldObj;   // "WORLD\n 1-1"
+    std::shared_ptr<Util::GameObject> m_WorldObj;   // "WORLD\n 1-2"
     std::shared_ptr<Util::GameObject> m_TimeObj;    // "TIME\n 300"
 
     // 存放對應的 Text Drawable，方便後續呼叫 SetText()

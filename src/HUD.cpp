@@ -42,7 +42,7 @@ static std::shared_ptr<Util::GameObject> MakeTextObj(
 
 // ─── Init ─────────────────────────────────────────────────────────────────
 
-void HUD::Init(Util::Renderer& renderer) {
+void HUD::Init(Util::Renderer& renderer, const std::string& worldLabel) {
     // 分數區塊："MARIO" 標題 + 分數數值
     m_ScoreText = std::make_shared<Util::Text>(kFontPath, kFontSize, "MARIO\n000000", kWhite);
     m_ScoreObj  = MakeTextObj(m_ScoreText, kScoreX, kTopY);
@@ -51,8 +51,7 @@ void HUD::Init(Util::Renderer& renderer) {
     m_CoinText  = std::make_shared<Util::Text>(kFontPath, kFontSize, "x00", kWhite);
     m_CoinObj   = MakeTextObj(m_CoinText, kCoinX, kTopY);
 
-    // 世界區塊（靜態，固定為 1-1）
-    auto worldText = std::make_shared<Util::Text>(kFontPath, kFontSize, "WORLD\n 1-1", kWhite);
+    auto worldText = std::make_shared<Util::Text>(kFontPath, kFontSize, "WORLD\n " + worldLabel, kWhite);
     m_WorldObj  = MakeTextObj(worldText, kWorldX, kTopY);
 
     // 時間區塊

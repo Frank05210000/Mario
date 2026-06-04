@@ -28,6 +28,7 @@ public:
         TreePlatform,
         Hidden,
         MultiCoin,
+        UsedOnHitBrick,
     };
 
     Block(glm::vec2 position, glm::vec2 size);

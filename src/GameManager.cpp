@@ -31,9 +31,31 @@
 
 // ─── 關卡 JSON 路徑 ────────────────────────────────────────────────────────
 // RESOURCE_DIR 定義在 CMakeLists.txt，指向 Mario/Resources/
-// data/ 資料夾與 Resources/ 同層，所以往上一層再進 data/
-static const std::string kLevel1_1 =
-    std::string(RESOURCE_DIR) + "/../data/1-1.json";
+// runtime 關卡 JSON 統一放在 Resources/data/
+static const std::string kDefaultInitialLevelName = "1-1";
+
+namespace {
+glm::vec2 GetPipeSize(const std::string& opening, int segments) {
+    const float clampedSegments = static_cast<float>(std::max(1, segments));
+    if (opening == "left" || opening == "right") {
+        return {TILE_SIZE * clampedSegments, TILE_SIZE * 2.0f};
+    }
+    return {TILE_SIZE * 2.0f, TILE_SIZE * clampedSegments};
+}
+
+glm::vec2 GetPipePositionFromAnchor(glm::vec2 anchorPosition,
+                                    const std::string& opening,
+                                    int segments) {
+    const int clampedSegments = std::max(1, segments);
+    if (opening == "down") {
+        return {anchorPosition.x, anchorPosition.y - (clampedSegments - 1) * TILE_SIZE};
+    }
+    if (opening == "right") {
+        return {anchorPosition.x - (clampedSegments - 1) * TILE_SIZE, anchorPosition.y};
+    }
+    return anchorPosition;
+}
+}
 
 // ─── Start ────────────────────────────────────────────────────────────────
 
@@ -73,6 +95,22 @@ void GameManager::Update() {
 void GameManager::UpdateTitle(float dt) {
     (void)dt;
 
+    if (Util::Input::IsKeyDown(Util::Keycode::NUM_4)) {
+        SelectInitialLevel("1-1", "1-1");
+        DrawScene(false);
+        return;
+    }
+    if (Util::Input::IsKeyDown(Util::Keycode::NUM_5)) {
+        SelectInitialLevel("1-2_ground_1", "1-2");
+        DrawScene(false);
+        return;
+    }
+    if (Util::Input::IsKeyDown(Util::Keycode::NUM_6)) {
+        SelectInitialLevel("1-3_ground_1", "1-3");
+        DrawScene(false);
+        return;
+    }
+
     if (Util::Input::IsKeyDown(Util::Keycode::RETURN) ||
         Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
         StartNewGame();
@@ -89,12 +127,24 @@ void GameManager::UpdateLevelIntro(float dt) {
         return;
     }
 
-    m_Renderer.Update();
+    DrawScene(true);
 }
 
 void GameManager::UpdatePlaying(float dt) {
+    if (m_Player.GetState() == Player::State::EnteringPipe && m_Player.IsAnimationFinished()) {
+        ChangeLevel(m_PendingLevel, m_PendingSpawn);
+        return;
+    }
+
     // 1. 更新所有角色邏輯
     m_Player.Update(dt);
+
+    if (m_Player.GetState() == Player::State::EnteringPipe || m_Player.GetState() == Player::State::ExitingPipe) {
+        m_Camera.Update(m_Player.GetPosition().x,
+                        static_cast<float>(m_Level.levelWidth));
+        DrawScene(true);
+        return;
+    }
 
     // 如果瑪利歐正在播放死亡動畫，停止更新世界其他物件（凍結畫面）
     if (!m_Player.IsDying()) {
@@ -232,6 +282,10 @@ void GameManager::ResetSceneObjects() {
     m_Fireballs.clear();
     m_BrickDebris.clear();
     m_OverlayObjects.clear();
+    // 效能優化：清空複用的暫存容器（不釋放已分配的 capacity）
+    m_TmpBlocksToRemove.clear();
+    m_TmpItemsToRemove.clear();
+    m_TmpFireballsToRemove.clear();
     m_Background.reset();
     m_Renderer = Util::Renderer();
 }
@@ -251,7 +305,11 @@ void GameManager::EnterLevelIntro() {
     m_TimeRemaining = 400.0f;
     m_LevelCleared = false;
 
-    m_Hud.Init(m_Renderer);
+    LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
+    ApplyPlayerProgress();
+    m_Camera.Update(m_Player.GetPosition().x, static_cast<float>(m_Level.levelWidth));
+    BuildScene();
+    m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
     const auto& progress = m_Session.CurrentPlayer();
     m_Hud.Update(progress.score, progress.coins, static_cast<int>(m_TimeRemaining));
     BuildLevelIntroOverlay();
@@ -267,11 +325,11 @@ void GameManager::EnterPlaying() {
     m_TimeRemaining = 400.0f;
     m_LevelCleared = false;
 
-    LoadLevel(kLevel1_1);
+    LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
     ApplyPlayerProgress();
     m_Camera.Update(m_Player.GetPosition().x, static_cast<float>(m_Level.levelWidth));
     BuildScene();
-    m_Hud.Init(m_Renderer);
+    m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
 
     m_FlowState = FlowState::Playing;
     LOG_INFO("Entered playing state.");
@@ -284,7 +342,7 @@ void GameManager::EnterTitleScreen() {
     m_LevelClearTransitionTimer = 0.0f;
     m_Player.ResetForNewGame();
 
-    LoadLevel(kLevel1_1);
+    LoadLevel(MakeLevelPath(m_SelectedInitialLevelName.empty() ? kDefaultInitialLevelName : m_SelectedInitialLevelName));
     m_Camera.Update(m_Player.GetPosition().x, static_cast<float>(m_Level.levelWidth));
     BuildScene();
     BuildTitleOverlay();
@@ -293,13 +351,32 @@ void GameManager::EnterTitleScreen() {
     LOG_INFO("Entered title screen.");
 }
 
+void GameManager::SelectInitialLevel(const std::string& levelName, const std::string& worldLabel) {
+    if (m_SelectedInitialLevelName == levelName && m_SelectedWorldLabel == worldLabel) {
+        return;
+    }
+
+    m_SelectedInitialLevelName = levelName;
+    m_SelectedWorldLabel = worldLabel;
+
+    ResetSceneObjects();
+    m_Player.ResetForNewGame();
+    LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
+    m_Camera.Update(m_Player.GetPosition().x, static_cast<float>(m_Level.levelWidth));
+    BuildScene();
+    BuildTitleOverlay();
+    m_FlowState = FlowState::Title;
+
+    LOG_INFO("Selected initial level: '{}' ({})", m_SelectedInitialLevelName, m_SelectedWorldLabel);
+}
+
 void GameManager::EnterTimeUp() {
     ResetSceneObjects();
     m_StateTimer = 0.0f;
     m_TimeRemaining = 0.0f;
     m_LevelCleared = false;
 
-    m_Hud.Init(m_Renderer);
+    m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
     const auto& progress = m_Session.CurrentPlayer();
     m_Hud.Update(progress.score, progress.coins, 0);
     BuildTimeUpOverlay();
@@ -322,14 +399,17 @@ void GameManager::BuildTitleOverlay() {
     const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
 
     AddOverlayImage("ui/title/logo.png", {0.0f, halfH - 180.0f}, {2.5f, 2.5f});
-    AddOverlayText("PRESS ENTER OR SPACE", 16, {0.0f, halfH - 310.0f});
+    AddOverlayText("PRESS ENTER OR SPACE", 16, {0.0f, halfH - 300.0f});
+    AddOverlayText("SELECT START LEVEL", 12, {0.0f, halfH - 340.0f});
+    AddOverlayText("4: 1-1   5: 1-2   6: 1-3", 12, {0.0f, halfH - 370.0f});
+    AddOverlayText("CURRENT: " + m_SelectedWorldLabel, 12, {0.0f, halfH - 400.0f});
 }
 
 void GameManager::BuildLevelIntroOverlay() {
     const auto context = Core::Context::GetInstance();
     const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
 
-    AddOverlayText("WORLD  1-1", 22, {0.0f, halfH - 260.0f});
+    AddOverlayText("WORLD  " + m_SelectedWorldLabel, 22, {0.0f, halfH - 260.0f});
 
     std::ostringstream livesText;
     livesText << m_Session.GetCurrentPlayerName()
@@ -395,8 +475,8 @@ void GameManager::ApplyPlayerProgress() {
 }
 
 void GameManager::HandleLifeLost() {
-    SavePlayerProgress();
     m_Session.LoseLife();
+    m_Session.CurrentPlayer().form = Player::Form::SMALL;
 
     if (m_Session.IsGameOver()) {
         LOG_INFO("Game over. Returning to title.");
@@ -446,38 +526,47 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
             auto b = std::make_shared<BrickBlock>(pos, m_Level.theme);
             b->SetItemType(obj.itemType.empty() ? "None" : obj.itemType);
             m_Blocks.push_back(b);
+        } else if (obj.type == "UsedOnHitBrickBlock") {
+            auto b = std::make_shared<UsedOnHitBrickBlock>(pos, m_Level.theme);
+            b->SetItemType(obj.itemType.empty() ? "None" : obj.itemType);
+            m_Blocks.push_back(b);
         } else if (obj.type == "QuestionBlock") {
             auto b = std::make_shared<QuestionBlock>(pos, m_Level.theme);
             b->SetItemType(obj.itemType.empty() ? "Coin" : obj.itemType);
             m_Blocks.push_back(b);
-        } else if (obj.type == "HiddenBlock") {
+        } else if (obj.type == "HiddenBlock" || obj.type == "HiddenQuestionBlock") {
             auto b = std::make_shared<HiddenBlock>(pos, m_Level.theme);
             b->SetItemType(obj.itemType.empty() ? "Coin" : obj.itemType);
             m_Blocks.push_back(b);
         } else if (obj.type == "MultiCoinBlock") {
             m_Blocks.push_back(std::make_shared<MultiCoinBlock>(pos, m_Level.theme, obj.coinCount));
-        } else if (obj.type == "Pipe") {
-            m_Blocks.push_back(std::make_shared<PipeBlock>(
-                pos,
-                size,
+        } else if (obj.type == "Pipe" || obj.type == "EnterablePipe") {
+            const glm::vec2 pipeSize = GetPipeSize(obj.opening, obj.segments);
+            const glm::vec2 pipePosition = GetPipePositionFromAnchor(pos, obj.opening, obj.segments);
+            m_Blocks.push_back(std::make_shared<EnterablePipeBlock>(
+                pipePosition,
+                pipeSize,
                 obj.opening,
-                obj.enterable,
                 obj.targetLevel,
                 obj.exitToLevel,
                 obj.targetSpawn,
-                obj.hasTargetSpawn,
-                m_Level.theme));
+                obj.hasTargetSpawn));
+        } else if (obj.type == "PipeCollision") {
+            m_Blocks.push_back(std::make_shared<PipeCollisionBlock>(pos, size));
         } else if (obj.type == "MovingPlatform") {
-            glm::vec2 platformSize = size;
-            if (platformSize.x <= 0.0f) platformSize.x = TILE_SIZE * 3.0f;
-            if (platformSize.y <= 0.0f) platformSize.y = TILE_SIZE * 0.5f;
+            const glm::vec2 platformSize = {
+                TILE_SIZE * static_cast<float>(std::max(1, obj.segments)),
+                TILE_SIZE * 0.5f
+            };
+            const float moveDistance = static_cast<float>(std::max(0, obj.moveTiles)) * TILE_SIZE;
             m_Blocks.push_back(std::make_shared<MovingPlatformBlock>(
                 pos,
                 platformSize,
                 obj.moveAxis,
-                obj.moveDistance,
+                moveDistance,
                 obj.moveSpeed,
-                obj.moveMode));
+                obj.moveMode,
+                obj.startDirection));
         } else if (obj.type == "TreePlatform") {
             m_Blocks.push_back(std::make_shared<TreePlatformBlock>(pos, obj.segments));
         } else if (obj.type == "Wall") {
@@ -505,7 +594,7 @@ std::string GameManager::MakeLevelPath(const std::string& levelName) {
         levelName.size() >= 5 &&
         levelName.substr(levelName.size() - 5) == ".json";
 
-    return std::string(RESOURCE_DIR) + "/../data/" +
+    return std::string(RESOURCE_DIR) + "/data/" +
            levelName + (hasJsonSuffix ? "" : ".json");
 }
 
@@ -525,7 +614,26 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
     }
 
     BuildScene();
-    m_Hud.Init(m_Renderer);
+    m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
+
+    // ─── 檢查是否起點是個水管，如果是則觸發鑽出動畫 ───
+    glm::vec2 pPos = m_Player.GetPosition();
+    glm::vec2 pSize = m_Player.GetSize();
+    for (const auto& block : m_Blocks) {
+        if (block->GetType() != Block::Type::Pipe) continue;
+        auto* pipe = dynamic_cast<PipeBlock*>(block.get());
+        if (!pipe || !pipe->IsEnterable()) continue;
+
+        glm::vec2 bPos = pipe->GetPosition();
+        glm::vec2 bSize = pipe->GetSize();
+        
+        bool insideX = (pPos.x + pSize.x * 0.5f) >= bPos.x && (pPos.x + pSize.x * 0.5f) <= (bPos.x + bSize.x);
+        bool insideY = (pPos.y + pSize.y * 0.5f) >= bPos.y && (pPos.y + pSize.y * 0.5f) <= (bPos.y + bSize.y);
+        if (insideX && insideY) {
+            m_Player.StartPipeExit(bPos, bSize, pipe->GetOpening(), 1.0f);
+            break;
+        }
+    }
 }
 
 bool GameManager::CheckPipeTransition() {
@@ -542,68 +650,22 @@ bool GameManager::CheckPipeTransition() {
         Util::Input::IsKeyDown(Util::Keycode::RIGHT) ||
         Util::Input::IsKeyDown(Util::Keycode::D);
 
-    const glm::vec2 pPos = m_Player.GetPosition();
-    const glm::vec2 pSize = m_Player.GetSize();
-    const float playerCenterX = pPos.x + pSize.x * 0.5f;
-    const float playerCenterY = pPos.y + pSize.y * 0.5f;
-    const float playerBottom = pPos.y + pSize.y;
-
     for (const auto& block : m_Blocks) {
         if (block->GetType() != Block::Type::Pipe) continue;
 
         auto* pipe = dynamic_cast<PipeBlock*>(block.get());
-        if (!pipe || !pipe->IsEnterable()) continue;
+        if (!pipe) continue;
+        if (!pipe->CanEnter(m_Player, pressingUp, pressingDown, pressingLeft, pressingRight)) continue;
 
-        const glm::vec2 pipePos = pipe->GetPosition();
-        const glm::vec2 pipeSize = pipe->GetSize();
-        const std::string opening = pipe->GetOpening();
-
-        bool canEnter = false;
-        if (opening == "up") {
-            const bool horizontallyAligned =
-                playerCenterX >= pipePos.x &&
-                playerCenterX <= pipePos.x + pipeSize.x;
-            const bool standingOnMouth =
-                std::abs(playerBottom - pipePos.y) <= 8.0f;
-            canEnter = pressingDown && horizontallyAligned && standingOnMouth;
-        } else if (opening == "down") {
-            const bool horizontallyAligned =
-                playerCenterX >= pipePos.x &&
-                playerCenterX <= pipePos.x + pipeSize.x;
-            const bool touchingMouth =
-                std::abs(pPos.y - (pipePos.y + pipeSize.y)) <= 8.0f;
-            canEnter = pressingUp && horizontallyAligned && touchingMouth;
-        } else if (opening == "left") {
-            const bool verticallyAligned =
-                playerCenterY >= pipePos.y &&
-                playerCenterY <= pipePos.y + pipeSize.y;
-            const bool touchingMouth =
-                std::abs((pPos.x + pSize.x) - pipePos.x) <= 8.0f;
-            canEnter = pressingRight && verticallyAligned && touchingMouth;
-        } else if (opening == "right") {
-            const bool verticallyAligned =
-                playerCenterY >= pipePos.y &&
-                playerCenterY <= pipePos.y + pipeSize.y;
-            const bool touchingMouth =
-                std::abs(pPos.x - (pipePos.x + pipeSize.x)) <= 8.0f;
-            canEnter = pressingLeft && verticallyAligned && touchingMouth;
-        }
-
-        if (!canEnter) continue;
-
-        std::string targetLevel = pipe->GetTargetLevel();
-        if (targetLevel.empty()) targetLevel = pipe->GetExitToLevel();
+        const std::string targetLevel = pipe->GetDestinationLevel();
         if (targetLevel.empty()) {
-            LOG_WARN("Enterable pipe at {} has no target level.", pipePos);
+            LOG_WARN("Enterable pipe at {} has no target level.", pipe->GetPosition());
             return false;
         }
 
-        std::optional<glm::vec2> spawnOverride;
-        if (pipe->HasTargetSpawn()) {
-            spawnOverride = pipe->GetTargetSpawn();
-        }
-
-        ChangeLevel(targetLevel, spawnOverride);
+        m_PendingLevel = targetLevel;
+        m_PendingSpawn = pipe->GetDestinationSpawn();
+        m_Player.StartPipeEntry(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), 1.0f);
         return true;
     }
 
@@ -619,23 +681,19 @@ bool GameManager::CheckPipeTransition() {
  */
 void GameManager::CheckEnemySpawnQueue() {
     // 右邊界 = 鏡頭左邊界 + 可視世界寬度 + 一小段預載
-    constexpr float SPAWN_BUFFER = 32.0f; // 默默在画面外儴 2 格再生成
+    constexpr float SPAWN_BUFFER = 32.0f;
     const float cameraRight = m_Camera.GetX() + m_Camera.GetViewWorldWidth() + SPAWN_BUFFER;
 
-    std::vector<ObjectData> remaining;
-    remaining.reserve(m_EnemySpawnQueue.size());
+    // 效能優化：用 partition 取代每幀配置 remaining 向量。
+    // stable_partition 把「還沒到」的留在前半，「已到」的移到後半，再 spawn + erase。
+    auto spawnBegin = std::stable_partition(
+        m_EnemySpawnQueue.begin(), m_EnemySpawnQueue.end(),
+        [&](const ObjectData& d) { return d.x > cameraRight; });
 
-    for (const auto& data : m_EnemySpawnQueue) {
-        if (data.x <= cameraRight) {
-            // 進入觀察範圍，真的建立敷人物件
-            SpawnEnemy(data);
-        } else {
-            // 還沒到，保留在 queue 裡
-            remaining.push_back(data);
-        }
+    for (auto it = spawnBegin; it != m_EnemySpawnQueue.end(); ++it) {
+        SpawnEnemy(*it);
     }
-
-    m_EnemySpawnQueue = std::move(remaining);
+    m_EnemySpawnQueue.erase(spawnBegin, m_EnemySpawnQueue.end());
 }
 
 /*
@@ -749,86 +807,148 @@ void GameManager::CheckStompCollision() {
 
 // ─── CheckBlockCollision ──────────────────────────────────────────────────
 void GameManager::CheckBlockCollision() {
-    glm::vec2 pPos  = m_Player.GetPosition();
-    glm::vec2 pPrev = m_Player.GetPreviousPosition();
-    glm::vec2 pSize = m_Player.GetSize();
-    glm::vec2 pVel  = m_Player.GetVelocity();
+    // ── Bug 1 修復：分兩個 pass 處理 ──────────────────────────────────────
+    // 問題根源：原本在同一迴圈中邊掃描邊修改 pPos，
+    // 導致後面的方塊用「已位移後的位置」做 hitFromBelow 判斷，
+    // 造成站在 B 正下方往上跳卻觸發 A 或 C 的 OnHit。
+    //
+    // 修復策略：
+    //   Pass 1：用原始 pPos/pPrev 找出所有「從下方碰撞」的候選方塊，
+    //            取 blockBottom 最大的那個（最靠近頭頂），只觸發它的 OnHit。
+    //   Pass 2：對所有重疊方塊做位置修正（落地、側碰）。
+    // ──────────────────────────────────────────────────────────────────────
+
+    const glm::vec2 pPosOrig = m_Player.GetPosition();  // 原始位置，整個函式內不變
+    const glm::vec2 pPrev    = m_Player.GetPreviousPosition();
+    const glm::vec2 pSize    = m_Player.GetSize();
+    glm::vec2 pPos           = pPosOrig;                // 工作用位置，可累積修正
+    glm::vec2 pVel           = m_Player.GetVelocity();
     bool onGround = false;
 
-    std::vector<std::shared_ptr<Block>> blocksToRemove;
+    // 效能優化：複用 member 暫存容器，避免每幀 heap allocation
+    m_TmpBlocksToRemove.clear();
 
-    for (const auto& block : m_Blocks) {
-        if (!block->IsSolid()) continue;
+    constexpr float SURFACE_TOLERANCE = 2.0f;
 
-        glm::vec2 bPos  = block->GetPosition();
-        glm::vec2 bSize = block->GetSize();
+    // ── Pass 1：找到唯一的 hitFromBelow 候選 ─────────────────────────────
+    // 選擇標準：水平重疊量最大的方塊 = 馬力歐「最正對」的那格。
+    // 不能用 blockBottom 最大：同一排 ABCD 的 blockBottom 完全相同，
+    // 用 blockBottom 只會選到迴圈最後通過的那個，導致打到旁邊的方塊。
+    std::shared_ptr<Block> hitBelowBlock = nullptr;
+    float bestOverlapX = -1.0f;
 
-        // 判斷 AABB 是否重疊
-        if (CollisionUtils::CheckAABB(pPos, pSize, bPos, bSize)) {
-            // 計算滲透深度來將瑪利歐擠出方塊
-            float pCenterX = pPos.x + pSize.x * 0.5f;
-            float pCenterY = pPos.y + pSize.y * 0.5f;
-            float bCenterX = bPos.x + bSize.x * 0.5f;
-            float bCenterY = bPos.y + bSize.y * 0.5f;
+    if (pVel.y < 0.0f) { // 只有往上飛時才可能從下方碰
+        const float previousTop = pPrev.y;
 
-            float dx = pCenterX - bCenterX;
-            float dy = pCenterY - bCenterY;
+        for (const auto& block : m_Blocks) {
+            if (!block->IsSolid()) continue;
 
-            float penX = (pSize.x * 0.5f + bSize.x * 0.5f) - std::abs(dx);
-            float penY = (pSize.y * 0.5f + bSize.y * 0.5f) - std::abs(dy);
+            const glm::vec2 bPos  = block->GetPosition();
+            const glm::vec2 bSize = block->GetSize();
 
-            constexpr float SURFACE_TOLERANCE = 2.0f;
-            const float previousTop = pPrev.y;
-            const float previousBottom = pPrev.y + pSize.y;
-            const float currentBottom = pPos.y + pSize.y;
-            const float overlapLeft = std::max(pPos.x, bPos.x);
-            const float overlapRight = std::min(pPos.x + pSize.x, bPos.x + bSize.x);
-            const float overlapX = std::max(0.0f, overlapRight - overlapLeft);
-            const float blockTop = bPos.y;
+            // 用原始 pPosOrig 判斷是否重疊
+            if (!CollisionUtils::CheckAABB(pPosOrig, pSize, bPos, bSize)) continue;
+
             const float blockBottom = bPos.y + bSize.y;
 
-            const bool landedFromAbove =
-                pVel.y >= 0.0f &&
-                previousBottom <= blockTop + SURFACE_TOLERANCE &&
-                currentBottom >= blockTop;
-            const bool standingOverlap =
-                pVel.y >= 0.0f &&
-                block->GetType() == Block::Type::Ground &&
-                dy < 0.0f &&
-                penY <= TILE_SIZE + 4.0f &&
-                overlapX >= pSize.x * 0.5f;
             const bool hitFromBelow =
-                pVel.y < 0.0f &&
                 previousTop >= blockBottom - SURFACE_TOLERANCE &&
-                pPos.y <= blockBottom;
+                pPosOrig.y <= blockBottom;
 
-            if (landedFromAbove || standingOverlap) {
-                pPos.y -= penY;
-                if (pVel.y > 0.0f) pVel.y = 0.0f;
-                onGround = true;
-                if (auto* platform = dynamic_cast<MovingPlatformBlock*>(block.get())) {
-                    pPos += platform->GetFrameDelta();
+            if (hitFromBelow) {
+                // 計算水平重疊量，選最大的（即最正對的方塊）
+                const float overlapLeft  = std::max(pPosOrig.x, bPos.x);
+                const float overlapRight = std::min(pPosOrig.x + pSize.x, bPos.x + bSize.x);
+                const float overlapX = std::max(0.0f, overlapRight - overlapLeft);
+
+                if (overlapX > bestOverlapX) {
+                    bestOverlapX = overlapX;
+                    hitBelowBlock = block;
                 }
-            } else if (hitFromBelow) {
-                pPos.y += penY;
-                pVel.y = 0.0f;
-
-                BlockHitResult hitRes = block->OnHit(&m_Player);
-
-                if (hitRes.isDestroyed) {
-                    SpawnBrickDebris(bPos);
-                    block->SetVisible(false);
-                    blocksToRemove.push_back(block);
-                }
-
-                if (hitRes.spawnItem != "None") {
-                    LOG_INFO("GameManager received Item Spawn request: {}", hitRes.spawnItem);
-                    SpawnItem(hitRes.spawnItem, bPos);
-                }
-            } else {
-                if (dx > 0.0f) pPos.x += penX;
-                else           pPos.x -= penX;
             }
+        }
+    }
+
+
+    // 若找到 hitFromBelow 方塊，先處理它（彈開玩家並呼叫 OnHit）
+    if (hitBelowBlock) {
+        const glm::vec2 bPos  = hitBelowBlock->GetPosition();
+        const glm::vec2 bSize = hitBelowBlock->GetSize();
+
+        const float bCenterY  = bPos.y + bSize.y * 0.5f;
+        const float pCenterY  = pPosOrig.y + pSize.y * 0.5f;
+        const float penY      = (pSize.y * 0.5f + bSize.y * 0.5f) - std::abs(pCenterY - bCenterY);
+
+        pPos.y += penY;
+        pVel.y  = 0.0f;
+
+        BlockHitResult hitRes = hitBelowBlock->OnHit(&m_Player);
+
+        if (hitRes.isDestroyed) {
+            SpawnBrickDebris(bPos);
+            hitBelowBlock->SetVisible(false);
+            m_TmpBlocksToRemove.push_back(hitBelowBlock);
+        }
+
+        if (hitRes.spawnItem != "None") {
+            SpawnItem(hitRes.spawnItem, bPos);
+        }
+    }
+
+    // ── Pass 2：處理落地與側碰（使用累積修正後的 pPos）─────────────────
+    for (const auto& block : m_Blocks) {
+        if (!block->IsSolid()) continue;
+        if (block == hitBelowBlock) continue; // 已在 Pass 1 處理
+
+        const glm::vec2 bPos  = block->GetPosition();
+        const glm::vec2 bSize = block->GetSize();
+
+        if (!CollisionUtils::CheckAABB(pPos, pSize, bPos, bSize)) continue;
+
+        const float pCenterX = pPos.x + pSize.x * 0.5f;
+        const float pCenterY = pPos.y + pSize.y * 0.5f;
+        const float bCenterX = bPos.x + bSize.x * 0.5f;
+        const float bCenterY = bPos.y + bSize.y * 0.5f;
+
+        const float dx   = pCenterX - bCenterX;
+        const float dy   = pCenterY - bCenterY;
+        const float penX = (pSize.x * 0.5f + bSize.x * 0.5f) - std::abs(dx);
+        const float penY = (pSize.y * 0.5f + bSize.y * 0.5f) - std::abs(dy);
+
+        const float previousBottom = pPrev.y + pSize.y;
+        const float currentBottom  = pPos.y + pSize.y;
+        const float overlapLeft    = std::max(pPos.x, bPos.x);
+        const float overlapRight   = std::min(pPos.x + pSize.x, bPos.x + bSize.x);
+        const float overlapX       = std::max(0.0f, overlapRight - overlapLeft);
+        const float blockTop       = bPos.y;
+
+        const bool landedFromAbove =
+            pVel.y >= 0.0f &&
+            previousBottom <= blockTop + SURFACE_TOLERANCE &&
+            currentBottom >= blockTop;
+
+        // Bug 2 修復：standingOverlap 加入 penY < penX 條件，
+        // 確保 Y 軸穿透比 X 軸小才視為從上方著地，
+        // 避免快速水平移動側碰地板被誤判為落地而「被拉上去」。
+        const bool standingOverlap =
+            pVel.y >= 0.0f &&
+            block->GetType() == Block::Type::Ground &&
+            dy < 0.0f &&
+            penY < penX &&
+            penY <= TILE_SIZE + 4.0f &&
+            overlapX >= pSize.x * 0.5f;
+
+        if (landedFromAbove || standingOverlap) {
+            pPos.y -= penY;
+            if (pVel.y > 0.0f) pVel.y = 0.0f;
+            onGround = true;
+            if (auto* platform = dynamic_cast<MovingPlatformBlock*>(block.get())) {
+                pPos += platform->GetFrameDelta();
+            }
+        } else {
+            // 側碰（hitFromBelow 已在 Pass 1 排除）
+            if (dx > 0.0f) pPos.x += penX;
+            else           pPos.x -= penX;
         }
     }
 
@@ -836,11 +956,12 @@ void GameManager::CheckBlockCollision() {
     m_Player.SetVelocity(pVel);
     m_Player.SetOnGround(onGround);
 
-    // 清理碎裂的方塊
-    for (auto& b : blocksToRemove) {
+    // 清理碎裂的方塊（使用 member 暫存容器）
+    for (auto& b : m_TmpBlocksToRemove) {
         m_Blocks.erase(std::remove(m_Blocks.begin(), m_Blocks.end(), b), m_Blocks.end());
     }
 }
+
 
 void GameManager::CheckEnemyBlockCollision() {
     for (auto& enemy : m_Enemies) {
@@ -946,49 +1067,63 @@ void GameManager::BuildScene() {
 // ─── SpawnItem ────────────────────────────────────────────────────────────
 void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
     std::shared_ptr<Item> newItem;
+    std::string spawnedType;
 
     if (itemType == "Coin") {
         newItem = std::make_shared<CoinItem>(position);
+        spawnedType = "Coin";
         m_Session.AddCoin();
     } else if (itemType == "PowerUp" || itemType == "Mushroom") {
         if (m_Player.GetForm() == Player::Form::SMALL) {
             newItem = std::make_shared<MushroomItem>(position);
+            spawnedType = "Mushroom";
         } else {
             newItem = std::make_shared<FireFlowerItem>(position);
+            spawnedType = "FireFlower";
         }
     } else if (itemType == "FireFlower") {
         newItem = std::make_shared<FireFlowerItem>(position);
+        spawnedType = "FireFlower";
     } else if (itemType == "OneUp" || itemType == "1Up") {
         newItem = std::make_shared<OneUpMushroomItem>(position);
+        spawnedType = "OneUp";
     } else if (itemType == "Star" || itemType == "Starman") {
         newItem = std::make_shared<StarmanItem>(position);
+        spawnedType = "Star";
     }
 
     if (newItem) {
         m_Items.push_back(newItem);
         m_Renderer.AddChild(newItem);
+        LOG_INFO("Item spawned: requested='{}' actual='{}' position={}",
+                 itemType,
+                 spawnedType,
+                 position);
+    } else {
+        LOG_WARN("Unknown item type requested: '{}' at {}", itemType, position);
     }
 }
 
 // ─── CheckItemCollision ───────────────────────────────────────────────────
 void GameManager::CheckItemCollision() {
-    glm::vec2 pPos  = m_Player.GetPosition();
-    glm::vec2 pSize = m_Player.GetSize();
+    const glm::vec2 pPos  = m_Player.GetPosition();
+    const glm::vec2 pSize = m_Player.GetSize();
 
-    std::vector<std::shared_ptr<Item>> itemsToRemove;
+    // 效能優化：複用 member 暫存容器
+    m_TmpItemsToRemove.clear();
 
     for (auto& item : m_Items) {
         // 香菇只有在 Active 狀態才能吃
         // 金幣不透過接觸吃，但金幣生命週期結束變成 Collected 也會移除
         if (item->GetState() == ItemState::Active && item->GetType() != "Coin") {
-            glm::vec2 iPos  = item->GetPosition();
-            glm::vec2 iSize = item->GetSize();
+            const glm::vec2 iPos  = item->GetPosition();
+            const glm::vec2 iSize = item->GetSize();
 
             if (CollisionUtils::CheckAABB(pPos, pSize, iPos, iSize)) {
-                // 吃掉！
                 const std::string itemType = item->GetType();
                 item->OnCollect(&m_Player);
                 if (item->GetState() == ItemState::Collected) {
+                    LOG_INFO("Item collected: type='{}' position={}", itemType, iPos);
                     if (itemType == "LevelCoin") {
                         m_Session.AddCoin();
                         m_Session.AddScore(200);
@@ -1004,11 +1139,11 @@ void GameManager::CheckItemCollision() {
         // 把狀態變為 Collected 的項目加入移除名單
         if (item->GetState() == ItemState::Collected) {
             item->SetVisible(false);
-            itemsToRemove.push_back(item);
+            m_TmpItemsToRemove.push_back(item);
         }
     }
 
-    for (auto& i : itemsToRemove) {
+    for (auto& i : m_TmpItemsToRemove) {
         m_Items.erase(std::remove(m_Items.begin(), m_Items.end(), i), m_Items.end());
     }
 }
@@ -1103,18 +1238,18 @@ void GameManager::SpawnBrickDebris(glm::vec2 position) {
 
 // ─── CheckFireballCollision ───────────────────────────────────────────────
 void GameManager::CheckFireballCollision() {
-    std::vector<std::shared_ptr<Fireball>> fireballsToRemove;
+    // 效能優化：複用 member 暫存容器
+    m_TmpFireballsToRemove.clear();
+    const float killZ = m_Level.levelHeight + 50.0f;
 
     for (auto& fireball : m_Fireballs) {
         if (fireball->IsDead()) {
-            fireballsToRemove.push_back(fireball);
+            m_TmpFireballsToRemove.push_back(fireball);
             continue;
         }
 
         // 當火球正在播放碎片爆炸動畫時，不再計算碰撞
-        if (fireball->IsExploded()) {
-            continue;
-        }
+        if (fireball->IsExploded()) continue;
 
         glm::vec2 fPos  = fireball->GetPosition();
         glm::vec2 fSize = fireball->GetSize();
@@ -1128,35 +1263,25 @@ void GameManager::CheckFireballCollision() {
             const glm::vec2 bPos  = block->GetPosition();
             const glm::vec2 bSize = block->GetSize();
 
-            // AABB 判定：火球 vs 方塊
             if (!CollisionUtils::CheckAABB(fPos, fSize, bPos, bSize)) continue;
 
-            const float fCenterX = fPos.x + fSize.x * 0.5f;
-            const float fCenterY = fPos.y + fSize.y * 0.5f;
-            const float bCenterX = bPos.x + bSize.x * 0.5f;
-            const float bCenterY = bPos.y + bSize.y * 0.5f;
-
-            const float dx = fCenterX - bCenterX;
-            const float dy = fCenterY - bCenterY;
-
+            const float dx = (fPos.x + fSize.x * 0.5f) - (bPos.x + bSize.x * 0.5f);
+            const float dy = (fPos.y + fSize.y * 0.5f) - (bPos.y + bSize.y * 0.5f);
             const float penX = (fSize.x * 0.5f + bSize.x * 0.5f) - std::abs(dx);
             const float penY = (fSize.y * 0.5f + bSize.y * 0.5f) - std::abs(dy);
 
             if (penX < penY) {
-                // X 軸推擠，撞到牆 -> 爆炸
                 fireball->Explode();
                 collidedThisFrame = true;
                 break;
             }
 
             if (dy < 0.0f && fVel.y > 0.0f) {
-                // 從上方落到地板/方塊頂面，推出碰撞後反彈。
                 fPos.y -= penY;
                 fireball->SetPosition(fPos);
                 fireball->Bounce();
                 fVel = fireball->GetVelocity();
             } else {
-                // 撞到方塊底部或非下落狀態撞上垂直面，避免貼著天花板滑行。
                 fireball->Explode();
                 collidedThisFrame = true;
                 break;
@@ -1168,30 +1293,23 @@ void GameManager::CheckFireballCollision() {
         // 2. 與敵人的碰撞
         for (auto& enemy : m_Enemies) {
             if (!enemy->IsAlive()) continue;
-
-            glm::vec2 ePos  = enemy->GetPosition();
-            glm::vec2 eSize = enemy->GetSize();
-
-            // 火球 vs 敵人 AABB 碰撞
-            if (CollisionUtils::CheckAABB(fPos, fSize, ePos, eSize)) {
-                // 擊中敵人！
+            if (CollisionUtils::CheckAABB(fPos, fSize, enemy->GetPosition(), enemy->GetSize())) {
                 enemy->SetAlive(false);
                 enemy->SetVisible(false);
                 fireball->Explode();
-                LOG_INFO("Fireball killed an enemy!");
+                LOG_INFO("Fireball defeated enemy: fireballPos={} enemyPos={}",
+                         fPos,
+                         enemy->GetPosition());
                 break;
             }
         }
-        
+
         // 3. 虛空判定
-        const float killZ = m_Level.levelHeight + 50.0f;
-        if (fPos.y > killZ) {
-            fireball->Explode();
-        }
+        if (fPos.y > killZ) fireball->Explode();
     }
 
     // 移除死掉的火球
-    for (auto& fb : fireballsToRemove) {
+    for (auto& fb : m_TmpFireballsToRemove) {
         m_Fireballs.erase(std::remove(m_Fireballs.begin(), m_Fireballs.end(), fb), m_Fireballs.end());
     }
 }

@@ -2,18 +2,31 @@
 
 #include <algorithm>
 
+namespace {
+int DirectionSignForAxis(const std::string& moveAxis, const std::string& startDirection) {
+    if (moveAxis == "vertical") {
+        return startDirection == "up" ? -1 : 1;
+    }
+    return startDirection == "left" ? -1 : 1;
+}
+}
+
 MovingPlatformBlock::MovingPlatformBlock(glm::vec2 position,
                                          glm::vec2 size,
                                          const std::string& moveAxis,
                                          float moveDistance,
                                          float moveSpeed,
-                                         const std::string& moveMode)
+                                         const std::string& moveMode,
+                                         const std::string& startDirection)
     : Block(position, size),
       m_StartPosition(position),
       m_MoveAxis(moveAxis),
       m_MoveMode(moveMode),
+      m_StartDirection(startDirection.empty() ? (moveAxis == "vertical" ? "down" : "right") : startDirection),
       m_MoveDistance(std::max(0.0f, moveDistance)),
-      m_MoveSpeed(std::max(0.0f, moveSpeed)) {
+      m_MoveSpeed(std::max(0.0f, moveSpeed)),
+      m_StartSign(DirectionSignForAxis(m_MoveAxis, m_StartDirection)),
+      m_Direction(m_StartSign) {
     SetSprite("block/platform/moving_platform.png", 2.0f);
 }
 
@@ -29,21 +42,23 @@ void MovingPlatformBlock::Update(float deltaTime) {
 
     m_Position += axis * (m_MoveSpeed * static_cast<float>(m_Direction) * deltaTime);
 
-    const float offset =
+    const float rawOffset =
         (m_MoveAxis == "vertical") ? (m_Position.y - m_StartPosition.y)
                                    : (m_Position.x - m_StartPosition.x);
+    const float offset = rawOffset * static_cast<float>(m_StartSign);
+
     if (m_MoveMode == "verticalWrap" && m_MoveAxis == "vertical") {
         if (offset > m_MoveDistance) {
             m_Position = m_StartPosition;
         } else if (offset < 0.0f) {
-            m_Position = m_StartPosition + axis * m_MoveDistance;
+            m_Position = m_StartPosition + axis * (m_MoveDistance * static_cast<float>(m_StartSign));
         }
     } else if (offset > m_MoveDistance) {
-        m_Position = m_StartPosition + axis * m_MoveDistance;
-        m_Direction = -1;
+        m_Position = m_StartPosition + axis * (m_MoveDistance * static_cast<float>(m_StartSign));
+        m_Direction = -m_StartSign;
     } else if (offset < 0.0f) {
         m_Position = m_StartPosition;
-        m_Direction = 1;
+        m_Direction = m_StartSign;
     }
 
     m_FrameDelta = m_Position - previousPosition;
