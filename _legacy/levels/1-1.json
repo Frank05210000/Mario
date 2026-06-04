@@ -1,0 +1,47 @@
+{
+  "formatVersion": 1,
+  "levelId": "1-1",
+  "coordinateSystem": {
+    "origin": "top-left",
+    "xAxis": "right",
+    "yAxis": "down"
+  },
+  "background": {
+    "image": "image/stage/1-1.png",
+    "assetSize": {
+      "width": 6752,
+      "height": 960
+    },
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "width": 6752,
+      "height": 480
+    },
+    "worldSize": {
+      "width": 6752,
+      "height": 480
+    }
+  },
+  "player": {
+    "spawn": {
+      "x": 240,
+      "y": 353.92
+    },
+    "size": {
+      "width": 32,
+      "height": 64
+    },
+    "groundY": 417.92
+  },
+  "collision": {
+    "ground": {
+      "type": "line",
+      "y": 417.92
+    },
+    "rects": [],
+    "segments": []
+  },
+  "enemies": [],
+  "objects": []
+}
