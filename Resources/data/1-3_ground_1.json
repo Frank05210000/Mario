@@ -1,0 +1,373 @@
+{
+  "backgroundImage": "level_image/1-3/1-3_ground_1.png",
+  "levelWidth": 2608,
+  "levelHeight": 240,
+  "objects": [
+    {
+      "type": "Wall",
+      "x": 2272.0,
+      "y": 80.0,
+      "width": 32.0,
+      "height": 128.0
+    },
+    {
+      "type": "Wall",
+      "x": 2240.0,
+      "y": 112.0,
+      "width": 32.0,
+      "height": 96.0
+    },
+    {
+      "type": "Wall",
+      "x": 2208.0,
+      "y": 144.0,
+      "width": 32.0,
+      "height": 64.0
+    },
+    {
+      "type": "Ground",
+      "x": 0.0,
+      "y": 208.0,
+      "width": 256.0,
+      "height": 32.0
+    },
+    {
+      "type": "Ground",
+      "x": 2064.0,
+      "y": 208.0,
+      "width": 544.0,
+      "height": 32.0
+    },
+    {
+      "type": "Coin",
+      "x": 592.0,
+      "y": 32.0
+    },
+    {
+      "type": "Coin",
+      "x": 608.0,
+      "y": 32.0
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 704.0,
+      "y": 48.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 736.0,
+      "y": 48.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "Coin",
+      "x": 432.0,
+      "y": 64.0
+    },
+    {
+      "type": "Coin",
+      "x": 448.0,
+      "y": 64.0
+    },
+    {
+      "type": "Coin",
+      "x": 464.0,
+      "y": 64.0
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 480.0,
+      "y": 64.0,
+      "enemyType": "Koopa",
+      "variant": "red"
+    },
+    {
+      "type": "TreePlatform",
+      "x": 640.0,
+      "y": 64.0,
+      "segments": 7
+    },
+    {
+      "type": "Coin",
+      "x": 960.0,
+      "y": 64.0
+    },
+    {
+      "type": "Coin",
+      "x": 976.0,
+      "y": 64.0
+    },
+    {
+      "type": "Coin",
+      "x": 992.0,
+      "y": 64.0
+    },
+    {
+      "type": "Coin",
+      "x": 1008.0,
+      "y": 64.0
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1184.0,
+      "y": 64.0,
+      "enemyType": "KoopaParatroopa",
+      "variant": "red",
+      "flightMode": "verticalPatrol"
+    },
+    {
+      "type": "Coin",
+      "x": 1488.0,
+      "y": 64.0
+    },
+    {
+      "type": "Coin",
+      "x": 1504.0,
+      "y": 64.0
+    },
+    {
+      "type": "Coin",
+      "x": 1552.0,
+      "y": 64.0
+    },
+    {
+      "type": "Coin",
+      "x": 1568.0,
+      "y": 64.0
+    },
+    {
+      "type": "TreePlatform",
+      "x": 416.0,
+      "y": 80.0,
+      "segments": 5
+    },
+    {
+      "type": "TreePlatform",
+      "x": 960.0,
+      "y": 80.0,
+      "segments": 4
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1280.0,
+      "y": 80.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "Coin",
+      "x": 1360.0,
+      "y": 80.0
+    },
+    {
+      "type": "Coin",
+      "x": 1376.0,
+      "y": 80.0
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1824.0,
+      "y": 80.0,
+      "enemyType": "KoopaParatroopa",
+      "variant": "red",
+      "flightMode": "verticalPatrol"
+    },
+    {
+      "type": "Coin",
+      "x": 1920.0,
+      "y": 80.0
+    },
+    {
+      "type": "Coin",
+      "x": 1936.0,
+      "y": 80.0
+    },
+    {
+      "type": "Coin",
+      "x": 800.0,
+      "y": 96.0
+    },
+    {
+      "type": "Coin",
+      "x": 816.0,
+      "y": 96.0
+    },
+    {
+      "type": "MovingPlatform",
+      "x": 880.0,
+      "y": 96.0,
+      "moveAxis": "vertical",
+      "moveMode": "oscillate",
+      "startDirection": "down",
+      "moveTiles": 6,
+      "moveSpeed": 35.0,
+      "segments": 3
+    },
+    {
+      "type": "TreePlatform",
+      "x": 1216.0,
+      "y": 96.0,
+      "segments": 6
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1760.0,
+      "y": 96.0,
+      "enemyType": "Koopa",
+      "variant": "red"
+    },
+    {
+      "type": "MovingPlatform",
+      "x": 2096.0,
+      "y": 96.0,
+      "moveAxis": "horizontal",
+      "moveMode": "oscillate",
+      "startDirection": "left",
+      "moveTiles": 4,
+      "moveSpeed": 35.0,
+      "segments": 3
+    },
+    {
+      "type": "TreePlatform",
+      "x": 1664.0,
+      "y": 112.0,
+      "segments": 8
+    },
+    {
+      "type": "TreePlatform",
+      "x": 560.0,
+      "y": 128.0,
+      "segments": 5
+    },
+    {
+      "type": "MovingPlatform",
+      "x": 1376.0,
+      "y": 128.0,
+      "moveAxis": "horizontal",
+      "moveMode": "oscillate",
+      "startDirection": "left",
+      "moveTiles": 5,
+      "moveSpeed": 35.0,
+      "segments": 3
+    },
+    {
+      "type": "TreePlatform",
+      "x": 384.0,
+      "y": 144.0,
+      "segments": 8
+    },
+    {
+      "type": "TreePlatform",
+      "x": 1120.0,
+      "y": 144.0,
+      "segments": 3
+    },
+    {
+      "type": "MovingPlatform",
+      "x": 1504.0,
+      "y": 144.0,
+      "moveAxis": "horizontal",
+      "moveMode": "oscillate",
+      "startDirection": "left",
+      "moveTiles": 6,
+      "moveSpeed": 35.0,
+      "segments": 3
+    },
+    {
+      "type": "TreePlatform",
+      "x": 1856.0,
+      "y": 144.0,
+      "segments": 4
+    },
+    {
+      "type": "TreePlatform",
+      "x": 1952.0,
+      "y": 144.0,
+      "segments": 4
+    },
+    {
+      "type": "QuestionBlock",
+      "x": 944.0,
+      "y": 160.0,
+      "itemType": "PowerUp"
+    },
+    {
+      "type": "Coin",
+      "x": 528.0,
+      "y": 176.0
+    },
+    {
+      "type": "TreePlatform",
+      "x": 1568.0,
+      "y": 176.0,
+      "segments": 4
+    },
+    {
+      "type": "TreePlatform",
+      "x": 288.0,
+      "y": 192.0,
+      "segments": 4
+    },
+    {
+      "type": "TreePlatform",
+      "x": 512.0,
+      "y": 192.0,
+      "segments": 3
+    },
+    {
+      "type": "Coin",
+      "x": 1808.0,
+      "y": 192.0
+    },
+    {
+      "type": "Coin",
+      "x": 1824.0,
+      "y": 192.0
+    },
+    {
+      "type": "Coin",
+      "x": 1840.0,
+      "y": 192.0
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 2128.0,
+      "y": 192.0,
+      "enemyType": "Koopa",
+      "variant": "red"
+    },
+    {
+      "type": "Flag",
+      "x": 2432.0,
+      "y": 192.0
+    },
+    {
+      "type": "TreePlatform",
+      "x": 800.0,
+      "y": 208.0,
+      "segments": 4
+    },
+    {
+      "type": "TreePlatform",
+      "x": 944.0,
+      "y": 208.0,
+      "segments": 5
+    },
+    {
+      "type": "TreePlatform",
+      "x": 1040.0,
+      "y": 208.0,
+      "segments": 5
+    },
+    {
+      "type": "TreePlatform",
+      "x": 1808.0,
+      "y": 208.0,
+      "segments": 3
+    }
+  ],
+  "playerSpawn": {
+    "x": 32.0,
+    "y": 192.0
+  }
+}

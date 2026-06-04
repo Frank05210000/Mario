@@ -411,7 +411,7 @@
     {
       "type": "Flag",
       "x": 3168.0,
-      "y": 32.0
+      "y": 192.0
     },
     {
       "type": "Brick",
@@ -588,59 +588,47 @@
       "height": 32.0
     },
     {
-      "type": "Pipe",
+      "type": "PipeCollision",
       "x": 448.0,
       "y": 176.0,
       "width": 32.0,
-      "height": 32.0,
-      "opening": "up",
-      "enterable": false
+      "height": 32.0
     },
     {
-      "type": "Pipe",
+      "type": "PipeCollision",
       "x": 608.0,
       "y": 160.0,
       "width": 32.0,
-      "height": 48.0,
-      "opening": "up",
-      "enterable": false
+      "height": 48.0
     },
     {
-      "type": "Pipe",
+      "type": "PipeCollision",
       "x": 736.0,
       "y": 144.0,
       "width": 32.0,
-      "height": 64.0,
-      "opening": "up",
-      "enterable": false
+      "height": 64.0
     },
     {
-      "type": "Pipe",
+      "type": "EnterablePipe",
       "x": 912.0,
       "y": 144.0,
-      "width": 32.0,
-      "height": 64.0,
+      "segments": 4,
       "opening": "up",
-      "enterable": true,
       "targetLevel": "1-1_underground"
     },
     {
-      "type": "Pipe",
+      "type": "PipeCollision",
       "x": 2608.0,
       "y": 176.0,
       "width": 32.0,
-      "height": 32.0,
-      "opening": "up",
-      "enterable": false
+      "height": 32.0
     },
     {
-      "type": "Pipe",
+      "type": "PipeCollision",
       "x": 2864.0,
       "y": 176.0,
       "width": 32.0,
-      "height": 32.0,
-      "opening": "up",
-      "enterable": false
+      "height": 32.0
     }
   ],
   "playerSpawn": {

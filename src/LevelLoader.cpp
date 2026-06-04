@@ -1,25 +1,38 @@
 #include "LevelLoader.hpp"
 
+#include "GameConstants.hpp"
+#include "Util/Logger.hpp"
+
+#include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <stdexcept>
 
 #include <nlohmann/json.hpp>
 
 LevelData LevelLoader::Load(const std::string& jsonPath) {
+    LOG_INFO("LevelLoader loading: {}", jsonPath);
+
     // 1. 開檔
     std::ifstream file(jsonPath);
     if (!file.is_open()) {
+        LOG_ERROR("LevelLoader failed to open file: {}", jsonPath);
         throw std::runtime_error("LevelLoader: 無法開啟檔案: " + jsonPath);
     }
 
     nlohmann::json j;
-    file >> j;
+    try {
+        file >> j;
+    } catch (const nlohmann::json::exception& e) {
+        LOG_ERROR("LevelLoader JSON parse error: file='{}' message='{}'", jsonPath, e.what());
+        throw;
+    }
 
     LevelData data;
 
     // 2. 讀背景圖路徑
-    //    JSON 格式：{ "backgroundImage": "Asset/image/stage/1-1.png" }
-    //    存入 LevelData 時去掉 "Asset/" 前綴，讓 MakeAssetPath() 直接接受
+    //    JSON 格式：{ "backgroundImage": "level_image/1-1/ground.png" }
+    //    路徑相對於 Resources/Asset/；舊的 "Asset/..." 前綴仍相容。
     std::string rawPath = j.value("backgroundImage", "");
     const std::string prefix = "Asset/";
     if (rawPath.size() >= prefix.size() &&
@@ -44,6 +57,9 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
         for (const auto& obj : j["objects"]) {
             ObjectData od;
             od.type      = obj.value("type",      "");
+            if (od.type == "Pipe") {
+                od.type = "EnterablePipe";
+            }
             od.enemyType = obj.value("enemyType", "");
             od.itemType  = obj.value("itemType",  "");
             od.variant = obj.value("variant", "green");
@@ -58,9 +74,38 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
             od.enterable = obj.value("enterable", false);
             od.moveAxis = obj.value("moveAxis", "horizontal");
             od.moveMode = obj.value("moveMode", "oscillate");
-            od.moveDistance = obj.value("moveDistance", 0.0f);
+            od.startDirection = obj.value("startDirection", "");
+            if (od.startDirection.empty()) {
+                od.startDirection = (od.moveAxis == "vertical") ? "down" : "right";
+            }
             od.moveSpeed = obj.value("moveSpeed", 0.0f);
-            od.segments = obj.value("segments", 3);
+            if (od.type == "EnterablePipe") {
+                if (obj.contains("segments")) {
+                    od.segments = std::max(1, obj.value("segments", 2));
+                } else if ((od.opening == "left" || od.opening == "right") && obj.contains("width")) {
+                    od.segments = std::max(1, static_cast<int>(std::round(od.width / TILE_SIZE)));
+                } else if (obj.contains("height")) {
+                    od.segments = std::max(1, static_cast<int>(std::round(od.height / TILE_SIZE)));
+                } else {
+                    od.segments = 2;
+                }
+            } else {
+                od.segments = obj.value("segments", 3);
+            }
+            if (od.type == "MovingPlatform") {
+                if (!obj.contains("segments") && obj.contains("width")) {
+                    od.segments = std::max(1, static_cast<int>(std::round(od.width / TILE_SIZE)));
+                }
+                if (obj.contains("moveTiles")) {
+                    od.moveTiles = std::max(0, obj.value("moveTiles", 0));
+                    od.moveDistance = static_cast<float>(od.moveTiles) * TILE_SIZE;
+                } else {
+                    od.moveDistance = obj.value("moveDistance", 0.0f);
+                    od.moveTiles = std::max(0, static_cast<int>(std::round(od.moveDistance / TILE_SIZE)));
+                }
+            } else {
+                od.moveDistance = obj.value("moveDistance", 0.0f);
+            }
             od.coinCount = obj.value("coinCount", 10);
             if (obj.contains("targetSpawn")) {
                 od.targetSpawn.x = obj["targetSpawn"].value("x", 0.0f);
@@ -70,6 +115,14 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
             data.objects.push_back(od);
         }
     }
+
+    LOG_INFO("LevelLoader loaded: file='{}' background='{}' theme='{}' size=({}, {}) objects={}",
+             jsonPath,
+             data.backgroundImagePath,
+             data.theme,
+             data.levelWidth,
+             data.levelHeight,
+             data.objects.size());
 
     return data;
 }

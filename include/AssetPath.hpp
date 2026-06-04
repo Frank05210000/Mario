@@ -5,8 +5,7 @@
 #include <string>
 
 inline std::string MakeAssetPath(const std::string& relativePath) {
-    const auto assetRoot =
-        std::filesystem::path(RESOURCE_DIR).parent_path() / "Asset";
+    const auto assetRoot = std::filesystem::path(RESOURCE_DIR) / "Asset";
     return (assetRoot / relativePath).string();
 }
 

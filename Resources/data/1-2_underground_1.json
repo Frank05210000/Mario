@@ -1,0 +1,2769 @@
+{
+  "backgroundImage": "level_image/1-2/1-2_underground_1.png",
+  "levelWidth": 2832,
+  "levelHeight": 240,
+  "objects": [
+    {
+      "type": "PipeCollision",
+      "x": 2688.0,
+      "y": 32.0,
+      "width": 32.0,
+      "height": 128.0
+    },
+    {
+      "type": "Wall",
+      "x": 368.0,
+      "y": 144.0,
+      "width": 16.0,
+      "height": 64.0
+    },
+    {
+      "type": "Wall",
+      "x": 400.0,
+      "y": 144.0,
+      "width": 16.0,
+      "height": 64.0
+    },
+    {
+      "type": "Wall",
+      "x": 2176.0,
+      "y": 144.0,
+      "width": 32.0,
+      "height": 64.0
+    },
+    {
+      "type": "Wall",
+      "x": 336.0,
+      "y": 160.0,
+      "width": 16.0,
+      "height": 48.0
+    },
+    {
+      "type": "Wall",
+      "x": 432.0,
+      "y": 160.0,
+      "width": 16.0,
+      "height": 48.0
+    },
+    {
+      "type": "Wall",
+      "x": 496.0,
+      "y": 160.0,
+      "width": 16.0,
+      "height": 48.0
+    },
+    {
+      "type": "Wall",
+      "x": 2160.0,
+      "y": 160.0,
+      "width": 16.0,
+      "height": 48.0
+    },
+    {
+      "type": "Wall",
+      "x": 304.0,
+      "y": 176.0,
+      "width": 16.0,
+      "height": 32.0
+    },
+    {
+      "type": "Wall",
+      "x": 528.0,
+      "y": 176.0,
+      "width": 16.0,
+      "height": 32.0
+    },
+    {
+      "type": "PipeCollision",
+      "x": 1744.0,
+      "y": 176.0,
+      "width": 32.0,
+      "height": 32.0
+    },
+    {
+      "type": "Wall",
+      "x": 2144.0,
+      "y": 176.0,
+      "width": 16.0,
+      "height": 32.0
+    },
+    {
+      "type": "Wall",
+      "x": 272.0,
+      "y": 192.0,
+      "width": 16.0,
+      "height": 16.0
+    },
+    {
+      "type": "PipeCollision",
+      "x": 1648.0,
+      "y": 192.0,
+      "width": 32.0,
+      "height": 16.0
+    },
+    {
+      "type": "Wall",
+      "x": 2128.0,
+      "y": 192.0,
+      "width": 16.0,
+      "height": 16.0
+    },
+    {
+      "type": "Ground",
+      "x": 0.0,
+      "y": 208.0,
+      "width": 1280.0,
+      "height": 32.0
+    },
+    {
+      "type": "Ground",
+      "x": 1328.0,
+      "y": 208.0,
+      "width": 592.0,
+      "height": 32.0
+    },
+    {
+      "type": "Ground",
+      "x": 1952.0,
+      "y": 208.0,
+      "width": 32.0,
+      "height": 32.0
+    },
+    {
+      "type": "Ground",
+      "x": 2016.0,
+      "y": 208.0,
+      "width": 192.0,
+      "height": 32.0
+    },
+    {
+      "type": "Ground",
+      "x": 2320.0,
+      "y": 208.0,
+      "width": 128.0,
+      "height": 32.0
+    },
+    {
+      "type": "Ground",
+      "x": 2560.0,
+      "y": 208.0,
+      "width": 272.0,
+      "height": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 96.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 112.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 128.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 144.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 160.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 176.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 192.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 208.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 224.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 240.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 256.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 272.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 288.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 304.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 320.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 336.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 352.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 368.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 384.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 400.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 416.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 432.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 448.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 464.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 480.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 496.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 512.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 528.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 544.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 560.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 576.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 592.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 608.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 624.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 640.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 656.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 672.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 688.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 704.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 720.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 736.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 752.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 768.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 784.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 800.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 816.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 832.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 848.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 864.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 880.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 896.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 912.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 928.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 944.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 960.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 976.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 992.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1008.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1024.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1040.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1056.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1072.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1088.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1104.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1120.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1136.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1152.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1168.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1184.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1200.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1216.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1232.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1248.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1264.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1280.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1296.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1312.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1328.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1344.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1360.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1376.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1392.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1408.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1424.0,
+      "y": 32.0,
+      "itemType": "Mushroom"
+    },
+    {
+      "type": "Brick",
+      "x": 1440.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1456.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1472.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1488.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1504.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1520.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1536.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1552.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1568.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1584.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1600.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1616.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1632.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1648.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1664.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1680.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1696.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1712.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1728.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1744.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1760.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1776.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1792.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1808.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1824.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1840.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1856.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1872.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1888.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1904.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1920.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1936.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1952.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1968.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1984.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2000.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2016.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2032.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2048.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2064.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2080.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2096.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2112.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2128.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2144.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2160.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2176.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2192.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2576.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2592.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2608.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2624.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2640.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2656.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2672.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2720.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2736.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2752.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2768.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2784.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2800.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2816.0,
+      "y": 32.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 864.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 880.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 928.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 944.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 960.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 976.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 992.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1008.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1056.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1072.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1088.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1104.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1216.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1232.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1248.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1264.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2720.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2736.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2752.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2768.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2784.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2800.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2816.0,
+      "y": 48.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 864.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 880.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 928.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 944.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 960.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 976.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 992.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1008.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1056.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1072.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1088.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1104.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1168.0,
+      "y": 64.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "Brick",
+      "x": 1216.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1232.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1248.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1264.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2720.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2736.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2752.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2768.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2784.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2800.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2816.0,
+      "y": 64.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Coin",
+      "x": 656.0,
+      "y": 80.0
+    },
+    {
+      "type": "Coin",
+      "x": 672.0,
+      "y": 80.0
+    },
+    {
+      "type": "Coin",
+      "x": 688.0,
+      "y": 80.0
+    },
+    {
+      "type": "Coin",
+      "x": 704.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 832.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 848.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 992.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1008.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1072.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1152.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1168.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Coin",
+      "x": 1344.0,
+      "y": 80.0
+    },
+    {
+      "type": "Coin",
+      "x": 1360.0,
+      "y": 80.0
+    },
+    {
+      "type": "Coin",
+      "x": 1376.0,
+      "y": 80.0
+    },
+    {
+      "type": "Coin",
+      "x": 1392.0,
+      "y": 80.0
+    },
+    {
+      "type": "Coin",
+      "x": 1408.0,
+      "y": 80.0
+    },
+    {
+      "type": "Coin",
+      "x": 1424.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 2720.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2736.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2752.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2768.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2784.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2800.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2816.0,
+      "y": 80.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 832.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 848.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 992.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1008.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1072.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1152.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1168.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "MovingPlatform",
+      "x": 2480.0,
+      "y": 96.0,
+      "moveAxis": "vertical",
+      "moveMode": "verticalWrap",
+      "startDirection": "up",
+      "moveTiles": 4,
+      "moveSpeed": 35.0,
+      "segments": 3
+    },
+    {
+      "type": "Brick",
+      "x": 2720.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2736.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2752.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2768.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2784.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2800.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2816.0,
+      "y": 96.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 624.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 656.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 672.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 688.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 704.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 736.0,
+      "y": 112.0,
+      "itemType": "Star"
+    },
+    {
+      "type": "Brick",
+      "x": 832.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 848.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 992.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1008.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1072.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1152.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1168.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1344.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1360.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1376.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1392.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1408.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1424.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "MovingPlatform",
+      "x": 2240.0,
+      "y": 112.0,
+      "moveAxis": "vertical",
+      "moveMode": "oscillate",
+      "startDirection": "down",
+      "moveTiles": 4,
+      "moveSpeed": 35.0,
+      "segments": 3
+    },
+    {
+      "type": "Brick",
+      "x": 2720.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2736.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2752.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2768.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2784.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2800.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2816.0,
+      "y": 112.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 464.0,
+      "y": 128.0,
+      "itemType": "Coin"
+    },
+    {
+      "type": "Brick",
+      "x": 624.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Coin",
+      "x": 640.0,
+      "y": 128.0
+    },
+    {
+      "type": "Brick",
+      "x": 656.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 704.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Coin",
+      "x": 720.0,
+      "y": 128.0
+    },
+    {
+      "type": "Brick",
+      "x": 736.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 832.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 848.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Coin",
+      "x": 928.0,
+      "y": 128.0
+    },
+    {
+      "type": "Coin",
+      "x": 944.0,
+      "y": 128.0
+    },
+    {
+      "type": "Coin",
+      "x": 960.0,
+      "y": 128.0
+    },
+    {
+      "type": "Coin",
+      "x": 976.0,
+      "y": 128.0
+    },
+    {
+      "type": "Brick",
+      "x": 992.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1008.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1072.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Coin",
+      "x": 1088.0,
+      "y": 128.0
+    },
+    {
+      "type": "Brick",
+      "x": 1104.0,
+      "y": 128.0,
+      "itemType": "Mushroom"
+    },
+    {
+      "type": "Brick",
+      "x": 1152.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1168.0,
+      "y": 128.0,
+      "itemType": "Coin"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1216.0,
+      "y": 128.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1248.0,
+      "y": 128.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "Brick",
+      "x": 1344.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1360.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1376.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1392.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1408.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1424.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 2192.0,
+      "y": 128.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "Brick",
+      "x": 2320.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2336.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2352.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2368.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2384.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2400.0,
+      "y": 128.0,
+      "itemType": "Mushroom"
+    },
+    {
+      "type": "EnterablePipe",
+      "x": 2656.0,
+      "y": 128.0,
+      "opening": "left",
+      "targetLevel": "1-2_ground_2",
+      "segments": 2
+    },
+    {
+      "type": "Brick",
+      "x": 2720.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2736.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2752.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2768.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2784.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2800.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2816.0,
+      "y": 128.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "QuestionBlock",
+      "x": 160.0,
+      "y": 144.0,
+      "itemType": "PowerUp"
+    },
+    {
+      "type": "QuestionBlock",
+      "x": 176.0,
+      "y": 144.0,
+      "itemType": "Coin"
+    },
+    {
+      "type": "QuestionBlock",
+      "x": 192.0,
+      "y": 144.0,
+      "itemType": "Coin"
+    },
+    {
+      "type": "QuestionBlock",
+      "x": 208.0,
+      "y": 144.0,
+      "itemType": "Coin"
+    },
+    {
+      "type": "QuestionBlock",
+      "x": 224.0,
+      "y": 144.0,
+      "itemType": "Coin"
+    },
+    {
+      "type": "Brick",
+      "x": 624.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 640.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 656.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 704.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 720.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 736.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 832.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 848.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 864.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 880.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 928.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 944.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 960.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 976.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 992.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1008.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1072.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1088.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1104.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1152.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1168.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1216.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1232.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1248.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1264.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "PipeCollision",
+      "x": 1744.0,
+      "y": 144.0,
+      "width": 32.0,
+      "height": 32.0
+    },
+    {
+      "type": "EnemySpawn",
+      "enemyType": "PiranhaPlant",
+      "x": 1752.0,
+      "y": 120.0
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 2160.0,
+      "y": 144.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "Brick",
+      "x": 2720.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2736.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2752.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2768.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2784.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2800.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2816.0,
+      "y": 144.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 864.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 880.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "EnterablePipe",
+      "x": 1648.0,
+      "y": 160.0,
+      "opening": "up",
+      "targetLevel": "1-2_underground_2",
+      "segments": 2
+    },
+    {
+      "type": "EnemySpawn",
+      "enemyType": "PiranhaPlant",
+      "x": 1656.0,
+      "y": 136.0
+    },
+    {
+      "type": "Brick",
+      "x": 1952.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1968.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2560.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2576.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2592.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2608.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2624.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2640.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2656.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2672.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2688.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2704.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2720.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2736.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2752.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2768.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2784.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2800.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2816.0,
+      "y": 160.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 272.0,
+      "y": 176.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "Brick",
+      "x": 864.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 880.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "PipeCollision",
+      "x": 1840.0,
+      "y": 176.0,
+      "width": 32.0,
+      "height": 32.0
+    },
+    {
+      "type": "EnemySpawn",
+      "enemyType": "PiranhaPlant",
+      "x": 1848.0,
+      "y": 152.0
+    },
+    {
+      "type": "Brick",
+      "x": 1952.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1968.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2560.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2576.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2592.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2608.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2624.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2640.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2656.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2672.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2688.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2704.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2720.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2736.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2752.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2768.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2784.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2800.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2816.0,
+      "y": 176.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 256.0,
+      "y": 192.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 464.0,
+      "y": 192.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 704.0,
+      "y": 192.0,
+      "enemyType": "Koopa",
+      "variant": "green"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 736.0,
+      "y": 192.0,
+      "enemyType": "Koopa",
+      "variant": "green"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 944.0,
+      "y": 192.0,
+      "enemyType": "Koopa",
+      "variant": "green"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 992.0,
+      "y": 192.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1024.0,
+      "y": 192.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1568.0,
+      "y": 192.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1600.0,
+      "y": 192.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1632.0,
+      "y": 192.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 1808.0,
+      "y": 192.0,
+      "enemyType": "Goomba"
+    },
+    {
+      "type": "Brick",
+      "x": 1952.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 1968.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "EnemySpawn",
+      "x": 2336.0,
+      "y": 192.0,
+      "enemyType": "Koopa",
+      "variant": "red"
+    },
+    {
+      "type": "Brick",
+      "x": 2560.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2576.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2592.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2608.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2624.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2640.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2656.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2672.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2688.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2704.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2720.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2736.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2752.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2768.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2784.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2800.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "Brick",
+      "x": 2816.0,
+      "y": 192.0,
+      "itemType": "None"
+    },
+    {
+      "type": "MovingPlatform",
+      "x": 2480.0,
+      "y": 208.0,
+      "moveAxis": "vertical",
+      "moveMode": "verticalWrap",
+      "startDirection": "up",
+      "moveTiles": 4,
+      "moveSpeed": 35.0,
+      "segments": 3
+    },
+    {
+      "type": "MovingPlatform",
+      "x": 2240.0,
+      "y": 224.0,
+      "moveAxis": "vertical",
+      "moveMode": "oscillate",
+      "startDirection": "down",
+      "moveTiles": 4,
+      "moveSpeed": 35.0,
+      "segments": 3
+    }
+  ],
+  "playerSpawn": {
+    "x": 48.0,
+    "y": 192.0
+  }
+}
