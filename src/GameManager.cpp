@@ -35,6 +35,9 @@
 static const std::string kDefaultInitialLevelName = "1-1";
 
 namespace {
+constexpr float kTitleBackdropZ = 25.0f;
+constexpr float kTitleTextZ = 30.0f;
+
 glm::vec2 GetPipeSize(const std::string& opening, int segments) {
     const float clampedSegments = static_cast<float>(std::max(1, segments));
     if (opening == "left" || opening == "right") {
@@ -396,13 +399,21 @@ void GameManager::EnterLevelClearTransition() {
 
 void GameManager::BuildTitleOverlay() {
     const auto context = Core::Context::GetInstance();
+    const float halfW = static_cast<float>(context->GetWindowWidth()) * 0.5f;
     const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
 
-    AddOverlayImage("ui/title/logo.png", {0.0f, halfH - 180.0f}, {2.5f, 2.5f});
-    AddOverlayText("PRESS ENTER OR SPACE", 16, {0.0f, halfH - 300.0f});
-    AddOverlayText("SELECT START LEVEL", 12, {0.0f, halfH - 340.0f});
-    AddOverlayText("4: 1-1   5: 1-2   6: 1-3", 12, {0.0f, halfH - 370.0f});
-    AddOverlayText("CURRENT: " + m_SelectedWorldLabel, 12, {0.0f, halfH - 400.0f});
+    AddOverlayImage(
+        "ui/title/black.png",
+        {0.0f, 0.0f},
+        {halfW * 2.0f, halfH * 2.0f},
+        kTitleBackdropZ);
+
+    AddOverlayImage("ui/title/logo.png", {0.0f, halfH - 150.0f}, {3.0f, 3.0f}, kTitleTextZ);
+    AddOverlayText("TOP - 000000", 14, {0.0f, halfH - 270.0f}, kTitleTextZ);
+    AddOverlayText("1 PLAYER GAME", 16, {0.0f, halfH - 335.0f}, kTitleTextZ);
+    AddOverlayText("WORLD " + m_SelectedWorldLabel, 14, {0.0f, halfH - 380.0f}, kTitleTextZ);
+    AddOverlayText("4:1-1  5:1-2  6:1-3", 12, {0.0f, halfH - 420.0f}, kTitleTextZ);
+    AddOverlayText("PRESS ENTER OR SPACE", 12, {0.0f, halfH - 465.0f}, kTitleTextZ);
 }
 
 void GameManager::BuildLevelIntroOverlay() {
