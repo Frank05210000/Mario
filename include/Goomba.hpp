@@ -2,6 +2,7 @@
 #define GOOMBA_HPP
 
 #include "Enemy.hpp"
+#include <string>
 
 /*
  * Goomba：栗寶寶
@@ -16,7 +17,7 @@ public:
     /* 建構子
      * startX / startY：出生的世界座標位置。
      */
-    Goomba(float startX, float startY);
+    Goomba(float startX, float startY, const std::string& theme = "ground");
 
     /* 被踩：直接死亡
      * 栗寶寶沒有殼，踩一下就消失。

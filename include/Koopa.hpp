@@ -2,6 +2,7 @@
 #define KOOPA_HPP
 
 #include <memory>
+#include <string>
 
 #include "Enemy.hpp"
 #include "Util/Animation.hpp"
@@ -22,7 +23,10 @@ public:
     /* 建構子
      * startX / startY：出生的世界座標位置。
      */
-    Koopa(float startX, float startY, Variant variant = Variant::Green);
+    Koopa(float startX,
+          float startY,
+          Variant variant = Variant::Green,
+          const std::string& theme = "ground");
 
     /* 每幀更新（覆寫 Enemy::Update）
      * 縮殼狀態下停止水平移動；其他時候和普通敵人一樣。

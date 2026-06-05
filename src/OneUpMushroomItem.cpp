@@ -5,9 +5,11 @@
 #include "Util/Image.hpp"
 #include "Util/Logger.hpp"
 
-OneUpMushroomItem::OneUpMushroomItem(glm::vec2 pos) : Item(pos) {
+OneUpMushroomItem::OneUpMushroomItem(glm::vec2 pos, const std::string& theme) : Item(pos) {
+    const std::string spriteTheme = (theme == "underground") ? "underground" : "ground";
     m_Size = {TILE_SIZE, TILE_SIZE};
-    SetDrawable(std::make_shared<Util::Image>(MakeAssetPath("item/powerup/mushroom/mushroom.png")));
+    SetDrawable(std::make_shared<Util::Image>(
+        MakeAssetPath("item/powerup/" + spriteTheme + "/oneup/oneup.png")));
     SetZIndex(0.5f);
     m_Velocity = {0.0f, -30.0f};
 }

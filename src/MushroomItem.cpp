@@ -4,9 +4,11 @@
 #include "Util/Image.hpp"
 #include "Util/Logger.hpp"
 
-MushroomItem::MushroomItem(glm::vec2 pos) : Item(pos) {
+MushroomItem::MushroomItem(glm::vec2 pos, const std::string& theme) : Item(pos) {
+    const std::string spriteTheme = (theme == "underground") ? "underground" : "ground";
     m_Size = {TILE_SIZE, TILE_SIZE};
-    auto image = std::make_shared<Util::Image>(MakeAssetPath("item/powerup/mushroom/mushroom.png"));
+    auto image = std::make_shared<Util::Image>(
+        MakeAssetPath("item/powerup/" + spriteTheme + "/mushroom/mushroom.png"));
     SetDrawable(image);
     SetZIndex(0.5f); // 在方塊後方一點點
 
