@@ -3,14 +3,15 @@
 #include "AssetPath.hpp"
 #include "Util/Logger.hpp"
 
-FireFlowerItem::FireFlowerItem(glm::vec2 pos) : Item(pos) {
+FireFlowerItem::FireFlowerItem(glm::vec2 pos, const std::string& theme) : Item(pos) {
+    const std::string spriteTheme = (theme == "underground") ? "underground" : "ground";
     m_Size = {TILE_SIZE, TILE_SIZE};
     
     std::vector<std::string> animPaths = {
-        MakeAssetPath("item/powerup/flower/flower-1.png"),
-        MakeAssetPath("item/powerup/flower/flower-2.png"),
-        MakeAssetPath("item/powerup/flower/flower-3.png"),
-        MakeAssetPath("item/powerup/flower/flower-4.png")
+        MakeAssetPath("item/powerup/" + spriteTheme + "/flower/flower-1.png"),
+        MakeAssetPath("item/powerup/" + spriteTheme + "/flower/flower-2.png"),
+        MakeAssetPath("item/powerup/" + spriteTheme + "/flower/flower-3.png"),
+        MakeAssetPath("item/powerup/" + spriteTheme + "/flower/flower-4.png")
     };
     
     m_Animation = std::make_shared<Util::Animation>(animPaths, true, 100, true);

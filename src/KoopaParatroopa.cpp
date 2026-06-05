@@ -8,8 +8,9 @@
 KoopaParatroopa::KoopaParatroopa(float startX,
                                  float startY,
                                  Variant variant,
-                                 FlightMode flightMode)
-    : Koopa(startX, startY, variant), m_FlightMode(flightMode), m_BaseY(startY - TILE_SIZE) {
+                                 FlightMode flightMode,
+                                 const std::string& theme)
+    : Koopa(startX, startY, variant, theme), m_FlightMode(flightMode), m_BaseY(startY - TILE_SIZE) {
 }
 
 void KoopaParatroopa::Update(float deltaTime) {
