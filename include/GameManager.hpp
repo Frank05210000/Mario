@@ -188,6 +188,15 @@ private:
     std::string m_PendingLevel;
     std::optional<glm::vec2> m_PendingSpawn;
 
+    // ─── 中繼點系統 ───────────────────────────────────────────────────
+    // 目前存活期間玩家已越過的最後一個中繼點（nullopt 表示尚未達成任何中繼點）
+    // 換關時必須清空，確保死亡重生位置對應到正確關卡
+    std::optional<glm::vec2> m_LastCheckpoint;
+    // 暫存「本次重生要用的中繼點座標」，由 HandleLifeLost 設定，
+    // EnterLevelIntro/EnterPlaying 在 LoadLevel 後讀取並覆蓋 playerSpawn
+    std::optional<glm::vec2> m_CheckpointRespawnOverride;
+    void UpdateCheckpoints();   // 每幀在 UpdatePlaying 中呼叫，偵測玩家是否越過新中繼點
+
     // ─── HUD ──────────────────────────────────────────────────────
     HUD   m_Hud;                  // 遊戲狀態列
     float m_TimeRemaining = 400.0f; // 關卡倒數時間（秒）

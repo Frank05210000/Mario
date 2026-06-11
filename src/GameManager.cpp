@@ -286,6 +286,11 @@ void GameManager::UpdatePlaying(float dt) {
 
         // 4. 玩家左界夾制：確保玩家不會走到鏡頭左邊界之外（棘輪規則的配套）
         m_Player.ClampToCameraBounds(m_Camera.GetX());
+
+        // 5. 中繼點偵測：更新玩家已達成的最後中繼點
+        if (m_Player.IsAlive()) {
+            UpdateCheckpoints();
+        }
     }
 
     // ─── 虛空掉落判定 (Kill Z) ───
@@ -426,6 +431,10 @@ void GameManager::StartNewGame() {
     m_Session.ResetNewGame(1);
     m_Player.ResetForNewGame();
 
+    // 新遊戲：清空中繼點與中繼點重生覆蓋
+    m_LastCheckpoint = std::nullopt;
+    m_CheckpointRespawnOverride = std::nullopt;
+
     EnterLevelIntro();
     LOG_INFO("New game started.");
 }
@@ -439,6 +448,16 @@ void GameManager::EnterLevelIntro() {
 
     LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
     ApplyPlayerProgress();
+
+    // 若有中繼點重生覆蓋，套用後清除（只用一次）
+    if (m_CheckpointRespawnOverride.has_value()) {
+        m_Player.SetSpawnPosition(*m_CheckpointRespawnOverride);
+        LOG_INFO("Checkpoint respawn override applied: x={} y={}",
+                 m_CheckpointRespawnOverride->x,
+                 m_CheckpointRespawnOverride->y);
+        m_CheckpointRespawnOverride = std::nullopt;
+    }
+
     {
         const float lvW = static_cast<float>(m_Level.levelWidth);
         m_Camera.SetX(std::clamp(
@@ -655,11 +674,24 @@ void GameManager::HandleLifeLost() {
 
     if (m_Session.IsGameOver()) {
         LOG_INFO("Game over. Showing GAME OVER screen.");
+        // 清空中繼點（Game Over 後回到標題，不保留進度）
+        m_LastCheckpoint = std::nullopt;
         EnterGameOver();
         return;
     }
 
     m_Session.SwitchToNextAlivePlayer();
+
+    // 若有達成的中繼點，重生位置改為中繼點（保持存活期間不清空）
+    if (m_LastCheckpoint.has_value()) {
+        LOG_INFO("Respawning at checkpoint: x={} y={}",
+                 m_LastCheckpoint->x, m_LastCheckpoint->y);
+        // 暫存中繼點座標，EnterLevelIntro 呼叫 LoadLevel 後覆蓋 playerSpawn
+        m_CheckpointRespawnOverride = m_LastCheckpoint;
+    } else {
+        m_CheckpointRespawnOverride = std::nullopt;
+    }
+
     EnterLevelIntro();
 }
 
@@ -781,6 +813,10 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
 
     ResetSceneObjects();
     m_LevelCleared = false;
+
+    // 換關（水管切換關卡）：清空中繼點，新關卡從頭開始
+    m_LastCheckpoint = std::nullopt;
+    m_CheckpointRespawnOverride = std::nullopt;
 
     LoadLevel(levelPath);
     if (spawnOverride.has_value()) {
@@ -1670,6 +1706,26 @@ void GameManager::CheckFireballCollision() {
     // 移除死掉的火球
     for (auto& fb : m_TmpFireballsToRemove) {
         m_Fireballs.erase(std::remove(m_Fireballs.begin(), m_Fireballs.end(), fb), m_Fireballs.end());
+    }
+}
+
+// ─── UpdateCheckpoints ────────────────────────────────────────────────────
+// 每幀呼叫：掃描關卡中繼點清單，若玩家 X 越過某中繼點 X，
+// 且比目前已記錄的中繼點更靠右，就更新 m_LastCheckpoint。
+void GameManager::UpdateCheckpoints() {
+    if (m_Level.checkpoints.empty()) return;
+
+    const float playerX = m_Player.GetPosition().x;
+
+    for (const auto& cp : m_Level.checkpoints) {
+        // 玩家中心 X 越過中繼點 X 才算達成
+        if (playerX >= cp.x) {
+            if (!m_LastCheckpoint.has_value() ||
+                cp.x > m_LastCheckpoint->x) {
+                m_LastCheckpoint = cp;
+                LOG_INFO("Checkpoint reached: x={} y={}", cp.x, cp.y);
+            }
+        }
     }
 }
 
