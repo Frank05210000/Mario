@@ -619,35 +619,24 @@ void GameManager::EnterLevelIntro() {
 }
 
 void GameManager::EnterPlaying() {
-    ResetSceneObjects();
-    m_TimeRemaining = 400.0f;
+    // 注意：EnterPlaying 由 UpdateLevelIntro 呼叫，
+    // 此時關卡已在 EnterLevelIntro 完整載入（含中繼點重生座標）。
+    // 不重新 LoadLevel，避免覆蓋 EnterLevelIntro 中已套用的 checkpoint spawn。
+    // 只需重置遊戲邏輯狀態、重建場景並開始播 BGM 即可。
+
+    // 重建 renderer（移除 intro overlay，重建可玩場景）
+    m_Renderer = Util::Renderer();
+    m_OverlayObjects.clear();
+    m_ScorePopups.clear();
+    // 重建敵人/方塊/道具的 renderer 子節點（物件本身不清空，保留關卡狀態）
+    BuildScene();
+    m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
+
     m_LevelCleared = false;
     m_WaitingForTimeUpDeath = false;
     m_Paused = false;          // 確保進入遊玩狀態時不殘留暫停
     m_PauseOverlay = nullptr;  // overlay 隨 renderer 重建
     m_PendingDamageInvincibility = 0.0f; // 清空待定無敵
-
-    // 決定要載入的關卡：若 m_CurrentLevelIndex 有效則用關卡鏈，否則退回標題選關
-    const std::string levelToLoad = (m_CurrentLevelIndex >= 0 &&
-                                     m_CurrentLevelIndex < static_cast<int>(kLevelChain.size()))
-                                    ? kLevelChain[m_CurrentLevelIndex].levelName
-                                    : m_SelectedInitialLevelName;
-
-    // 同步 world label（確保 HUD 顯示正確關卡名）
-    if (m_CurrentLevelIndex >= 0 && m_CurrentLevelIndex < static_cast<int>(kLevelChain.size())) {
-        m_SelectedWorldLabel = kLevelChain[m_CurrentLevelIndex].worldLabel;
-    }
-
-    LoadLevel(MakeLevelPath(levelToLoad));
-    ApplyPlayerProgress();
-    {
-        const float lvW = static_cast<float>(m_Level.levelWidth);
-        m_Camera.SetX(std::clamp(
-            m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
-            0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
-    }
-    BuildScene();
-    m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
 
     m_FlowState = FlowState::Playing;
     m_PlayerWasDying = false; // 重置死亡偵測狀態
