@@ -73,6 +73,7 @@ private:
         Playing,
         TimeUp,
         LevelClearTransition,
+        GameOver,  // 命數歸零後顯示 GAME OVER 畫面約 3 秒再回標題
     };
 
     /* 讀入關卡 JSON，建立背景圖與所有方塊
@@ -86,11 +87,13 @@ private:
     void EnterLevelIntro();
     void EnterPlaying();
     void EnterTimeUp();
+    void EnterGameOver();
     void EnterLevelClearTransition();
     void SelectInitialLevel(const std::string& levelName, const std::string& worldLabel);
     void BuildTitleOverlay();
     void BuildLevelIntroOverlay();
     void BuildTimeUpOverlay();
+    void BuildGameOverOverlay();
     void BuildLevelClearOverlay();
     void AddOverlayText(const std::string& text, int fontSize, glm::vec2 position, float zIndex = 30.0f);
     void AddOverlayImage(const std::string& assetPath, glm::vec2 position, glm::vec2 scale, float zIndex = 30.0f);
@@ -98,6 +101,7 @@ private:
     void UpdateLevelIntro(float dt);
     void UpdatePlaying(float dt);
     void UpdateTimeUp(float dt);
+    void UpdateGameOver(float dt);
     void UpdateLevelClearTransition(float dt);
     void DrawScene(bool updateHud);
     bool CheckPipeTransition();
@@ -175,7 +179,8 @@ private:
     float m_LevelClearTransitionTimer = 0.0f;
     std::vector<std::shared_ptr<Util::GameObject>> m_OverlayObjects;
 
-    bool  m_LevelCleared = false; // 是否已觸碰旗杆（防止重複計分）
+    bool  m_LevelCleared = false;          // 是否已觸碰旗杆（防止重複計分）
+    bool  m_WaitingForTimeUpDeath = false; // 時間到後等待玩家死亡動畫播完再進 TimeUp
     std::string m_SelectedInitialLevelName = "1-1";
     std::string m_SelectedWorldLabel = "1-1";
 

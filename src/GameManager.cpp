@@ -161,6 +161,9 @@ void GameManager::Update() {
         case FlowState::TimeUp:
             UpdateTimeUp(dt);
             break;
+        case FlowState::GameOver:
+            UpdateGameOver(dt);
+            break;
         case FlowState::LevelClearTransition:
             UpdateLevelClearTransition(dt);
             break;
@@ -287,6 +290,18 @@ void GameManager::UpdatePlaying(float dt) {
 
     // ─── 虛空掉落判定 (Kill Z) ───
     const float killZ = m_Level.levelHeight + 50.0f;
+
+    // Time Up 等待死亡動畫時：玩家落出畫面後進 TIME UP overlay，不走一般生命扣除
+    if (m_WaitingForTimeUpDeath) {
+        if (m_Player.GetPosition().y > killZ) {
+            m_WaitingForTimeUpDeath = false;
+            EnterTimeUp();
+            return;
+        }
+        DrawScene(true);
+        return;
+    }
+
     if (m_Player.IsAlive() && m_Player.GetPosition().y > killZ) {
         m_Player.SetAlive(false);
         LOG_INFO("Player fell into the void! Life lost.");
@@ -308,11 +323,19 @@ void GameManager::UpdatePlaying(float dt) {
         return;
     }
 
+    // ─── 倒數計時 ─────────────────────────────────────────────────────────
     if (!m_LevelCleared && m_Player.IsAlive()) {
         m_TimeRemaining -= dt;
         if (m_TimeRemaining <= 0.0f) {
             m_TimeRemaining = 0.0f;
-            EnterTimeUp();
+            // Time Up：先觸發玩家死亡動畫，再進入 TIME UP overlay
+            // 原版 NES：TIME UP 時不降級，直接死亡彈跳
+            // 強制設為 SMALL 再 Downgrade → 進入 Dying state
+            m_WaitingForTimeUpDeath = true;
+            m_Player.SetForm(Player::Form::SMALL);
+            m_Player.Downgrade();  // SMALL -> Dying state（含死亡彈跳動畫）
+            LOG_INFO("Time Up! Player death animation started.");
+            DrawScene(true);
             return;
         }
     }
@@ -324,6 +347,18 @@ void GameManager::UpdateTimeUp(float dt) {
     m_StateTimer += dt;
     if (m_StateTimer >= 2.0f) {
         HandleLifeLost();
+        return;
+    }
+
+    m_Renderer.Update();
+}
+
+void GameManager::UpdateGameOver(float dt) {
+    m_StateTimer += dt;
+    // GAME OVER 畫面顯示約 3 秒後回標題
+    if (m_StateTimer >= 3.0f) {
+        EnterTitleScreen();
+        DrawScene(false);
         return;
     }
 
@@ -400,6 +435,7 @@ void GameManager::EnterLevelIntro() {
     m_StateTimer = 0.0f;
     m_TimeRemaining = 400.0f;
     m_LevelCleared = false;
+    m_WaitingForTimeUpDeath = false;
 
     LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
     ApplyPlayerProgress();
@@ -425,6 +461,7 @@ void GameManager::EnterPlaying() {
     ResetSceneObjects();
     m_TimeRemaining = 400.0f;
     m_LevelCleared = false;
+    m_WaitingForTimeUpDeath = false;
 
     LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
     ApplyPlayerProgress();
@@ -444,6 +481,7 @@ void GameManager::EnterPlaying() {
 void GameManager::EnterTitleScreen() {
     ResetSceneObjects();
     m_LevelCleared = false;
+    m_WaitingForTimeUpDeath = false;
     m_StateTimer = 0.0f;
     m_LevelClearTransitionTimer = 0.0f;
     m_Player.ResetForNewGame();
@@ -501,6 +539,19 @@ void GameManager::EnterTimeUp() {
     LOG_INFO("Entered time up state.");
 }
 
+void GameManager::EnterGameOver() {
+    ResetSceneObjects();
+    m_StateTimer = 0.0f;
+    m_LevelCleared = false;
+    m_WaitingForTimeUpDeath = false;
+
+    // 建立黑底 + GAME OVER 文字 overlay
+    BuildGameOverOverlay();
+
+    m_FlowState = FlowState::GameOver;
+    LOG_INFO("Entered GAME OVER state.");
+}
+
 void GameManager::EnterLevelClearTransition() {
     SavePlayerProgress();
     ResetSceneObjects();
@@ -538,6 +589,14 @@ void GameManager::BuildTimeUpOverlay() {
     const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
 
     AddOverlayText("TIME UP", 24, {0.0f, halfH - 430.0f});
+}
+
+void GameManager::BuildGameOverOverlay() {
+    const auto context = Core::Context::GetInstance();
+    const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
+
+    // 仿 NES 原版：黑底居中顯示 GAME OVER
+    AddOverlayText("GAME OVER", 28, {0.0f, halfH - 400.0f});
 }
 
 void GameManager::BuildLevelClearOverlay() {
@@ -595,8 +654,8 @@ void GameManager::HandleLifeLost() {
     m_Session.CurrentPlayer().form = Player::Form::SMALL;
 
     if (m_Session.IsGameOver()) {
-        LOG_INFO("Game over. Returning to title.");
-        EnterTitleScreen();
+        LOG_INFO("Game over. Showing GAME OVER screen.");
+        EnterGameOver();
         return;
     }
 
