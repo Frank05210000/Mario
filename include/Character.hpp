@@ -1,6 +1,7 @@
 #ifndef CHARACTER_HPP
 #define CHARACTER_HPP
 
+#include "GameConstants.hpp"
 #include "Util/GameObject.hpp"
 
 class Camera; // 前置宣告
@@ -64,7 +65,7 @@ protected:
     glm::vec2 m_Size     = {0.0f, 0.0f}; // 寬高（碰撞盒大小）
 
     bool  m_IsAlive = true;    // 死亡時停止更新與顯示
-    float m_Gravity = 700.0f;  // 重力加速度（子類別可覆蓋，原版 900 偏快，調低讓弧度更像 NES 原版）
+    float m_Gravity = ENEMY_GRAVITY;  // 重力加速度（敵人與死亡動畫用，700 px/s²）
 };
 
 #endif

@@ -134,6 +134,13 @@ private:
      */
     void CheckStompCollision();
 
+    /* 殼對敵人碰撞判斷
+     * 檢查正在滑行中的 Koopa 殼是否撞到其他存活的敵人。
+     * 若重疊則直接消滅被撞的敵人。
+     * TODO(Batch 5)：加入連殺 combo 計分機制。
+     */
+    void CheckShellEnemyCollision();
+
     /* 終點旗子碰撞
      * 偵測玩家是否碰到旗杆，若是計算得分並觸發過關。
      */
@@ -184,6 +191,24 @@ private:
     std::vector<std::shared_ptr<Block>>    m_TmpBlocksToRemove;
     std::vector<std::shared_ptr<Item>>     m_TmpItemsToRemove;
     std::vector<std::shared_ptr<Fireball>> m_TmpFireballsToRemove;
+
+    // ─── Combo 計分 ────────────────────────────────────────────────
+    // 踩踏連殺（單次跳躍）與殼滑行連殺共用同一組序列表與計數器
+    int m_ComboCount = 0;   // 當前連殺次數（0 = 尚未觸發）
+    // 根據 NES Mario 規則返回下一擊的分數，並推進 combo 計數
+    int NextComboScore();
+    void ResetCombo();
+
+    // ─── 浮動得分彈出 ─────────────────────────────────────────────
+    struct ScorePopup {
+        std::shared_ptr<Util::GameObject> obj;
+        glm::vec2 worldPos = {0.0f, 0.0f}; // 用世界座標追蹤，每幀再換算螢幕座標
+        float timer = 0.0f;    // 已存活秒數
+        float totalLife = 0.8f; // 最大存活秒數
+    };
+    std::vector<ScorePopup> m_ScorePopups;
+    void SpawnScorePopup(int score, glm::vec2 worldPos);
+    void UpdateScorePopups(float dt);
 };
 
 #endif
