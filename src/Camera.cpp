@@ -7,16 +7,12 @@ void Camera::Update(float targetX, float levelWidth) {
     const auto  ctx     = Core::Context::GetInstance();
     const float windowW = static_cast<float>(ctx->GetWindowWidth());
 
-    // 鏡頭中心對準追蹤目標（玩家）。因為畫面被放大 GAME_SCALE 倍，所以實體視窗寬度對應的世界寬度要除以 GAME_SCALE
-    const float viewWorldWidth = windowW / GAME_SCALE;
-    m_X = targetX - viewWorldWidth * 0.5f;
+    const float viewW = windowW / GAME_SCALE;
+    const float maxX  = std::max(0.0f, levelWidth - viewW);
 
-    // 夾制：不能超出地圖左邊
-    if (m_X < 0.0f) m_X = 0.0f;
-
-    // 夾制：不能超出地圖右邊
-    const float maxX = levelWidth - viewWorldWidth;
-    if (maxX > 0.0f && m_X > maxX) m_X = maxX;
+    float desiredX = targetX - viewW * 0.5f;      // 玩家置中
+    desiredX = std::clamp(desiredX, 0.0f, maxX);  // 先夾地圖邊界
+    m_X = std::max(m_X, desiredX);                // 棘輪：只進不退
 }
 
 float Camera::GetViewWorldWidth() const {

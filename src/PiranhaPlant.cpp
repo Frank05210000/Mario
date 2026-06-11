@@ -1,6 +1,7 @@
 #include "PiranhaPlant.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 #include "AssetPath.hpp"
@@ -8,13 +9,17 @@
 #include "Util/Animation.hpp"
 
 PiranhaPlant::PiranhaPlant(float extendedX, float extendedY) {
-    m_Size = {TILE_SIZE, TILE_SIZE * 1.5f};
+    m_Size      = {TILE_SIZE, TILE_SIZE * 1.5f};
     m_ExtendedY = extendedY;
-    m_HiddenY = extendedY + m_Size.y;
-    m_Position = {extendedX, m_HiddenY};
-    m_Velocity = {0.0f, 0.0f};
+    m_HiddenY   = extendedY + m_Size.y;
+    m_Position  = {extendedX, m_HiddenY};
+    m_PipeX     = extendedX + m_Size.x * 0.5f; // 水管中心 X
+    m_Velocity  = {0.0f, 0.0f};
     m_Transform.scale = {GAME_SCALE, GAME_SCALE};
-    SetZIndex(6.0f);
+
+    // z-index 低於水管（水管預設約 1.0 ~ 2.0）才能隱藏進水管內
+    // Enemy::Enemy() 預設設 5.0，這裡覆寫為 0.5（水管底層）
+    SetZIndex(0.5f);
 
     std::vector<std::string> paths = {
         MakeAssetPath("enemy/Piranha/underground/piranha-1.png"),
@@ -27,26 +32,40 @@ PiranhaPlant::PiranhaPlant(float extendedX, float extendedY) {
 void PiranhaPlant::Update(float deltaTime) {
     if (!m_IsAlive) return;
 
-    constexpr float MOVE_SPEED = 24.0f;
-    constexpr float HIDDEN_PAUSE = 1.0f;
-    constexpr float EXTENDED_PAUSE = 1.2f;
+    constexpr float MOVE_SPEED      = 24.0f;
+    constexpr float HIDDEN_PAUSE    = 1.0f;
+    constexpr float EXTENDED_PAUSE  = 1.2f;
+
+    // 判斷玩家是否在水管正上方 / 附近
+    const bool playerNear = std::abs(m_PlayerX - m_PipeX) <= PLAYER_NEAR_RANGE;
 
     switch (m_State) {
         case State::HiddenPause:
             m_Position.y = m_HiddenY;
             m_StateTimer += deltaTime;
             if (m_StateTimer >= HIDDEN_PAUSE) {
+                // 玩家在附近時不升出（重置計時，繼續等待）
+                if (playerNear) {
+                    m_StateTimer = 0.0f;
+                    break;
+                }
                 m_StateTimer = 0.0f;
-                m_State = State::Rising;
+                m_State      = State::Rising;
             }
             break;
 
         case State::Rising:
+            // 升出途中若玩家靠近，立即縮回
+            if (playerNear) {
+                m_StateTimer = 0.0f;
+                m_State      = State::Lowering;
+                break;
+            }
             m_Position.y = std::max(m_ExtendedY, m_Position.y - MOVE_SPEED * deltaTime);
             if (m_Position.y <= m_ExtendedY) {
                 m_Position.y = m_ExtendedY;
                 m_StateTimer = 0.0f;
-                m_State = State::ExtendedPause;
+                m_State      = State::ExtendedPause;
             }
             break;
 
@@ -55,7 +74,7 @@ void PiranhaPlant::Update(float deltaTime) {
             m_StateTimer += deltaTime;
             if (m_StateTimer >= EXTENDED_PAUSE) {
                 m_StateTimer = 0.0f;
-                m_State = State::Lowering;
+                m_State      = State::Lowering;
             }
             break;
 
@@ -64,12 +83,12 @@ void PiranhaPlant::Update(float deltaTime) {
             if (m_Position.y >= m_HiddenY) {
                 m_Position.y = m_HiddenY;
                 m_StateTimer = 0.0f;
-                m_State = State::HiddenPause;
+                m_State      = State::HiddenPause;
             }
             break;
     }
 }
 
 void PiranhaPlant::Stomp() {
-    // Piranha Plants are hazards, not stompable walking enemies.
+    // 食人花不可被踩（保持現有行為）
 }
