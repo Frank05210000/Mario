@@ -7,15 +7,14 @@
 #include "Util/Animation.hpp"
 #include "Util/Logger.hpp"
 
-StarmanItem::StarmanItem(glm::vec2 pos, const std::string& theme) : Item(pos) {
-    const std::string spriteTheme = (theme == "underground") ? "underground" : "ground";
+StarmanItem::StarmanItem(glm::vec2 pos, const ThemeAssets& assets) : Item(pos) {
     m_Size = {TILE_SIZE, TILE_SIZE};
     m_Animation = std::make_shared<Util::Animation>(
         std::vector<std::string>{
-            MakeAssetPath("item/powerup/" + spriteTheme + "/star/star-1.png"),
-            MakeAssetPath("item/powerup/" + spriteTheme + "/star/star-2.png"),
-            MakeAssetPath("item/powerup/" + spriteTheme + "/star/star-3.png"),
-            MakeAssetPath("item/powerup/" + spriteTheme + "/star/star-4.png"),
+            assets.Sprite("item/powerup/{theme}/star/star-1.png"),
+            assets.Sprite("item/powerup/{theme}/star/star-2.png"),
+            assets.Sprite("item/powerup/{theme}/star/star-3.png"),
+            assets.Sprite("item/powerup/{theme}/star/star-4.png"),
         },
         true,
         100,

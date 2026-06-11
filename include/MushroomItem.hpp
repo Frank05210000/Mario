@@ -2,11 +2,11 @@
 #define MUSHROOM_ITEM_HPP
 
 #include "Item.hpp"
-#include <string>
+#include "ThemeAssets.hpp"
 
 class MushroomItem : public Item {
 public:
-    MushroomItem(glm::vec2 pos, const std::string& theme = "ground");
+    MushroomItem(glm::vec2 pos, const ThemeAssets& assets = ThemeAssets(Theme::Ground));
 
     void Update(float deltaTime) override;
     void OnCollect(Player* player) override;

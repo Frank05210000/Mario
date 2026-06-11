@@ -11,7 +11,7 @@ public:
                     float startY,
                     Variant variant = Variant::Red,
                     FlightMode flightMode = FlightMode::Hop,
-                    const std::string& theme = "ground");
+                    const ThemeAssets& assets = ThemeAssets(Theme::Ground));
 
     void Update(float deltaTime) override;
     void Stomp() override;

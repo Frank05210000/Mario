@@ -2,7 +2,7 @@
 #define STARMAN_ITEM_HPP
 
 #include <memory>
-#include <string>
+#include "ThemeAssets.hpp"
 
 #include "Item.hpp"
 
@@ -12,7 +12,7 @@ namespace Util {
 
 class StarmanItem : public Item {
 public:
-    StarmanItem(glm::vec2 pos, const std::string& theme = "ground");
+    StarmanItem(glm::vec2 pos, const ThemeAssets& assets = ThemeAssets(Theme::Ground));
 
     void Update(float deltaTime) override;
     void OnCollect(Player* player) override;

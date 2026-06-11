@@ -5,10 +5,10 @@
 #include "GameConstants.hpp"
 #include "Util/Image.hpp"
 
-BrickDebris::BrickDebris(glm::vec2 position, glm::vec2 velocity, const std::string& theme)
+BrickDebris::BrickDebris(glm::vec2 position, glm::vec2 velocity, const ThemeAssets& assets)
     : m_Position(position), m_Velocity(velocity) {
     auto image = std::make_shared<Util::Image>(
-        MakeAssetPath("block/" + theme + "/brick_piece/brick_piece.png"));
+        assets.Sprite("block/{theme}/brick_piece/brick_piece.png"));
     SetDrawable(image);
     SetZIndex(6.0f);
     m_Transform.scale = {GAME_SCALE, GAME_SCALE};
