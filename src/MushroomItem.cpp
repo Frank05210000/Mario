@@ -38,7 +38,13 @@ void MushroomItem::Update(float deltaTime) {
 void MushroomItem::OnCollect(Player* player) {
     if (m_State != ItemState::Active) return;
 
-    LOG_INFO("Mushroom collected! Player -> SUPER");
+    LOG_INFO("Mushroom collected! Player -> SUPER (with transform animation)");
     m_State = ItemState::Collected;
-    player->SetForm(Player::Form::SUPER);
+    // 啟動升級變身動畫（全場凍結 ~1 秒）
+    // 若玩家已是 SUPER/FIRE，仍然直接 SetForm（升級不觸發動畫，原版也不會重播）
+    if (player->GetForm() == Player::Form::SMALL) {
+        player->StartTransformAnimation(Player::Form::SMALL, Player::Form::SUPER);
+    } else {
+        player->SetForm(Player::Form::SUPER);
+    }
 }

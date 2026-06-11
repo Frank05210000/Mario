@@ -185,6 +185,10 @@ private:
 
     bool  m_LevelCleared = false;          // 是否已觸碰旗杆（防止重複計分）
     bool  m_WaitingForTimeUpDeath = false; // 時間到後等待玩家死亡動畫播完再進 TimeUp
+    bool  m_Paused = false;                // 暫停狀態（只在 Playing 下有效）
+    std::shared_ptr<Util::GameObject> m_PauseOverlay; // 「PAUSED」文字 overlay
+    // 受傷縮小變身動畫結束後需要啟動的傷害無敵計時（秒）；0 = 無待定
+    float m_PendingDamageInvincibility = 0.0f;
     std::string m_SelectedInitialLevelName = "1-1"; // 標題選關用（不影響遊戲中推進）
     std::string m_SelectedWorldLabel = "1-1";
 

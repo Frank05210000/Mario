@@ -221,6 +221,39 @@ void GameManager::UpdateLevelIntro(float dt) {
 }
 
 void GameManager::UpdatePlaying(float dt) {
+    // ─── 暫停切換（Enter 鍵，單幀偵測防連發）──────────────────────────────
+    // Note：Title 畫面的 Enter 在 UpdateTitle 裡處理，不會到達這裡
+    if (Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
+        m_Paused = !m_Paused;
+
+        if (m_Paused) {
+            // 建立 PAUSED overlay（加入 renderer）
+            if (!m_PauseOverlay) {
+                const std::string fontPath = MakeAssetPath("font/Super Mario Bros. NES.ttf");
+                auto context = Core::Context::GetInstance();
+                const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
+                auto text = std::make_shared<Util::Text>(
+                    fontPath, 24, "PAUSED", Util::Color(255, 255, 255));
+                m_PauseOverlay = std::make_shared<Util::GameObject>(text, 35.0f);
+                m_PauseOverlay->m_Transform.translation = {0.0f, halfH - 200.0f};
+                m_PauseOverlay->SetVisible(true);
+                m_Renderer.AddChild(m_PauseOverlay);
+            } else {
+                m_PauseOverlay->SetVisible(true);
+            }
+            LOG_INFO("Game paused.");
+        } else {
+            if (m_PauseOverlay) m_PauseOverlay->SetVisible(false);
+            LOG_INFO("Game resumed.");
+        }
+    }
+
+    // 暫停時只更新渲染，不更新任何物件或時間
+    if (m_Paused) {
+        m_Renderer.Update();
+        return;
+    }
+
     if (m_Player.GetState() == Player::State::EnteringPipe && m_Player.IsAnimationFinished()) {
         ChangeLevel(m_PendingLevel, m_PendingSpawn);
         return;
@@ -229,7 +262,23 @@ void GameManager::UpdatePlaying(float dt) {
     // 1. 更新所有角色邏輯
     m_Player.Update(dt);
 
+    // 變身動畫結束時套用待定的傷害無敵（縮小後才開始計時）
+    if (!m_Player.IsTransforming() && m_PendingDamageInvincibility > 0.0f) {
+        m_Player.StartDamageInvincibility(m_PendingDamageInvincibility);
+        m_PendingDamageInvincibility = 0.0f;
+        LOG_INFO("Post-transform damage invincibility started.");
+    }
+
     if (m_Player.GetState() == Player::State::EnteringPipe || m_Player.GetState() == Player::State::ExitingPipe) {
+        m_Camera.Update(m_Player.GetPosition().x,
+                        static_cast<float>(m_Level.levelWidth));
+        DrawScene(true);
+        return;
+    }
+
+    // 變身動畫中：全場凍結（不更新敵人/方塊/道具/時間），
+    // 只讓玩家自己更新（動畫已在 m_Player.Update(dt) 裡處理）
+    if (m_Player.IsTransforming()) {
         m_Camera.Update(m_Player.GetPosition().x,
                         static_cast<float>(m_Level.levelWidth));
         DrawScene(true);
@@ -503,6 +552,9 @@ void GameManager::EnterLevelIntro() {
     m_TimeRemaining = 400.0f;
     m_LevelCleared = false;
     m_WaitingForTimeUpDeath = false;
+    m_Paused = false;          // 換關時清空暫停
+    m_PauseOverlay = nullptr;  // overlay 隨 renderer 重建
+    m_PendingDamageInvincibility = 0.0f; // 清空待定無敵
 
     // 決定要載入的關卡：若 m_CurrentLevelIndex 有效則用關卡鏈，否則退回標題選關
     const std::string levelToLoad = (m_CurrentLevelIndex >= 0 &&
@@ -550,6 +602,9 @@ void GameManager::EnterPlaying() {
     m_TimeRemaining = 400.0f;
     m_LevelCleared = false;
     m_WaitingForTimeUpDeath = false;
+    m_Paused = false;          // 確保進入遊玩狀態時不殘留暫停
+    m_PauseOverlay = nullptr;  // overlay 隨 renderer 重建
+    m_PendingDamageInvincibility = 0.0f; // 清空待定無敵
 
     // 決定要載入的關卡：若 m_CurrentLevelIndex 有效則用關卡鏈，否則退回標題選關
     const std::string levelToLoad = (m_CurrentLevelIndex >= 0 &&
@@ -1165,10 +1220,14 @@ void GameManager::CheckStompCollision() {
                 LOG_INFO("Koopa shell kicked {} from side!", kickLeft ? "left" : "right");
             } else {
                 // 碰到有殺傷力的敵人：玩家受傷降級
-                if (!m_Player.IsDamageInvincible()) {
+                // 變身動畫中視為無敵，不可被重複傷害
+                if (!m_Player.IsDamageInvincible() && !m_Player.IsTransforming()) {
                     m_Player.Downgrade();
-                    if (!m_Player.IsDying()) {
-                        m_Player.StartDamageInvincibility(2.0f);
+                    if (m_Player.IsDying()) {
+                        // SMALL 直接死亡，無無敵倒數需求
+                    } else if (m_Player.IsTransforming()) {
+                        // 觸發縮小動畫：無敵倒數等動畫結束後才開始
+                        m_PendingDamageInvincibility = 2.0f;
                     }
                     LOG_INFO("Player hit by enemy! Downgrade triggered.");
                 }
