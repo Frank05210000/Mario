@@ -262,6 +262,27 @@ void GameManager::UpdatePlaying(float dt) {
     // 1. 更新所有角色邏輯
     m_Player.Update(dt);
 
+    // ── 跳躍音效：Player 在 Jump() 設旗，GameManager 消耗並播音 ──
+    if (m_Player.ConsumeJumpEvent()) {
+        const std::string jumpSfx = (m_Player.GetForm() == Player::Form::SMALL)
+                                        ? "jump_small" : "jump_super";
+        m_Audio.PlaySFX(jumpSfx);
+    }
+
+    // ── 星星效果結束：切回關卡 BGM ──
+    if (m_Player.ConsumeStarEndedEvent()) {
+        m_Audio.PlayBGM(m_LevelBGMName);
+        LOG_INFO("Star ended, restoring level BGM: {}", m_LevelBGMName);
+    }
+
+    // ── 死亡偵測：玩家剛進入 Dying 狀態時，停關卡 BGM 改播死亡 BGM ──
+    const bool playerIsDyingNow = m_Player.IsDying();
+    if (playerIsDyingNow && !m_PlayerWasDying) {
+        m_Audio.StopBGM();
+        m_Audio.PlayBGM("death", 0); // 死亡 BGM 播一次
+    }
+    m_PlayerWasDying = playerIsDyingNow;
+
     // 變身動畫結束時套用待定的傷害無敵（縮小後才開始計時）
     if (!m_Player.IsTransforming() && m_PendingDamageInvincibility > 0.0f) {
         m_Player.StartDamageInvincibility(m_PendingDamageInvincibility);
@@ -629,6 +650,9 @@ void GameManager::EnterPlaying() {
     m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
 
     m_FlowState = FlowState::Playing;
+    m_PlayerWasDying = false; // 重置死亡偵測狀態
+    // 開始播放關卡 BGM（依 LoadLevel 時決定的主題）
+    m_Audio.PlayBGM(m_LevelBGMName);
     LOG_INFO("Entered playing state.");
 }
 
@@ -639,6 +663,8 @@ void GameManager::EnterTitleScreen() {
     m_StateTimer = 0.0f;
     m_LevelClearTransitionTimer = 0.0f;
     m_Player.ResetForNewGame();
+    // 回標題畫面時停止所有音樂
+    m_Audio.StopBGM();
 
     LoadLevel(MakeLevelPath(m_SelectedInitialLevelName.empty() ? kDefaultInitialLevelName : m_SelectedInitialLevelName));
     {
@@ -703,6 +729,8 @@ void GameManager::EnterGameOver() {
     BuildGameOverOverlay();
 
     m_FlowState = FlowState::GameOver;
+    // 播放 Game Over 音效 BGM（播一次，不循環）
+    m_Audio.PlayBGM("game_over", 0);
     LOG_INFO("Entered GAME OVER state.");
 }
 
@@ -714,6 +742,8 @@ void GameManager::EnterLevelClearTransition() {
     m_CountdownAccum = 0.0f;
     BuildLevelClearOverlay();
     m_FlowState = FlowState::LevelClearTransition;
+    // 播放過關 BGM（播一次，不循環）
+    m_Audio.PlayBGM("level_clear", 0);
     LOG_INFO("Entered level clear transition (time countdown). timeRemaining={}",
              m_TimeRemaining);
 }
@@ -878,6 +908,9 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
         m_Level.levelHeight,
         m_Level.playerSpawn
     );
+
+    // ── 依關卡主題決定背景音樂（載入時決定，EnterPlaying 時才真正播放）──
+    m_LevelBGMName = (m_Level.theme == "underground") ? "underground" : "overworld";
 
     // ── 背景圖 ──────────────────────────────────────────────────────
     if (!m_Level.backgroundImagePath.empty()) {
@@ -1053,6 +1086,7 @@ bool GameManager::CheckPipeTransition() {
         m_PendingLevel = targetLevel;
         m_PendingSpawn = pipe->GetDestinationSpawn();
         m_Player.StartPipeEntry(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), 1.0f);
+        m_Audio.PlaySFX("pipe"); // 進水管音效
         return true;
     }
 
@@ -1188,6 +1222,7 @@ void GameManager::CheckStompCollision() {
                 koopa->Kick(kickLeft);
                 m_Session.AddScore(400);
                 SpawnScorePopup(400, ePos);
+                m_Audio.PlaySFX("kick"); // 踢殼音效
                 LOG_INFO("Koopa shell kicked {} from top!", kickLeft ? "left" : "right");
             } else {
                 // 一般踩踏（包含首次踩到正常行走的龜）— combo 計分
@@ -1196,10 +1231,12 @@ void GameManager::CheckStompCollision() {
                 if (pts < 0) {
                     m_Session.AddLife();
                     SpawnScorePopup(-1, ePos);
+                    m_Audio.PlaySFX("1up"); // 踩踏 1UP 音效
                 } else {
                     m_Session.AddScore(pts);
                     SpawnScorePopup(pts, ePos);
                 }
+                m_Audio.PlaySFX("stomp"); // 踩踏音效
                 LOG_INFO("Stomp! combo={} score={}", m_ComboCount, pts);
             }
 
@@ -1217,6 +1254,7 @@ void GameManager::CheckStompCollision() {
                 koopa->Kick(kickLeft);
                 m_Session.AddScore(400);
                 SpawnScorePopup(400, ePos);
+                m_Audio.PlaySFX("kick"); // 踢殼音效
                 LOG_INFO("Koopa shell kicked {} from side!", kickLeft ? "left" : "right");
             } else {
                 // 碰到有殺傷力的敵人：玩家受傷降級
@@ -1382,10 +1420,14 @@ void GameManager::CheckBlockCollision() {
             // 磚塊打破得 50 分
             m_Session.AddScore(50);
             SpawnScorePopup(50, bPos);
+            m_Audio.PlaySFX("brick_break"); // 磚塊破碎音效
         }
 
         if (hitRes.spawnItem != "None") {
             SpawnItem(hitRes.spawnItem, bPos);
+        } else if (!hitRes.isDestroyed) {
+            // 頂到方塊但沒有打破也沒有道具：播 bump 音效（頂空磚或不可破磚）
+            m_Audio.PlaySFX("bump");
         }
 
         // ── 頂磚效果：消滅方塊正上方的敵人，踢飛正上方的道具 ──────────
@@ -1623,6 +1665,7 @@ void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
         m_Session.AddCoin();
         m_Session.AddScore(200);
         SpawnScorePopup(200, position);
+        m_Audio.PlaySFX("coin"); // 金幣音效
     } else if (itemType == "PowerUp" || itemType == "Mushroom") {
         if (m_Player.GetForm() == Player::Form::SMALL) {
             newItem = std::make_shared<MushroomItem>(position);
@@ -1631,15 +1674,19 @@ void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
             newItem = std::make_shared<FireFlowerItem>(position);
             spawnedType = "FireFlower";
         }
+        m_Audio.PlaySFX("powerup_appears"); // 道具冒出音效
     } else if (itemType == "FireFlower") {
         newItem = std::make_shared<FireFlowerItem>(position);
         spawnedType = "FireFlower";
+        m_Audio.PlaySFX("powerup_appears"); // 道具冒出音效
     } else if (itemType == "OneUp" || itemType == "1Up") {
         newItem = std::make_shared<OneUpMushroomItem>(position);
         spawnedType = "OneUp";
+        m_Audio.PlaySFX("powerup_appears"); // 道具冒出音效
     } else if (itemType == "Star" || itemType == "Starman") {
         newItem = std::make_shared<StarmanItem>(position);
         spawnedType = "Star";
+        m_Audio.PlaySFX("powerup_appears"); // 道具冒出音效
     }
 
     if (newItem) {
@@ -1678,12 +1725,21 @@ void GameManager::CheckItemCollision() {
                         m_Session.AddCoin();
                         m_Session.AddScore(200);
                         SpawnScorePopup(200, iPos);
+                        m_Audio.PlaySFX("coin"); // 場上金幣音效
                     } else if (itemType == "OneUp") {
                         m_Session.AddLife();
                         SpawnScorePopup(-1, iPos); // -1 = "1UP"
-                    } else if (itemType == "Mushroom" || itemType == "FireFlower" || itemType == "Star") {
+                        m_Audio.PlaySFX("1up");   // 1UP 音效
+                    } else if (itemType == "Mushroom" || itemType == "FireFlower") {
                         m_Session.AddScore(1000);
                         SpawnScorePopup(1000, iPos);
+                        m_Audio.PlaySFX("powerup"); // 吃到升級道具音效
+                    } else if (itemType == "Star") {
+                        m_Session.AddScore(1000);
+                        SpawnScorePopup(1000, iPos);
+                        m_Audio.PlaySFX("powerup");  // 吃到道具音效
+                        // 吃星後切換為 Starman BGM（星星時間結束後恢復，在 UpdatePlaying 偵測）
+                        m_Audio.PlayBGM("starman");
                     }
                 }
             }
@@ -1764,6 +1820,7 @@ void GameManager::SpawnFireball(glm::vec2 position, bool movingLeft) {
     auto fireball = std::make_shared<Fireball>(position, movingLeft);
     m_Fireballs.push_back(fireball);
     m_Renderer.AddChild(fireball);
+    m_Audio.PlaySFX("fireball"); // 火球發射音效
     LOG_INFO("GameManager spawned Fireball at {}", position);
 }
 
@@ -1948,6 +2005,9 @@ void GameManager::CheckFlagCollision() {
         // 觸發玩家的過關下降演出
         m_Player.StartLevelClearSequence(fPos.x, fPos.y + fSize.y);
 
+        // 碰到旗杆：播放旗杆 SFX，同時停掉關卡 BGM
+        m_Audio.StopBGM();
+        m_Audio.PlaySFX("flagpole");
         LOG_INFO("=== LEVEL CLEAR! Flag score: {}  Total score: {} ===",
                  score,
                  m_Session.CurrentPlayer().score);

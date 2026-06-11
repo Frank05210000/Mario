@@ -1,5 +1,6 @@
 set(SRC_FILES
     App.cpp
+    AudioManager.cpp
     Block.cpp
     BrickBlock.cpp
     BrickDebris.cpp
@@ -39,6 +40,7 @@ set(SRC_FILES
 set(INCLUDE_FILES
     App.hpp
     AssetPath.hpp
+    AudioManager.hpp
     Block.hpp
     BrickBlock.hpp
     BrickDebris.hpp
