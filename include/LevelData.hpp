@@ -6,6 +6,8 @@
 
 #include <glm/vec2.hpp>
 
+#include "ThemeAssets.hpp"
+
 /*
  * ObjectData：從 JSON 讀出的單一物件原始資料
  *
@@ -47,7 +49,7 @@ struct ObjectData {
  */
 struct LevelData {
     std::string backgroundImagePath;  // 相對於 Resources/Asset/ 的背景圖路徑
-    std::string theme = "ground";     // block tile 主題: "ground" / "underground"
+    Theme theme = Theme::Ground;      // block tile 主題
     int levelWidth  = 0;              // 地圖總寬（世界像素）
     int levelHeight = 0;              // 地圖總高（世界像素）
 

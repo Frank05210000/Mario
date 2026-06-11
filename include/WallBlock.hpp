@@ -1,7 +1,7 @@
 #ifndef WALL_BLOCK_HPP
 #define WALL_BLOCK_HPP
 
-#include <string>
+#include "ThemeAssets.hpp"
 
 #include "Block.hpp"
 
@@ -13,7 +13,7 @@
  */
 class WallBlock : public Block {
 public:
-    explicit WallBlock(glm::vec2 position, const std::string& theme = "ground");
+    explicit WallBlock(glm::vec2 position, const ThemeAssets& assets = ThemeAssets(Theme::Ground));
 
     Type GetType() const override { return Type::Wall; }
     bool IsSolid() const override { return true; }

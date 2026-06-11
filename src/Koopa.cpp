@@ -5,36 +5,35 @@
 
 #include <vector>
 
-Koopa::Koopa(float startX, float startY, Variant variant, const std::string& theme)
+Koopa::Koopa(float startX, float startY, Variant variant, const ThemeAssets& assets)
     : m_Variant(variant) {
     m_Position = {startX, startY - TILE_SIZE};
-    m_Size     = {TILE_SIZE, TILE_SIZE * 2.0f};  // 世界尺寸：16x32
+    m_Size     = {TILE_SIZE, TILE_SIZE * 2.0f};
     m_Transform.scale = {GAME_SCALE, GAME_SCALE};
 
-    LoadSprites(theme);
+    LoadSprites(assets);
     UpdateDrawable();
 }
 
-void Koopa::LoadSprites(const std::string& theme) {
-    const std::string spriteTheme = (theme == "underground") ? "underground" : "ground";
+void Koopa::LoadSprites(const ThemeAssets& assets) {
     m_WalkLeftAnim = std::make_shared<Util::Animation>(
         std::vector<std::string>{
-            MakeAssetPath("enemy/Koopa/" + spriteTheme + "/normal/walk/walk-1.png"),
-            MakeAssetPath("enemy/Koopa/" + spriteTheme + "/normal/walk/walk-2.png"),
+            assets.Sprite("enemy/Koopa/{theme}/normal/walk/walk-1.png"),
+            assets.Sprite("enemy/Koopa/{theme}/normal/walk/walk-2.png"),
         },
         true,
         160,
         true);
     m_WalkRightAnim = std::make_shared<Util::Animation>(
         std::vector<std::string>{
-            MakeAssetPath("enemy/Koopa/" + spriteTheme + "/reverse/walk/walk-1.png"),
-            MakeAssetPath("enemy/Koopa/" + spriteTheme + "/reverse/walk/walk-2.png"),
+            assets.Sprite("enemy/Koopa/{theme}/reverse/walk/walk-1.png"),
+            assets.Sprite("enemy/Koopa/{theme}/reverse/walk/walk-2.png"),
         },
         true,
         160,
         true);
     m_ShellImage = std::make_shared<Util::Image>(
-        MakeAssetPath("enemy/Koopa/" + spriteTheme + "/normal/shell/shell.png"));
+        assets.Sprite("enemy/Koopa/{theme}/normal/shell/shell.png"));
 }
 
 void Koopa::Update(float deltaTime) {

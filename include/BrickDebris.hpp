@@ -2,7 +2,7 @@
 #define BRICK_DEBRIS_HPP
 
 #include <memory>
-#include <string>
+#include "ThemeAssets.hpp"
 
 #include "Util/GameObject.hpp"
 
@@ -10,7 +10,7 @@ class Camera;
 
 class BrickDebris : public Util::GameObject {
 public:
-    BrickDebris(glm::vec2 position, glm::vec2 velocity, const std::string& theme);
+    BrickDebris(glm::vec2 position, glm::vec2 velocity, const ThemeAssets& assets);
 
     void Update(float deltaTime);
     void Draw(const Camera& camera);

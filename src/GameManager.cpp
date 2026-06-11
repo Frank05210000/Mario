@@ -503,6 +503,7 @@ void GameManager::HandleLifeLost() {
 
 void GameManager::LoadLevel(const std::string& jsonPath) {
     m_Level = LevelLoader::Load(jsonPath);
+    m_ThemeAssets = ThemeAssets(m_Level.theme);
 
     LOG_INFO(
         "Level loaded: json='{}' background='{}' levelSize=({}, {}) playerSpawn={}",
@@ -534,23 +535,23 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
         if (obj.type == "Ground") {
             m_Blocks.push_back(std::make_shared<GroundBlock>(pos, size));
         } else if (obj.type == "Brick") {
-            auto b = std::make_shared<BrickBlock>(pos, m_Level.theme);
+            auto b = std::make_shared<BrickBlock>(pos, m_ThemeAssets);
             b->SetItemType(obj.itemType.empty() ? "None" : obj.itemType);
             m_Blocks.push_back(b);
         } else if (obj.type == "UsedOnHitBrickBlock") {
-            auto b = std::make_shared<UsedOnHitBrickBlock>(pos, m_Level.theme);
+            auto b = std::make_shared<UsedOnHitBrickBlock>(pos, m_ThemeAssets);
             b->SetItemType(obj.itemType.empty() ? "None" : obj.itemType);
             m_Blocks.push_back(b);
         } else if (obj.type == "QuestionBlock") {
-            auto b = std::make_shared<QuestionBlock>(pos, m_Level.theme);
+            auto b = std::make_shared<QuestionBlock>(pos, m_ThemeAssets);
             b->SetItemType(obj.itemType.empty() ? "Coin" : obj.itemType);
             m_Blocks.push_back(b);
         } else if (obj.type == "HiddenBlock" || obj.type == "HiddenQuestionBlock") {
-            auto b = std::make_shared<HiddenBlock>(pos, m_Level.theme);
+            auto b = std::make_shared<HiddenBlock>(pos, m_ThemeAssets);
             b->SetItemType(obj.itemType.empty() ? "Coin" : obj.itemType);
             m_Blocks.push_back(b);
         } else if (obj.type == "MultiCoinBlock") {
-            m_Blocks.push_back(std::make_shared<MultiCoinBlock>(pos, m_Level.theme, obj.coinCount));
+            m_Blocks.push_back(std::make_shared<MultiCoinBlock>(pos, m_ThemeAssets, obj.coinCount));
         } else if (obj.type == "Pipe" || obj.type == "EnterablePipe") {
             const glm::vec2 pipeSize = GetPipeSize(obj.opening, obj.segments);
             const glm::vec2 pipePosition = GetPipePositionFromAnchor(pos, obj.opening, obj.segments);
@@ -581,11 +582,11 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
         } else if (obj.type == "TreePlatform") {
             m_Blocks.push_back(std::make_shared<TreePlatformBlock>(pos, obj.segments));
         } else if (obj.type == "Wall") {
-            m_Blocks.push_back(std::make_shared<WallBlock>(pos, m_Level.theme));
+            m_Blocks.push_back(std::make_shared<WallBlock>(pos, m_ThemeAssets));
         } else if (obj.type == "Flag") {
             m_Blocks.push_back(std::make_shared<FlagBlock>(pos));
         } else if (obj.type == "Coin" || obj.type == "CollectibleCoin") {
-            m_Items.push_back(std::make_shared<LevelCoinItem>(pos, m_Level.theme));
+            m_Items.push_back(std::make_shared<LevelCoinItem>(pos, m_ThemeAssets));
         } else if (obj.type == "EnemySpawn") {
             // 不直接建立物件，改存進 queue，等鏡頭到達再生成
             m_EnemySpawnQueue.push_back(obj);
@@ -719,10 +720,10 @@ void GameManager::SpawnEnemy(const ObjectData& data) {
         (data.flightMode == "verticalPatrol") ? KoopaParatroopa::FlightMode::VerticalPatrol
                                               : KoopaParatroopa::FlightMode::Hop;
 
-    if      (data.enemyType == "Goomba")       newEnemy = std::make_shared<Goomba>(data.x, data.y, m_Level.theme);
-    else if (data.enemyType == "Koopa")        newEnemy = std::make_shared<Koopa>(data.x, data.y, koopaVariant, m_Level.theme);
+    if      (data.enemyType == "Goomba")       newEnemy = std::make_shared<Goomba>(data.x, data.y, m_ThemeAssets);
+    else if (data.enemyType == "Koopa")        newEnemy = std::make_shared<Koopa>(data.x, data.y, koopaVariant, m_ThemeAssets);
     else if (data.enemyType == "KoopaParatroopa") {
-        newEnemy = std::make_shared<KoopaParatroopa>(data.x, data.y, koopaVariant, flightMode, m_Level.theme);
+        newEnemy = std::make_shared<KoopaParatroopa>(data.x, data.y, koopaVariant, flightMode, m_ThemeAssets);
     }
     else if (data.enemyType == "PiranhaPlant") newEnemy = std::make_shared<PiranhaPlant>(data.x, data.y);
 
@@ -1081,25 +1082,25 @@ void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
     std::string spawnedType;
 
     if (itemType == "Coin") {
-        newItem = std::make_shared<CoinItem>(position, m_Level.theme);
+        newItem = std::make_shared<CoinItem>(position, m_ThemeAssets);
         spawnedType = "Coin";
         m_Session.AddCoin();
     } else if (itemType == "PowerUp" || itemType == "Mushroom") {
         if (m_Player.GetForm() == Player::Form::SMALL) {
-            newItem = std::make_shared<MushroomItem>(position, m_Level.theme);
+            newItem = std::make_shared<MushroomItem>(position, m_ThemeAssets);
             spawnedType = "Mushroom";
         } else {
-            newItem = std::make_shared<FireFlowerItem>(position, m_Level.theme);
+            newItem = std::make_shared<FireFlowerItem>(position, m_ThemeAssets);
             spawnedType = "FireFlower";
         }
     } else if (itemType == "FireFlower") {
-        newItem = std::make_shared<FireFlowerItem>(position, m_Level.theme);
+        newItem = std::make_shared<FireFlowerItem>(position, m_ThemeAssets);
         spawnedType = "FireFlower";
     } else if (itemType == "OneUp" || itemType == "1Up") {
-        newItem = std::make_shared<OneUpMushroomItem>(position, m_Level.theme);
+        newItem = std::make_shared<OneUpMushroomItem>(position, m_ThemeAssets);
         spawnedType = "OneUp";
     } else if (itemType == "Star" || itemType == "Starman") {
-        newItem = std::make_shared<StarmanItem>(position, m_Level.theme);
+        newItem = std::make_shared<StarmanItem>(position, m_ThemeAssets);
         spawnedType = "Star";
     }
 
@@ -1241,7 +1242,7 @@ void GameManager::SpawnBrickDebris(glm::vec2 position) {
     };
 
     for (std::size_t i = 0; i < offsets.size(); ++i) {
-        auto debris = std::make_shared<BrickDebris>(center + offsets[i], velocities[i], m_Level.theme);
+        auto debris = std::make_shared<BrickDebris>(center + offsets[i], velocities[i], m_ThemeAssets);
         m_BrickDebris.push_back(debris);
         m_Renderer.AddChild(debris);
     }
