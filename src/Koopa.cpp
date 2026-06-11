@@ -8,12 +8,12 @@
 #include "GameConstants.hpp"
 #include "Util/Logger.hpp"
 
-Koopa::Koopa(float startX, float startY, Variant variant) : m_Variant(variant) {
+Koopa::Koopa(float startX, float startY, Variant variant, const std::string& theme) : m_Variant(variant) {
     m_Position = {startX, startY - TILE_SIZE};
     m_Size     = {TILE_SIZE, TILE_SIZE * 2.0f};  // 世界尺寸：16x32
     m_Transform.scale = {GAME_SCALE, GAME_SCALE};
 
-    LoadSprites("ground");
+    LoadSprites(theme);
     UpdateDrawable();
 }
 

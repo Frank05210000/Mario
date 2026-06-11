@@ -47,7 +47,15 @@ void HUD::Init(Util::Renderer& renderer, const std::string& worldLabel) {
     m_ScoreText = std::make_shared<Util::Text>(kFontPath, kFontSize, "MARIO\n000000", kWhite);
     m_ScoreObj  = MakeTextObj(m_ScoreText, kScoreX, kTopY);
 
-    // 金幣區塊："×" + 金幣數
+    // 金幣區塊：先加金幣圖示，再是文字「×03」
+    // 金幣圖示位置在數字左側，稍微往上偏移對齊頂部
+    auto coinImage = std::make_shared<Util::Image>(MakeAssetPath("item/coin/coin-1.png"));
+    m_CoinImageObj = std::make_shared<Util::GameObject>(coinImage, 20.0f);
+    // 金幣圖示座標：在 kCoinX 左邊約 30px（世界座標 16px = 48px 螢幕座標）
+    m_CoinImageObj->m_Transform.translation = {kCoinX - 30.0f, kTopY + 5.0f};
+    m_CoinImageObj->m_Transform.scale = {2.0f, 2.0f};  // 小一點顯示
+    m_CoinImageObj->SetVisible(true);
+
     m_CoinText  = std::make_shared<Util::Text>(kFontPath, kFontSize, "x00", kWhite);
     m_CoinObj   = MakeTextObj(m_CoinText, kCoinX, kTopY);
 
@@ -60,7 +68,8 @@ void HUD::Init(Util::Renderer& renderer, const std::string& worldLabel) {
 
     // 全部加進渲染器
     renderer.AddChild(m_ScoreObj);
-    renderer.AddChild(m_CoinObj);
+    renderer.AddChild(m_CoinImageObj);  // 金幣圖示
+    renderer.AddChild(m_CoinObj);       // 金幣數字
     renderer.AddChild(m_WorldObj);
     renderer.AddChild(m_TimeObj);
 

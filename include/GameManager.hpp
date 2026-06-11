@@ -193,10 +193,17 @@ private:
     std::vector<std::shared_ptr<Fireball>> m_TmpFireballsToRemove;
 
     // ─── Combo 計分 ────────────────────────────────────────────────
-    // 踩踏連殺（單次跳躍）與殼滑行連殺共用同一組序列表與計數器
+    // 踩踏連殺（單次跳躍）
     int m_ComboCount = 0;   // 當前連殺次數（0 = 尚未觸發）
     // 根據 NES Mario 規則返回下一擊的分數，並推進 combo 計數
     int NextComboScore();
+
+    // 殼滑行連殺（獨立計數）
+    int m_ShellComboCount = 0;   // 當前殼連殺次數
+    // 返回殼連殺的下一擊分數，並推進殼 combo 計數
+    int NextShellComboScore();
+
+    // 重置踩踏 combo（落地時呼叫）
     void ResetCombo();
 
     // ─── 浮動得分彈出 ─────────────────────────────────────────────
