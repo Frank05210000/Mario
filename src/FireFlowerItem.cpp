@@ -41,9 +41,14 @@ void FireFlowerItem::Update(float deltaTime) {
 void FireFlowerItem::OnCollect(Player* player) {
     if (m_State != ItemState::Active) return;
 
-    LOG_INFO("FireFlower collected by Player!");
+    LOG_INFO("FireFlower collected by Player! (with transform animation)");
     m_State = ItemState::Collected;
-    
-    // 將瑪利歐型態改變為 FIRE
-    player->SetForm(Player::Form::FIRE);
+
+    // 啟動升級變身動畫（全場凍結 ~1 秒）
+    // 依原版行為：吃花時，SMALL → SUPER → FIRE 間所有變換都有動畫
+    // 簡化：若尚未是 FIRE，就觸發動畫（from = 當前, to = FIRE）
+    if (player->GetForm() != Player::Form::FIRE) {
+        player->StartTransformAnimation(player->GetForm(), Player::Form::FIRE);
+    }
+    // 已經是 FIRE 則不重播動畫，維持 FIRE 不變
 }
