@@ -72,8 +72,9 @@ private:
         LevelIntro,
         Playing,
         TimeUp,
-        LevelClearTransition,
-        GameOver,  // 命數歸零後顯示 GAME OVER 畫面約 3 秒再回標題
+        LevelClearTransition,  // 時間結算倒數（每幀扣時間、加分）
+        LevelClearPause,       // 結算完後停頓約 1 秒，再進下一關 intro
+        GameOver,              // 命數歸零後顯示 GAME OVER 畫面約 3 秒再回標題
     };
 
     /* 讀入關卡 JSON，建立背景圖與所有方塊
@@ -88,7 +89,9 @@ private:
     void EnterPlaying();
     void EnterTimeUp();
     void EnterGameOver();
-    void EnterLevelClearTransition();
+    void EnterLevelClearTransition();   // 進入時間結算倒數狀態
+    void EnterLevelClearPause();        // 進入結算後停頓狀態
+    void AdvanceToNextLevel();          // 推進到下一關（或回標題）
     void SelectInitialLevel(const std::string& levelName, const std::string& worldLabel);
     void BuildTitleOverlay();
     void BuildLevelIntroOverlay();
@@ -102,7 +105,8 @@ private:
     void UpdatePlaying(float dt);
     void UpdateTimeUp(float dt);
     void UpdateGameOver(float dt);
-    void UpdateLevelClearTransition(float dt);
+    void UpdateLevelClearTransition(float dt);  // 時間結算倒數
+    void UpdateLevelClearPause(float dt);        // 結算後停頓
     void DrawScene(bool updateHud);
     bool CheckPipeTransition();
     static std::string MakeLevelPath(const std::string& levelName);
@@ -181,8 +185,22 @@ private:
 
     bool  m_LevelCleared = false;          // 是否已觸碰旗杆（防止重複計分）
     bool  m_WaitingForTimeUpDeath = false; // 時間到後等待玩家死亡動畫播完再進 TimeUp
-    std::string m_SelectedInitialLevelName = "1-1";
+    std::string m_SelectedInitialLevelName = "1-1"; // 標題選關用（不影響遊戲中推進）
     std::string m_SelectedWorldLabel = "1-1";
+
+    // ─── 關卡鏈（Batch A）─────────────────────────────────────────────────
+    // 每個元素：{levelName, worldLabel}
+    // 最後一關過關後 AdvanceToNextLevel() 回標題
+    struct LevelEntry { std::string levelName; std::string worldLabel; };
+    static const std::vector<LevelEntry> kLevelChain;
+
+    // 目前正在遊玩的關卡在 kLevelChain 中的 index
+    // -1 代表尚未進入遊戲（標題畫面）
+    int m_CurrentLevelIndex = -1;
+
+    // 時間結算：每幀扣減剩餘時間並同步加分
+    // 用與 m_TimeRemaining 相同的欄位，但每幀一次扣一批
+    float m_CountdownAccum = 0.0f; // 累積時間，每秒扣一單位（NES 以幀率計算）
 
     // ─── 水管進出動畫緩衝變數 ───────────────────────────────────────────
     std::string m_PendingLevel;

@@ -11,6 +11,11 @@
  *
  * 計分邏輯：
  *   玩家碰到旗杆時，依接觸高度回傳不同分數（越高越多）。
+ *
+ * Batch A 新增：旗球下降動畫
+ *   觸碰旗杆後呼叫 StartDescent()，球從杆頂滑向杆底。
+ *   TODO: 目前 Resources/Asset/item/flag/ 只有 ball.png，沒有旗幟 flag sprite。
+ *         若後續取得 flag.png，可在此加入子 GameObject 同步下移。
  */
 class FlagBlock : public Block {
 public:
@@ -18,6 +23,7 @@ public:
 
     Type GetType() const override { return Type::Flag; }
     bool IsSolid() const override { return false; }
+    void Update(float dt) override;
     void Draw(const Camera& camera) override;
 
     /*
@@ -30,6 +36,20 @@ public:
      * ratio 越大代表碰得越高，分數越高。
      */
     int GetContactScore(float playerY) const;
+
+    /*
+     * 開始旗球下降動畫（由 GameManager::CheckFlagCollision 觸發）
+     */
+    void StartDescent();
+
+    bool IsDescending() const { return m_IsDescending; }
+
+private:
+    // ─── 旗球下降動畫狀態 ──────────────────────────────────────────
+    bool  m_IsDescending = false;  // 是否正在下降中
+    float m_BallOffsetY  = 0.0f;   // 球相對杆頂的 Y 偏移（世界像素，往下增加）
+    float m_BallTargetY  = 0.0f;   // 下降目標 Y（杆底）
+    static constexpr float DESCENT_SPEED = 80.0f; // 下降速度（世界像素/秒）
 };
 
 #endif
