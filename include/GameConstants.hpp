@@ -34,12 +34,25 @@ constexpr int FLAG_POLE_TILES = 10;
  */
 constexpr float GAME_SCALE = 3.0f;
 
-// ─── 物理 ─────────────────────────────────────────────────────
-/*
- * 重力加速度（像素/秒²）
- * 角色沒站在地上時，每秒速度增加這個值
- */
-constexpr float GRAVITY = 900.0f;
+// ─── 玩家物理：垂直（世界像素/秒；未乘 GAME_SCALE）────────────────
+constexpr float PLAYER_JUMP_VELOCITY      = 250.0f;  // 跳躍初速；全按住 ≈ 4.4 tiles
+constexpr float PLAYER_JUMP_RUN_BONUS     =  30.0f;  // 跑跳加成 → 280 ≈ 5.4 tiles
+constexpr float PLAYER_RUN_JUMP_THRESHOLD =  90.0f;  // |vx| 超過走路極速才吃 bonus
+constexpr float GRAVITY_RISE              = 450.0f;  // 上升中且按住跳：弱重力
+constexpr float GRAVITY_FALL              = 1250.0f; // 放開跳 或 vy>=0：強重力（2.78x）
+constexpr float MAX_FALL_SPEED            = 400.0f;  // 終端速度：400/30 ≈ 13.3px < 16
+
+// ─── 玩家物理：水平 ───────────────────────────────────────────────────────
+constexpr float PLAYER_MAX_WALK_SPEED     =  90.0f;  // 走路最高速（NES ≈ 93.75）
+constexpr float PLAYER_MAX_RUN_SPEED      = 160.0f;  // 奔跑最高速（NES ≈ 153.75；現值 175 偏滑）
+constexpr float PLAYER_ACCELERATION       = 200.0f;  // 水平加速度（沿用現值）
+constexpr float PLAYER_RUN_ACCEL_MULT     =   1.5f;  // 地面奔跑加速度倍率（沿用現有 *1.5 邏輯）
+constexpr float PLAYER_SKID_DECEL         = 400.0f;  // 轉向煞車（打滑，沿用現值）
+constexpr float PLAYER_FRICTION           = 200.0f;  // 放開方向鍵摩擦（沿用現值）
+
+// ─── 其他 ─────────────────────────────────────────────────────────────────
+constexpr float PLAYER_DEATH_BOUNCE       = 500.0f;  // 死亡上彈初速（取代 Player.cpp 硬編碼 -500）
+constexpr float ENEMY_GRAVITY             = 700.0f;  // 敵人/死亡動畫重力（沿用 Character 現值）
 
 /*
  * MAX_FRAME_DT：單幀可接受的最大秒數

@@ -74,6 +74,7 @@ set(INCLUDE_FILES
     StarmanItem.hpp
     TreePlatformBlock.hpp
     UsedOnHitBrickBlock.hpp
+    Util/ImagePath.hpp
     WallBlock.hpp
 )
 

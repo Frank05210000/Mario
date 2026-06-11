@@ -81,12 +81,22 @@ void Player::Update(float deltaTime) {
 
             // 1. 處理一般鍵盤輸入（更新速度 m_Velocity.x 與面朝方向）
             HandleInput(deltaTime);
-            
+
             // 2. 根據速度更新水平位置
             m_Position.x += m_Velocity.x * deltaTime;
 
-            // 3. 套用重力 (更新 m_Velocity.y 與 m_Position.y)
-            ApplyGravity(deltaTime);
+            // 3. 雙段重力：上升按住跳鍵用弱重力，放開或下降用強重力（防穿地終端速度 400）
+            if (!m_OnGround) {
+                bool jumpHeld = Util::Input::IsKeyPressed(Util::Keycode::SPACE)
+                             || Util::Input::IsKeyPressed(Util::Keycode::UP)
+                             || Util::Input::IsKeyPressed(Util::Keycode::W);
+                if (!jumpHeld && m_Velocity.y < 0.0f) m_JumpCut = true;  // 放開即鎖定強重力
+                float g = (m_Velocity.y < 0.0f && jumpHeld && !m_JumpCut)
+                              ? GRAVITY_RISE
+                              : GRAVITY_FALL;
+                m_Velocity.y = std::min(m_Velocity.y + g * deltaTime, MAX_FALL_SPEED);
+                m_Position.y += m_Velocity.y * deltaTime;
+            }
             break;
         }
 
@@ -100,7 +110,7 @@ void Player::Update(float deltaTime) {
             }
             // 階段 2：0.5 秒瞬間，給一個往上的死亡彈跳
             else if (m_DeathTimer >= 0.5f && m_DeathTimer < 0.55f && m_Velocity.y == 0.0f) {
-                m_Velocity.y = -500.0f;
+                m_Velocity.y = -PLAYER_DEATH_BOUNCE;
             }
             // 階段 3：之後套用重力，讓瑪利歐掉出畫面外
             else {
@@ -129,7 +139,7 @@ void Player::Update(float deltaTime) {
                     m_WalkTargetX = m_Position.x + 6.0f * TILE_SIZE;
                     
                     m_FacingLeft = false;
-                    m_Velocity.x = m_MaxWalkSpeed;
+                    m_Velocity.x = PLAYER_MAX_WALK_SPEED;
                 }
             } else if (m_IsWalkingToCastle) {
                 // 自動向右走
@@ -191,8 +201,26 @@ void Player::UpdateStarInvincibility(float deltaTime) {
     if (m_StarTimer <= 0.0f) return;
 
     m_StarTimer -= deltaTime;
-    if (m_StarTimer < 0.0f) {
+    if (m_StarTimer <= 0.0f) {
         m_StarTimer = 0.0f;
+        // 星星效果結束：確保玩家可見（只在非受傷閃爍時才強制設回 visible）
+        if (!IsDamageInvincible()) {
+            SetVisible(true);
+        }
+        m_StarBlinkTimer = 0.0f;
+        return;
+    }
+
+    // 只有星星有效且玩家不在受傷閃爍狀態時才執行星星閃爍
+    // （兩者都有時，受傷閃爍優先，避免衝突）
+    if (IsDamageInvincible()) return;
+
+    constexpr float STAR_BLINK_INTERVAL = 0.06f;
+    m_StarBlinkTimer += deltaTime;
+    if (m_StarBlinkTimer >= STAR_BLINK_INTERVAL) {
+        m_StarBlinkTimer = 0.0f;
+        m_StarBlinkVisible = !m_StarBlinkVisible;
+        SetVisible(m_StarBlinkVisible);
     }
 }
 
@@ -303,65 +331,77 @@ void Player::HandleInput(float deltaTime) {
     bool pressingRight = Util::Input::IsKeyPressed(Util::Keycode::RIGHT) || Util::Input::IsKeyPressed(Util::Keycode::D);
     bool holdingRun = Util::Input::IsKeyPressed(Util::Keycode::Z);
 
-    // 空中不能靠跑鍵加速，只有在地上才允許切換極速
+    // 空中保留慣性（取現有絕對速度與走速中較大者）；地面依跑鍵切換上限
     float maxSpeed;
     if (m_OnGround) {
-        maxSpeed = holdingRun ? m_MaxRunSpeed : m_MaxWalkSpeed;
+        maxSpeed = holdingRun ? PLAYER_MAX_RUN_SPEED : PLAYER_MAX_WALK_SPEED;
     } else {
-        // 空中：極速維持起跳時的慣性（取現有絕對速度與走速中較大者）
-        maxSpeed = std::max(std::abs(m_Velocity.x), m_MaxWalkSpeed);
+        // 空中：極速維持起跳時的慣性，不得用加速超過此值
+        maxSpeed = std::max(std::abs(m_Velocity.x), PLAYER_MAX_WALK_SPEED);
     }
 
     m_IsSkidding = false; // 每幀重置，若達成條件再設為 true
 
     if (pressingLeft && !pressingRight) {
         m_FacingLeft = true;
-        // 如果現在正在往右走（速度 > 0），套用更大的煞車加速度 (打滑)
-        if (m_Velocity.x > 0.0f) {
-            m_Velocity.x -= m_SkidAcceleration * deltaTime;
+        // 地面：往右走時套用打滑煞車；空中：直接加速（無打滑）
+        if (m_OnGround && m_Velocity.x > 0.0f) {
+            m_Velocity.x -= PLAYER_SKID_DECEL * deltaTime;
             // 只有在具備一定速度時反向才顯示打滑圖片
-            if (m_Velocity.x > m_MaxWalkSpeed * 0.5f) {
+            if (m_Velocity.x > PLAYER_MAX_WALK_SPEED * 0.5f) {
                 m_IsSkidding = true;
             }
         } else {
-            const float accel = (m_OnGround && holdingRun) ? m_Acceleration * 1.5f : m_Acceleration;
+            const float accel = (m_OnGround && holdingRun)
+                                    ? PLAYER_ACCELERATION * PLAYER_RUN_ACCEL_MULT
+                                    : PLAYER_ACCELERATION;
             if (m_Velocity.x > -maxSpeed) {
                 m_Velocity.x = std::max(m_Velocity.x - accel * deltaTime, -maxSpeed);
             }
         }
     } else if (pressingRight && !pressingLeft) {
         m_FacingLeft = false;
-        // 如果現在正在往左走（速度 < 0），套用更大的煞車加速度 (打滑)
-        if (m_Velocity.x < 0.0f) {
-            m_Velocity.x += m_SkidAcceleration * deltaTime;
-            if (m_Velocity.x < -m_MaxWalkSpeed * 0.5f) {
+        // 地面：往左走時套用打滑煞車；空中：直接加速（無打滑）
+        if (m_OnGround && m_Velocity.x < 0.0f) {
+            m_Velocity.x += PLAYER_SKID_DECEL * deltaTime;
+            if (m_Velocity.x < -PLAYER_MAX_WALK_SPEED * 0.5f) {
                 m_IsSkidding = true;
             }
         } else {
-            const float accel = (m_OnGround && holdingRun) ? m_Acceleration * 1.5f : m_Acceleration;
+            const float accel = (m_OnGround && holdingRun)
+                                    ? PLAYER_ACCELERATION * PLAYER_RUN_ACCEL_MULT
+                                    : PLAYER_ACCELERATION;
             if (m_Velocity.x < maxSpeed) {
                 m_Velocity.x = std::min(m_Velocity.x + accel * deltaTime, maxSpeed);
             }
         }
     } else {
-        // 沒有按方向鍵，套用摩擦力減速
-        if (m_Velocity.x > 0.0f) {
-            m_Velocity.x -= m_Friction * deltaTime;
-            if (m_Velocity.x < 0.0f) m_Velocity.x = 0.0f; // 完全停止
-        } else if (m_Velocity.x < 0.0f) {
-            m_Velocity.x += m_Friction * deltaTime;
-            if (m_Velocity.x > 0.0f) m_Velocity.x = 0.0f; // 完全停止
+        // 沒有按方向鍵：地面套用摩擦力，空中保留慣性（vx 不衰減）
+        if (m_OnGround) {
+            if (m_Velocity.x > 0.0f) {
+                m_Velocity.x -= PLAYER_FRICTION * deltaTime;
+                if (m_Velocity.x < 0.0f) m_Velocity.x = 0.0f;
+            } else if (m_Velocity.x < 0.0f) {
+                m_Velocity.x += PLAYER_FRICTION * deltaTime;
+                if (m_Velocity.x > 0.0f) m_Velocity.x = 0.0f;
+            }
         }
     }
 
-    // 限制最高速度 (Clamp)
+    // 限制最高速度（地面超速時慢慢衰減，空中不套摩擦）
     if (m_Velocity.x > maxSpeed) {
-        // 如果超過最高速度（例如剛放開跑鍵），讓他慢慢減速而不是瞬間掉速
-        m_Velocity.x -= m_Friction * deltaTime;
-        if (m_Velocity.x < maxSpeed) m_Velocity.x = maxSpeed;
+        if (m_OnGround) {
+            m_Velocity.x -= PLAYER_FRICTION * deltaTime;
+            if (m_Velocity.x < maxSpeed) m_Velocity.x = maxSpeed;
+        } else {
+            // 空中超速（放開跑鍵後）：直接夾到上限，保持慣性
+            // maxSpeed 已是 std::max(|vx|, walk)，不會夾掉合法的跑速
+        }
     } else if (m_Velocity.x < -maxSpeed) {
-        m_Velocity.x += m_Friction * deltaTime;
-        if (m_Velocity.x > -maxSpeed) m_Velocity.x = -maxSpeed;
+        if (m_OnGround) {
+            m_Velocity.x += PLAYER_FRICTION * deltaTime;
+            if (m_Velocity.x > -maxSpeed) m_Velocity.x = -maxSpeed;
+        }
     }
 
     // 根據目前的絕對速度判斷是否真的有在移動 (給動畫播放判斷用)
@@ -382,7 +422,11 @@ void Player::HandleInput(float deltaTime) {
 }
 
 void Player::Jump() {
-    m_Velocity.y = -m_JumpStrength;
+    float launch = PLAYER_JUMP_VELOCITY;                              // 250
+    if (std::abs(m_Velocity.x) > PLAYER_RUN_JUMP_THRESHOLD)          // |vx| > 90
+        launch += PLAYER_JUMP_RUN_BONUS;                              // +30 → 280
+    m_Velocity.y = -launch;
+    m_JumpCut = false;
     m_OnGround = false;
 }
 
@@ -399,6 +443,7 @@ void Player::SetSpawnPosition(glm::vec2 position) {
 void Player::ResetTransientState() {
     m_Velocity = {0.0f, 0.0f};
     m_OnGround = false;
+    m_JumpCut = false;
     m_IsMoving = false;
     m_IsSkidding = false;
     m_FacingLeft = false;
@@ -419,9 +464,10 @@ void Player::ResetTransientState() {
 }
 
 void Player::ClampToCameraBounds(float cameraX) {
-    // 不讓 Mario 跑到鏡頭左邊
+    // 碰撞盒左緣不得超出鏡頭左界，殺掉殘留左速度避免抵牆抖動
     if (m_Position.x < cameraX) {
         m_Position.x = cameraX;
+        if (m_Velocity.x < 0.0f) m_Velocity.x = 0.0f;
     }
 }
 
@@ -460,6 +506,8 @@ void Player::StartDamageInvincibility(float duration) {
 void Player::ActivateStarInvincibility(float duration) {
     if (duration <= 0.0f || m_State == State::Dying || m_State == State::LevelClear) return;
     m_StarTimer = duration;
+    m_StarBlinkTimer = 0.0f;
+    m_StarBlinkVisible = true;
     SetVisible(true);
     LOG_INFO("Player star invincibility activated for {} seconds.", duration);
 }

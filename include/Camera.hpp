@@ -1,6 +1,7 @@
 #ifndef CAMERA_HPP
 #define CAMERA_HPP
 
+#include <algorithm>
 #include <glm/vec2.hpp>
 
 /*
@@ -43,6 +44,9 @@ public:
 
     // 重設鏡頭到關卡起點（關卡開始或重新啟動時呼叫）
     void Reset() { m_X = 0.0f; }
+
+    // 直接定位鏡頭（傳送/重生後使用，跳過棘輪邏輯）
+    void SetX(float x) { m_X = std::max(0.0f, x); }
 
 private:
     float m_X = 0.0f;  // 鏡頭左邊界的世界座標

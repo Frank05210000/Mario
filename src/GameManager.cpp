@@ -34,6 +34,71 @@
 // runtime 關卡 JSON 統一放在 Resources/data/
 static const std::string kDefaultInitialLevelName = "1-1";
 
+// ─── Combo 分數序列（NES Mario 踩踏 / 殼連殺）────────────────────────────
+// 第 n 次連殺的分值：100, 200, 400, 500, 800, 1000, 2000, 4000, 5000, 1UP...
+static const std::array<int, 9> kComboScores = {
+    100, 200, 400, 500, 800, 1000, 2000, 4000, 5000
+};
+
+// 返回當前 combo 計數對應的分數，-1 表示 1UP（額外命）
+// 同時將 m_ComboCount 向前推進一步
+int GameManager::NextComboScore() {
+    int idx = m_ComboCount;
+    ++m_ComboCount;
+    if (idx < static_cast<int>(kComboScores.size())) {
+        return kComboScores[idx];
+    }
+    return -1; // 1UP
+}
+
+void GameManager::ResetCombo() {
+    m_ComboCount = 0;
+}
+
+// ─── 浮動得分彈出 ─────────────────────────────────────────────────────────
+void GameManager::SpawnScorePopup(int score, glm::vec2 worldPos) {
+    const std::string fontPath = MakeAssetPath("font/Super Mario Bros. NES.ttf");
+    std::string label = (score < 0) ? "1UP" : std::to_string(score);
+
+    auto text = std::make_shared<Util::Text>(
+        fontPath, 12, label, Util::Color(255, 255, 255));
+
+    auto obj = std::make_shared<Util::GameObject>(text, 25.0f);
+    obj->m_Transform.translation = m_Camera.WorldToScreen(worldPos);
+    obj->SetVisible(true);
+
+    m_Renderer.AddChild(obj);
+
+    ScorePopup popup;
+    popup.obj      = obj;
+    popup.worldPos = worldPos;
+    popup.timer    = 0.0f;
+    popup.totalLife = 0.8f;
+    m_ScorePopups.push_back(std::move(popup));
+}
+
+void GameManager::UpdateScorePopups(float dt) {
+    constexpr float RISE_SPEED = 30.0f; // 世界像素 / 秒，往上漂移
+
+    for (auto& p : m_ScorePopups) {
+        p.timer += dt;
+        // 往上漂移（世界座標 Y 減少 = 向上）
+        p.worldPos.y -= RISE_SPEED * dt;
+        // 每幀以世界座標換算螢幕座標
+        p.obj->m_Transform.translation = m_Camera.WorldToScreen(p.worldPos);
+
+        if (p.timer >= p.totalLife) {
+            p.obj->SetVisible(false);
+        }
+    }
+
+    // 移除已結束的彈出
+    m_ScorePopups.erase(
+        std::remove_if(m_ScorePopups.begin(), m_ScorePopups.end(),
+                       [](const ScorePopup& p) { return p.timer >= p.totalLife; }),
+        m_ScorePopups.end());
+}
+
 namespace {
 glm::vec2 GetPipeSize(const std::string& opening, int segments) {
     const float clampedSegments = static_cast<float>(std::max(1, segments));
@@ -148,11 +213,26 @@ void GameManager::UpdatePlaying(float dt) {
 
     // 如果瑪利歐正在播放死亡動畫，停止更新世界其他物件（凍結畫面）
     if (!m_Player.IsDying()) {
-        for (auto& enemy : m_Enemies) enemy->Update(dt);
+        const float playerX = m_Player.GetPosition().x + m_Player.GetSize().x * 0.5f;
+        for (auto& enemy : m_Enemies) {
+            // 翻轉死亡中的 Koopa 仍需要更新物理（飛出畫面）
+            auto* koopa = dynamic_cast<Koopa*>(enemy.get());
+            if (koopa && koopa->IsDying()) {
+                koopa->Update(dt);
+                continue;
+            }
+            // 食人花：每幀同步玩家 X 座標
+            auto* piranha = dynamic_cast<PiranhaPlant*>(enemy.get());
+            if (piranha) {
+                piranha->SetPlayerX(playerX);
+            }
+            enemy->Update(dt);
+        }
         for (auto& block : m_Blocks)  block->Update(dt);
         for (auto& item : m_Items)    item->Update(dt);
         for (auto& fireball : m_Fireballs) fireball->Update(dt);
         for (auto& debris : m_BrickDebris) debris->Update(dt);
+        UpdateScorePopups(dt);
 
         m_BrickDebris.erase(
             std::remove_if(m_BrickDebris.begin(), m_BrickDebris.end(),
@@ -186,9 +266,13 @@ void GameManager::UpdatePlaying(float dt) {
             CheckItemBlockCollision();
             CheckItemCollision();
             CheckStompCollision();
+            CheckShellEnemyCollision();
             CheckFireballCollision();
             CheckFlagCollision();
         }
+
+        // 4. 玩家左界夾制：確保玩家不會走到鏡頭左邊界之外（棘輪規則的配套）
+        m_Player.ClampToCameraBounds(m_Camera.GetX());
     }
 
     // ─── 虛空掉落判定 (Kill Z) ───
@@ -282,12 +366,14 @@ void GameManager::ResetSceneObjects() {
     m_Fireballs.clear();
     m_BrickDebris.clear();
     m_OverlayObjects.clear();
+    m_ScorePopups.clear();
     // 效能優化：清空複用的暫存容器（不釋放已分配的 capacity）
     m_TmpBlocksToRemove.clear();
     m_TmpItemsToRemove.clear();
     m_TmpFireballsToRemove.clear();
     m_Background.reset();
     m_Renderer = Util::Renderer();
+    ResetCombo();
 }
 
 void GameManager::StartNewGame() {
@@ -307,7 +393,12 @@ void GameManager::EnterLevelIntro() {
 
     LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
     ApplyPlayerProgress();
-    m_Camera.Update(m_Player.GetPosition().x, static_cast<float>(m_Level.levelWidth));
+    {
+        const float lvW = static_cast<float>(m_Level.levelWidth);
+        m_Camera.SetX(std::clamp(
+            m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
+            0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
+    }
     BuildScene();
     m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
     const auto& progress = m_Session.CurrentPlayer();
@@ -327,7 +418,12 @@ void GameManager::EnterPlaying() {
 
     LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
     ApplyPlayerProgress();
-    m_Camera.Update(m_Player.GetPosition().x, static_cast<float>(m_Level.levelWidth));
+    {
+        const float lvW = static_cast<float>(m_Level.levelWidth);
+        m_Camera.SetX(std::clamp(
+            m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
+            0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
+    }
     BuildScene();
     m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
 
@@ -343,7 +439,12 @@ void GameManager::EnterTitleScreen() {
     m_Player.ResetForNewGame();
 
     LoadLevel(MakeLevelPath(m_SelectedInitialLevelName.empty() ? kDefaultInitialLevelName : m_SelectedInitialLevelName));
-    m_Camera.Update(m_Player.GetPosition().x, static_cast<float>(m_Level.levelWidth));
+    {
+        const float lvW = static_cast<float>(m_Level.levelWidth);
+        m_Camera.SetX(std::clamp(
+            m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
+            0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
+    }
     BuildScene();
     BuildTitleOverlay();
 
@@ -362,7 +463,12 @@ void GameManager::SelectInitialLevel(const std::string& levelName, const std::st
     ResetSceneObjects();
     m_Player.ResetForNewGame();
     LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
-    m_Camera.Update(m_Player.GetPosition().x, static_cast<float>(m_Level.levelWidth));
+    {
+        const float lvW = static_cast<float>(m_Level.levelWidth);
+        m_Camera.SetX(std::clamp(
+            m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
+            0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
+    }
     BuildScene();
     BuildTitleOverlay();
     m_FlowState = FlowState::Title;
@@ -613,6 +719,12 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
         LOG_INFO("Player spawn override applied: {}", m_Player.GetPosition());
     }
 
+    {
+        const float lvW = static_cast<float>(m_Level.levelWidth);
+        m_Camera.SetX(std::clamp(
+            m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
+            0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
+    }
     BuildScene();
     m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
 
@@ -732,6 +844,11 @@ void GameManager::CheckStompCollision() {
     const glm::vec2 pPrev = m_Player.GetPreviousPosition();
     const glm::vec2 pVel  = m_Player.GetVelocity();
 
+    // 玩家落地時重置踩踏連殺 combo
+    if (m_Player.IsOnGround()) {
+        ResetCombo();
+    }
+
     for (auto& enemy : m_Enemies) {
         if (!enemy->IsAlive()) continue;
 
@@ -742,12 +859,33 @@ void GameManager::CheckStompCollision() {
         if (!CollisionUtils::CheckAABB(pPos, pSize, ePos, eSize)) continue;
 
         if (m_Player.IsStarInvincible()) {
-            enemy->SetAlive(false);
-            enemy->SetVisible(false);
-            m_Session.AddScore(200);
+            // 星星無敵：觸發翻轉死亡（使用 combo 計分）
+            auto* koopa = dynamic_cast<Koopa*>(enemy.get());
+            if (koopa) {
+                const bool flipLeft = (enemy->GetPosition().x + enemy->GetSize().x * 0.5f) >=
+                                      (m_Player.GetPosition().x + m_Player.GetSize().x * 0.5f);
+                koopa->Die(flipLeft);
+            } else {
+                enemy->SetAlive(false);
+                enemy->SetVisible(false);
+            }
+            {
+                const int pts = NextComboScore();
+                if (pts < 0) {
+                    m_Session.AddLife();
+                    SpawnScorePopup(-1, ePos);
+                } else {
+                    m_Session.AddScore(pts);
+                    SpawnScorePopup(pts, ePos);
+                }
+            }
             LOG_INFO("Star invincibility defeated enemy.");
             continue;
         }
+
+        // ── 判斷是否為壓扁中的 Goomba（不具傷害性）──
+        auto* goomba = dynamic_cast<Goomba*>(enemy.get());
+        if (goomba && goomba->IsSquashed()) continue;
 
         // ── 判斷是否為靜止的龜殼 ──
         auto* koopa = dynamic_cast<Koopa*>(enemy.get());
@@ -764,17 +902,27 @@ void GameManager::CheckStompCollision() {
             playerBottom <= enemyTop + 12.0f;
 
         if (fallingOntoEnemy && !isPiranha) {
-            // TODO研究程式碼
             if (isStationaryShell) {
-                // 從上方踩到縮殼中的龜 → 踢殼！
+                // 從上方踩到縮殼中的龜 → 踢殼！（踢殼算 400 分，不進 combo）
                 const bool playerIsLeftOfShell =
                     (pPos.x + pSize.x * 0.5f) < (ePos.x + eSize.x * 0.5f);
                 const bool kickLeft = !playerIsLeftOfShell;
                 koopa->Kick(kickLeft);
+                m_Session.AddScore(400);
+                SpawnScorePopup(400, ePos);
                 LOG_INFO("Koopa shell kicked {} from top!", kickLeft ? "left" : "right");
             } else {
-                // 一般踩踏（包含首次踩到正常行走的龜）
+                // 一般踩踏（包含首次踩到正常行走的龜）— combo 計分
                 enemy->Stomp();
+                const int pts = NextComboScore();
+                if (pts < 0) {
+                    m_Session.AddLife();
+                    SpawnScorePopup(-1, ePos);
+                } else {
+                    m_Session.AddScore(pts);
+                    SpawnScorePopup(pts, ePos);
+                }
+                LOG_INFO("Stomp! combo={} score={}", m_ComboCount, pts);
             }
 
             // 踩踏後給玩家一個小彈跳
@@ -784,11 +932,13 @@ void GameManager::CheckStompCollision() {
         } else {
             // ── 側碰 / 從下方衝入 ──
             if (isStationaryShell) {
-                // 從側面碰到靜止的龜殼 → 直接踢飛，且不會有往上的彈跳！
+                // 從側面碰到靜止的龜殼 → 直接踢飛（400 分），且不會有往上的彈跳！
                 const bool playerIsLeftOfShell =
                     (pPos.x + pSize.x * 0.5f) < (ePos.x + eSize.x * 0.5f);
                 const bool kickLeft = !playerIsLeftOfShell;
                 koopa->Kick(kickLeft);
+                m_Session.AddScore(400);
+                SpawnScorePopup(400, ePos);
                 LOG_INFO("Koopa shell kicked {} from side!", kickLeft ? "left" : "right");
             } else {
                 // 碰到有殺傷力的敵人：玩家受傷降級
@@ -804,6 +954,52 @@ void GameManager::CheckStompCollision() {
     }
 }
 
+
+// ─── CheckShellEnemyCollision ─────────────────────────────────────────────
+// 掃描所有正在滑行的 Koopa 殼，判斷是否與其他存活的敵人重疊。
+// 重疊則直接消滅被撞到的敵人，並使用連殺 combo 計分。
+void GameManager::CheckShellEnemyCollision() {
+    for (auto& shellEnemy : m_Enemies) {
+        if (!shellEnemy->IsAlive()) continue;
+
+        auto* koopa = dynamic_cast<Koopa*>(shellEnemy.get());
+        if (!koopa || !koopa->IsSliding()) continue;  // 只有滑行中的殼才能傷到敵人
+
+        const glm::vec2 sPos  = koopa->GetPosition();
+        const glm::vec2 sSize = koopa->GetSize();
+
+        for (auto& target : m_Enemies) {
+            if (target.get() == shellEnemy.get()) continue;  // 不撞自己
+            if (!target->IsAlive()) continue;
+
+            const glm::vec2 tPos  = target->GetPosition();
+            const glm::vec2 tSize = target->GetSize();
+
+            if (CollisionUtils::CheckAABB(sPos, sSize, tPos, tSize)) {
+                // 殼命中 Koopa 系列：觸發翻轉死亡
+                auto* targetKoopa = dynamic_cast<Koopa*>(target.get());
+                if (targetKoopa) {
+                    const bool flipLeft = koopa->GetVelocity().x < 0.0f;
+                    targetKoopa->Die(flipLeft);
+                } else {
+                    target->SetAlive(false);
+                    target->SetVisible(false);
+                }
+                // 殼連殺使用 combo 計分
+                const int pts = NextComboScore();
+                if (pts < 0) {
+                    m_Session.AddLife();
+                    SpawnScorePopup(-1, tPos);
+                } else {
+                    m_Session.AddScore(pts);
+                    SpawnScorePopup(pts, tPos);
+                }
+                LOG_INFO("Shell killed enemy: combo={} score={} shellPos={} targetPos={}",
+                         m_ComboCount, pts, sPos, tPos);
+            }
+        }
+    }
+}
 
 // ─── CheckBlockCollision ──────────────────────────────────────────────────
 void GameManager::CheckBlockCollision() {
@@ -841,7 +1037,12 @@ void GameManager::CheckBlockCollision() {
         const float previousTop = pPrev.y;
 
         for (const auto& block : m_Blocks) {
-            if (!block->IsSolid()) continue;
+            // HiddenBlock 揭露前 IsSolid() == false，但往上頂碰時仍需觸發 OnHit（揭露效果）。
+            // 因此對未揭露的 HiddenBlock 也要進入 Pass 1 掃描；Pass 2 因 IsSolid() == false
+            // 會跳過它，所以揭露前不會阻擋玩家走路或站立。
+            const auto* hiddenBlk = dynamic_cast<const HiddenBlock*>(block.get());
+            const bool isUnrevealedHidden = hiddenBlk && !hiddenBlk->IsRevealed();
+            if (!block->IsSolid() && !isUnrevealedHidden) continue;
 
             const glm::vec2 bPos  = block->GetPosition();
             const glm::vec2 bSize = block->GetSize();
@@ -888,10 +1089,60 @@ void GameManager::CheckBlockCollision() {
             SpawnBrickDebris(bPos);
             hitBelowBlock->SetVisible(false);
             m_TmpBlocksToRemove.push_back(hitBelowBlock);
+            // 磚塊打破得 50 分
+            m_Session.AddScore(50);
+            SpawnScorePopup(50, bPos);
         }
 
         if (hitRes.spawnItem != "None") {
             SpawnItem(hitRes.spawnItem, bPos);
+        }
+
+        // ── 頂磚效果：消滅方塊正上方的敵人，踢飛正上方的道具 ──────────
+        // 判定範圍：敵人/道具底部距方塊頂部 ±BUMP_ABOVE_TOL 像素內，
+        // 且水平中心在方塊左右邊界以內（含半格緩衝）。
+        constexpr float BUMP_ABOVE_TOL  = 4.0f;   // 距方塊頂部的垂直容忍
+        constexpr float BUMP_ITEM_KICK  = -200.0f; // 道具被踢飛的上拋初速
+
+        const float blockTopY   = bPos.y;
+        const float blockLeft   = bPos.x;
+        const float blockRight  = bPos.x + bSize.x;
+
+        for (auto& enemy : m_Enemies) {
+            if (!enemy->IsAlive()) continue;
+
+            const glm::vec2 ePos  = enemy->GetPosition();
+            const glm::vec2 eSize = enemy->GetSize();
+
+            const float enemyBottom  = ePos.y + eSize.y;
+            const float enemyCenterX = ePos.x + eSize.x * 0.5f;
+
+            // 底部接近方塊頂面，且水平有重疊
+            if (std::abs(enemyBottom - blockTopY) <= BUMP_ABOVE_TOL &&
+                enemyCenterX >= blockLeft && enemyCenterX <= blockRight) {
+                // 踩踏式消滅（效果等同被從上方踩）
+                enemy->Stomp();
+                LOG_INFO("Bump-block killed enemy above block at ({}, {})", bPos.x, bPos.y);
+            }
+        }
+
+        for (auto& item : m_Items) {
+            if (item->GetState() != ItemState::Active) continue;
+
+            const glm::vec2 iPos  = item->GetPosition();
+            const glm::vec2 iSize = item->GetSize();
+
+            const float itemBottom  = iPos.y + iSize.y;
+            const float itemCenterX = iPos.x + iSize.x * 0.5f;
+
+            if (std::abs(itemBottom - blockTopY) <= BUMP_ABOVE_TOL &&
+                itemCenterX >= blockLeft && itemCenterX <= blockRight) {
+                // 給道具一個向上的速度踢飛
+                glm::vec2 iVel = item->GetVelocity();
+                iVel.y = BUMP_ITEM_KICK;
+                item->SetVelocity(iVel);
+                LOG_INFO("Bump-block kicked item above block at ({}, {})", bPos.x, bPos.y);
+            }
         }
     }
 
@@ -922,17 +1173,24 @@ void GameManager::CheckBlockCollision() {
         const float overlapX       = std::max(0.0f, overlapRight - overlapLeft);
         const float blockTop       = bPos.y;
 
+        // 修復（快速下落著地）：讓容忍值隨下落速度自適應。
+        // 高速下落時玩家一幀穿過的距離可能超過固定的 SURFACE_TOLERANCE，
+        // 改用 max(固定值, |vy|*dt + 小緩衝) 確保都能被正確接住。
+        // dt 固定用 MAX_FRAME_DT 的上界防止超大值；+2 是最小緩衝。
+        const float adaptiveTol = std::max(SURFACE_TOLERANCE,
+                                           std::abs(pVel.y) * MAX_FRAME_DT + 2.0f);
         const bool landedFromAbove =
             pVel.y >= 0.0f &&
-            previousBottom <= blockTop + SURFACE_TOLERANCE &&
+            previousBottom <= blockTop + adaptiveTol &&
             currentBottom >= blockTop;
 
         // Bug 2 修復：standingOverlap 加入 penY < penX 條件，
         // 確保 Y 軸穿透比 X 軸小才視為從上方著地，
         // 避免快速水平移動側碰地板被誤判為落地而「被拉上去」。
+        // 修復（擴充）：原本只涵蓋 Ground，現在擴充到所有 solid 方塊，
+        // 確保玩家站在磚塊、問號磚、牆壁等方塊頂部也能正確落地。
         const bool standingOverlap =
             pVel.y >= 0.0f &&
-            block->GetType() == Block::Type::Ground &&
             dy < 0.0f &&
             penY < penX &&
             penY <= TILE_SIZE + 4.0f &&
@@ -1073,6 +1331,8 @@ void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
         newItem = std::make_shared<CoinItem>(position);
         spawnedType = "Coin";
         m_Session.AddCoin();
+        m_Session.AddScore(200);
+        SpawnScorePopup(200, position);
     } else if (itemType == "PowerUp" || itemType == "Mushroom") {
         if (m_Player.GetForm() == Player::Form::SMALL) {
             newItem = std::make_shared<MushroomItem>(position);
@@ -1127,10 +1387,13 @@ void GameManager::CheckItemCollision() {
                     if (itemType == "LevelCoin") {
                         m_Session.AddCoin();
                         m_Session.AddScore(200);
+                        SpawnScorePopup(200, iPos);
                     } else if (itemType == "OneUp") {
                         m_Session.AddLife();
+                        SpawnScorePopup(-1, iPos); // -1 = "1UP"
                     } else if (itemType == "Mushroom" || itemType == "FireFlower" || itemType == "Star") {
                         m_Session.AddScore(1000);
+                        SpawnScorePopup(1000, iPos);
                     }
                 }
             }
@@ -1293,13 +1556,29 @@ void GameManager::CheckFireballCollision() {
         // 2. 與敵人的碰撞
         for (auto& enemy : m_Enemies) {
             if (!enemy->IsAlive()) continue;
+
+            // 食人花隱藏中不受火球傷害（由 PiranhaPlant::IsHidden() 保護）
+            auto* piranha = dynamic_cast<PiranhaPlant*>(enemy.get());
+            if (piranha && piranha->IsHidden()) continue;
+
             if (CollisionUtils::CheckAABB(fPos, fSize, enemy->GetPosition(), enemy->GetSize())) {
-                enemy->SetAlive(false);
-                enemy->SetVisible(false);
+                const glm::vec2 ePos = enemy->GetPosition();
+                // Koopa 系列：觸發翻轉死亡，得 200 分；其他敵人（Goomba 等）得 100 分
+                auto* koopa = dynamic_cast<Koopa*>(enemy.get());
+                const bool isKoopa = (koopa != nullptr);
+                if (koopa) {
+                    const bool flipLeft = fVel.x < 0.0f; // 火球飛行方向決定翻轉朝向
+                    koopa->Die(flipLeft);
+                } else {
+                    enemy->SetAlive(false);
+                    enemy->SetVisible(false);
+                }
+                const int pts = isKoopa ? 200 : 100;
+                m_Session.AddScore(pts);
+                SpawnScorePopup(pts, ePos);
                 fireball->Explode();
-                LOG_INFO("Fireball defeated enemy: fireballPos={} enemyPos={}",
-                         fPos,
-                         enemy->GetPosition());
+                LOG_INFO("Fireball defeated enemy: score={} fireballPos={} enemyPos={}",
+                         pts, fPos, ePos);
                 break;
             }
         }

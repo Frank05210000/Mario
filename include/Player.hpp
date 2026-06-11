@@ -137,15 +137,10 @@ private:
 
     // ─── Player 專屬屬性 ───────────────────────────────────────────
 
-    // ─── 物理與移動設定 ───────────────────────────────────────────
-    float m_MaxWalkSpeed     =  87.5f; // 一般走路最高水平速度（原版 NES ≈ 1.5 tiles/s × 16 × 3 ≈ 72，含餘裕取 87.5）
-    float m_MaxRunSpeed      = 175.0f; // 跑步最高水平速度（原版 NES ≈ 3 tiles/s × 16 × 3 ≈ 144，取 175）
-    float m_Acceleration     = 200.0f; // 水平加速度（原本 400 偏快，減半）
-    float m_SkidAcceleration = 400.0f; // 轉向時的強大煞車力道 (打滑)（原本 800，減半）
-    float m_Friction         = 200.0f; // 放開方向鍵時的摩擦力減速（原本 400，減半）
-    float m_JumpStrength     = 320.0f; // 跳躍初速度（原本 550 跳太高，調低後約 4 tiles 高度）
+    // ─── 物理與移動設定（速度常數見 GameConstants.hpp）─────────────
     glm::vec2 m_PreviousPosition = {0.0f, 0.0f};
     bool  m_OnGround         = false;  // 是否站在地上
+    bool  m_JumpCut          = false;  // 跳躍中途放開跳鍵後鎖定為強重力
 
     bool  m_ShootRequested = false; // 是否要求發射火球
     float m_ShootingTimer  = 0.0f;  // 發射姿勢維持時間
@@ -158,6 +153,8 @@ private:
     float m_DamageBlinkTimer = 0.0f;
     bool  m_DamageBlinkVisible = true;
     float m_StarTimer = 0.0f;
+    float m_StarBlinkTimer = 0.0f;   // 星星閃爍計時器
+    bool  m_StarBlinkVisible = true; // 星星閃爍時的顯示狀態
 
     Form m_Form = Form::SMALL;     // 預設小馬力歐
     // ─── 動畫資源（三套形態，right 方向；Draw() 裡用 scaleX 翻轉） ──
