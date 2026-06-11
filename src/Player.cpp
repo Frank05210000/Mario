@@ -214,6 +214,7 @@ void Player::UpdateStarInvincibility(float deltaTime) {
             SetVisible(true);
         }
         m_StarBlinkTimer = 0.0f;
+        m_StarEndedEventPending = true; // 通知 AudioManager 切回關卡 BGM
         return;
     }
 
@@ -496,6 +497,7 @@ void Player::Jump() {
     m_Velocity.y = -launch;
     m_JumpCut = false;
     m_OnGround = false;
+    m_JumpEventPending = true; // 通知 AudioManager 播跳躍音效
 }
 
 // ─── 其他方法 ────────────────────────────────────────────────────────
@@ -517,6 +519,8 @@ void Player::ResetTransientState() {
     m_FacingLeft = false;
     m_ShootRequested = false;
     m_ShootingTimer = 0.0f;
+    m_JumpEventPending = false;
+    m_StarEndedEventPending = false;
     m_IsAlive = true;
     m_IsDying = false;
     m_DeathTimer = 0.0f;

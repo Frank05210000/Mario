@@ -86,6 +86,25 @@ public:
         return false;
     }
 
+    // 給 AudioManager 詢問這幀是否剛跳躍（消耗式查詢）
+    bool ConsumeJumpEvent() {
+        if (m_JumpEventPending) {
+            m_JumpEventPending = false;
+            return true;
+        }
+        return false;
+    }
+
+    // 給 AudioManager 詢問星星無敵是否剛結束（消耗式查詢）
+    // 結束後需切回關卡 BGM
+    bool ConsumeStarEndedEvent() {
+        if (m_StarEndedEventPending) {
+            m_StarEndedEventPending = false;
+            return true;
+        }
+        return false;
+    }
+
     /* 設定出生點
      * 載入關卡時呼叫，重設位置並清除速度。
      */
@@ -153,6 +172,8 @@ private:
 
     bool  m_ShootRequested = false; // 是否要求發射火球
     float m_ShootingTimer  = 0.0f;  // 發射姿勢維持時間
+    bool  m_JumpEventPending = false;   // 這幀是否剛跳躍（供 AudioManager 查詢）
+    bool  m_StarEndedEventPending = false; // 星星效果剛結束（供 AudioManager 切回 BGM）
 
     bool  m_IsMoving   = false;    // 這幀有沒有按左右鍵（動畫用）
     bool  m_IsSkidding = false;    // 是否正在打滑

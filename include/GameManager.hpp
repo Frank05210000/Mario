@@ -35,6 +35,7 @@
 #include "WallBlock.hpp"
 #include "Fireball.hpp"
 #include "HUD.hpp"
+#include "AudioManager.hpp"
 #include "Util/GameObject.hpp"
 #include "Util/Image.hpp"
 #include "Util/Renderer.hpp"
@@ -185,6 +186,7 @@ private:
 
     bool  m_LevelCleared = false;          // 是否已觸碰旗杆（防止重複計分）
     bool  m_WaitingForTimeUpDeath = false; // 時間到後等待玩家死亡動畫播完再進 TimeUp
+    bool  m_PlayerWasDying = false;        // 上幀是否已在死亡狀態（偵測死亡事件用）
     bool  m_Paused = false;                // 暫停狀態（只在 Playing 下有效）
     std::shared_ptr<Util::GameObject> m_PauseOverlay; // 「PAUSED」文字 overlay
     // 受傷縮小變身動畫結束後需要啟動的傷害無敵計時（秒）；0 = 無待定
@@ -218,6 +220,10 @@ private:
     // EnterLevelIntro/EnterPlaying 在 LoadLevel 後讀取並覆蓋 playerSpawn
     std::optional<glm::vec2> m_CheckpointRespawnOverride;
     void UpdateCheckpoints();   // 每幀在 UpdatePlaying 中呼叫，偵測玩家是否越過新中繼點
+
+    // ─── 音效管理器 ────────────────────────────────────────────────
+    AudioManager m_Audio;           // BGM / SFX 統一管理
+    std::string  m_LevelBGMName;    // 目前關卡的 BGM 名稱（星星結束後恢復用）
 
     // ─── HUD ──────────────────────────────────────────────────────
     HUD   m_Hud;                  // 遊戲狀態列
