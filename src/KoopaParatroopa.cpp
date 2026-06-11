@@ -22,7 +22,6 @@ void KoopaParatroopa::Update(float deltaTime) {
     if (m_FlightMode == FlightMode::VerticalPatrol) {
         m_FlightTimer += deltaTime;
         m_Position.y = m_BaseY + std::sin(m_FlightTimer * 2.5f) * TILE_SIZE * 2.0f;
-        m_Position.x += m_Velocity.x * deltaTime;
         UpdateDrawable();
         return;
     }

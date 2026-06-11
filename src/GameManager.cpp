@@ -218,7 +218,7 @@ void GameManager::UpdatePlaying(float dt) {
     }
 
     if (!m_LevelCleared && m_Player.IsAlive()) {
-        m_TimeRemaining -= dt;
+        m_TimeRemaining -= dt * 2.5f;
         if (m_TimeRemaining <= 0.0f) {
             m_TimeRemaining = 0.0f;
             EnterTimeUp();
@@ -649,17 +649,17 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
 
 bool GameManager::CheckPipeTransition() {
     const bool pressingDown =
-        Util::Input::IsKeyDown(Util::Keycode::DOWN) ||
-        Util::Input::IsKeyDown(Util::Keycode::S);
+        Util::Input::IsKeyPressed(Util::Keycode::DOWN) ||
+        Util::Input::IsKeyPressed(Util::Keycode::S);
     const bool pressingUp =
-        Util::Input::IsKeyDown(Util::Keycode::UP) ||
-        Util::Input::IsKeyDown(Util::Keycode::W);
+        Util::Input::IsKeyPressed(Util::Keycode::UP) ||
+        Util::Input::IsKeyPressed(Util::Keycode::W);
     const bool pressingLeft =
-        Util::Input::IsKeyDown(Util::Keycode::LEFT) ||
-        Util::Input::IsKeyDown(Util::Keycode::A);
+        Util::Input::IsKeyPressed(Util::Keycode::LEFT) ||
+        Util::Input::IsKeyPressed(Util::Keycode::A);
     const bool pressingRight =
-        Util::Input::IsKeyDown(Util::Keycode::RIGHT) ||
-        Util::Input::IsKeyDown(Util::Keycode::D);
+        Util::Input::IsKeyPressed(Util::Keycode::RIGHT) ||
+        Util::Input::IsKeyPressed(Util::Keycode::D);
 
     for (const auto& block : m_Blocks) {
         if (block->GetType() != Block::Type::Pipe) continue;
