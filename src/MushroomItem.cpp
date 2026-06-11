@@ -42,5 +42,8 @@ void MushroomItem::OnCollect(Player* player) {
 
     LOG_INFO("Mushroom collected! Player -> SUPER");
     m_State = ItemState::Collected;
-    player->SetForm(Player::Form::SUPER);
+    // 只在SMALL時升級，已經是SUPER或FIRE就不變
+    if (player->GetForm() == Player::Form::SMALL) {
+        player->SetForm(Player::Form::SUPER);
+    }
 }

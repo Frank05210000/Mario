@@ -198,6 +198,7 @@ private:
     // ── 死亡動畫狀態 ──
     bool  m_IsDying = false;
     float m_DeathTimer = 0.0f;
+    bool  m_DeathBounced = false;
 
     // ── 水管動畫狀態變數 ──
     State m_State = State::Normal;
