@@ -6,9 +6,9 @@
 
 #include "GameConstants.hpp"
 
-BrickBlock::BrickBlock(glm::vec2 position, const std::string& theme)
-    : Block(position, {TILE_SIZE, TILE_SIZE}), m_Theme(theme), m_BaseY(position.y) {
-    SetSprite("block/" + m_Theme + "/brick/brick.png");
+BrickBlock::BrickBlock(glm::vec2 position, const ThemeAssets& assets)
+    : Block(position, {TILE_SIZE, TILE_SIZE}), m_Assets(assets), m_BaseY(position.y) {
+    SetSprite(m_Assets.Sprite("block/{theme}/brick/brick.png"));
 }
 
 void BrickBlock::Update(float deltaTime) {
@@ -41,7 +41,7 @@ BlockHitResult BrickBlock::OnHit(Player* player) {
         // 如果磚塊裡有藏金幣或是道具，行為就相當於問號方塊
         m_IsUsed = true;
         StartBounce();
-        SetSprite("block/" + m_Theme + "/used_block/used_block.png");
+        SetSprite(m_Assets.Sprite("block/{theme}/used_block/used_block.png"));
         LOG_INFO("BrickBlock Hit! Spawning hidden item: {}", m_ItemType);
         result.spawnItem = m_ItemType;
         return result;

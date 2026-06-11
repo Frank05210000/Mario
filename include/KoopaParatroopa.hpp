@@ -10,7 +10,8 @@ public:
     KoopaParatroopa(float startX,
                     float startY,
                     Variant variant = Variant::Red,
-                    FlightMode flightMode = FlightMode::Hop);
+                    FlightMode flightMode = FlightMode::Hop,
+                    const ThemeAssets& assets = ThemeAssets(Theme::Ground));
 
     void Update(float deltaTime) override;
     void Stomp() override;

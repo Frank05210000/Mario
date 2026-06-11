@@ -1,13 +1,13 @@
 #ifndef HIDDEN_BLOCK_HPP
 #define HIDDEN_BLOCK_HPP
 
-#include <string>
+#include "ThemeAssets.hpp"
 
 #include "Block.hpp"
 
 class HiddenBlock : public Block {
 public:
-    HiddenBlock(glm::vec2 position, const std::string& theme);
+    HiddenBlock(glm::vec2 position, const ThemeAssets& assets);
 
     Type GetType() const override { return Type::Hidden; }
 
@@ -22,7 +22,7 @@ public:
     BlockHitResult OnHit(Player* player) override;
 
 private:
-    std::string m_Theme = "ground";
+    ThemeAssets m_Assets;
 };
 
 #endif

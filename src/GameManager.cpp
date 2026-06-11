@@ -100,6 +100,9 @@ void GameManager::UpdateScorePopups(float dt) {
 }
 
 namespace {
+constexpr float kTitleBackdropZ = 25.0f;
+constexpr float kTitleTextZ = 30.0f;
+
 glm::vec2 GetPipeSize(const std::string& opening, int segments) {
     const float clampedSegments = static_cast<float>(std::max(1, segments));
     if (opening == "left" || opening == "right") {
@@ -299,7 +302,7 @@ void GameManager::UpdatePlaying(float dt) {
     }
 
     if (!m_LevelCleared && m_Player.IsAlive()) {
-        m_TimeRemaining -= dt;
+        m_TimeRemaining -= dt * 2.5f;
         if (m_TimeRemaining <= 0.0f) {
             m_TimeRemaining = 0.0f;
             EnterTimeUp();
@@ -502,13 +505,21 @@ void GameManager::EnterLevelClearTransition() {
 
 void GameManager::BuildTitleOverlay() {
     const auto context = Core::Context::GetInstance();
+    const float halfW = static_cast<float>(context->GetWindowWidth()) * 0.5f;
     const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
 
-    AddOverlayImage("ui/title/logo.png", {0.0f, halfH - 180.0f}, {2.5f, 2.5f});
-    AddOverlayText("PRESS ENTER OR SPACE", 16, {0.0f, halfH - 300.0f});
-    AddOverlayText("SELECT START LEVEL", 12, {0.0f, halfH - 340.0f});
-    AddOverlayText("4: 1-1   5: 1-2   6: 1-3", 12, {0.0f, halfH - 370.0f});
-    AddOverlayText("CURRENT: " + m_SelectedWorldLabel, 12, {0.0f, halfH - 400.0f});
+    AddOverlayImage(
+        "ui/title/black.png",
+        {0.0f, 0.0f},
+        {halfW * 2.0f, halfH * 2.0f},
+        kTitleBackdropZ);
+
+    AddOverlayImage("ui/title/logo.png", {0.0f, halfH - 150.0f}, {3.0f, 3.0f}, kTitleTextZ);
+    AddOverlayText("TOP - 000000", 14, {0.0f, halfH - 270.0f}, kTitleTextZ);
+    AddOverlayText("1 PLAYER GAME", 16, {0.0f, halfH - 335.0f}, kTitleTextZ);
+    AddOverlayText("WORLD " + m_SelectedWorldLabel, 14, {0.0f, halfH - 380.0f}, kTitleTextZ);
+    AddOverlayText("4:1-1  5:1-2  6:1-3", 12, {0.0f, halfH - 420.0f}, kTitleTextZ);
+    AddOverlayText("PRESS ENTER OR SPACE", 12, {0.0f, halfH - 465.0f}, kTitleTextZ);
 }
 
 void GameManager::BuildLevelIntroOverlay() {
@@ -598,6 +609,7 @@ void GameManager::HandleLifeLost() {
 
 void GameManager::LoadLevel(const std::string& jsonPath) {
     m_Level = LevelLoader::Load(jsonPath);
+    m_ThemeAssets = ThemeAssets(m_Level.theme);
 
     LOG_INFO(
         "Level loaded: json='{}' background='{}' levelSize=({}, {}) playerSpawn={}",
@@ -629,23 +641,23 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
         if (obj.type == "Ground") {
             m_Blocks.push_back(std::make_shared<GroundBlock>(pos, size));
         } else if (obj.type == "Brick") {
-            auto b = std::make_shared<BrickBlock>(pos, m_Level.theme);
+            auto b = std::make_shared<BrickBlock>(pos, m_ThemeAssets);
             b->SetItemType(obj.itemType.empty() ? "None" : obj.itemType);
             m_Blocks.push_back(b);
         } else if (obj.type == "UsedOnHitBrickBlock") {
-            auto b = std::make_shared<UsedOnHitBrickBlock>(pos, m_Level.theme);
+            auto b = std::make_shared<UsedOnHitBrickBlock>(pos, m_ThemeAssets);
             b->SetItemType(obj.itemType.empty() ? "None" : obj.itemType);
             m_Blocks.push_back(b);
         } else if (obj.type == "QuestionBlock") {
-            auto b = std::make_shared<QuestionBlock>(pos, m_Level.theme);
+            auto b = std::make_shared<QuestionBlock>(pos, m_ThemeAssets);
             b->SetItemType(obj.itemType.empty() ? "Coin" : obj.itemType);
             m_Blocks.push_back(b);
         } else if (obj.type == "HiddenBlock" || obj.type == "HiddenQuestionBlock") {
-            auto b = std::make_shared<HiddenBlock>(pos, m_Level.theme);
+            auto b = std::make_shared<HiddenBlock>(pos, m_ThemeAssets);
             b->SetItemType(obj.itemType.empty() ? "Coin" : obj.itemType);
             m_Blocks.push_back(b);
         } else if (obj.type == "MultiCoinBlock") {
-            m_Blocks.push_back(std::make_shared<MultiCoinBlock>(pos, m_Level.theme, obj.coinCount));
+            m_Blocks.push_back(std::make_shared<MultiCoinBlock>(pos, m_ThemeAssets, obj.coinCount));
         } else if (obj.type == "Pipe" || obj.type == "EnterablePipe") {
             const glm::vec2 pipeSize = GetPipeSize(obj.opening, obj.segments);
             const glm::vec2 pipePosition = GetPipePositionFromAnchor(pos, obj.opening, obj.segments);
@@ -676,11 +688,11 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
         } else if (obj.type == "TreePlatform") {
             m_Blocks.push_back(std::make_shared<TreePlatformBlock>(pos, obj.segments));
         } else if (obj.type == "Wall") {
-            m_Blocks.push_back(std::make_shared<WallBlock>(pos, m_Level.theme));
+            m_Blocks.push_back(std::make_shared<WallBlock>(pos, m_ThemeAssets));
         } else if (obj.type == "Flag") {
             m_Blocks.push_back(std::make_shared<FlagBlock>(pos));
         } else if (obj.type == "Coin" || obj.type == "CollectibleCoin") {
-            m_Items.push_back(std::make_shared<LevelCoinItem>(pos));
+            m_Items.push_back(std::make_shared<LevelCoinItem>(pos, m_ThemeAssets));
         } else if (obj.type == "EnemySpawn") {
             // 不直接建立物件，改存進 queue，等鏡頭到達再生成
             m_EnemySpawnQueue.push_back(obj);
@@ -750,17 +762,17 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
 
 bool GameManager::CheckPipeTransition() {
     const bool pressingDown =
-        Util::Input::IsKeyDown(Util::Keycode::DOWN) ||
-        Util::Input::IsKeyDown(Util::Keycode::S);
+        Util::Input::IsKeyPressed(Util::Keycode::DOWN) ||
+        Util::Input::IsKeyPressed(Util::Keycode::S);
     const bool pressingUp =
-        Util::Input::IsKeyDown(Util::Keycode::UP) ||
-        Util::Input::IsKeyDown(Util::Keycode::W);
+        Util::Input::IsKeyPressed(Util::Keycode::UP) ||
+        Util::Input::IsKeyPressed(Util::Keycode::W);
     const bool pressingLeft =
-        Util::Input::IsKeyDown(Util::Keycode::LEFT) ||
-        Util::Input::IsKeyDown(Util::Keycode::A);
+        Util::Input::IsKeyPressed(Util::Keycode::LEFT) ||
+        Util::Input::IsKeyPressed(Util::Keycode::A);
     const bool pressingRight =
-        Util::Input::IsKeyDown(Util::Keycode::RIGHT) ||
-        Util::Input::IsKeyDown(Util::Keycode::D);
+        Util::Input::IsKeyPressed(Util::Keycode::RIGHT) ||
+        Util::Input::IsKeyPressed(Util::Keycode::D);
 
     for (const auto& block : m_Blocks) {
         if (block->GetType() != Block::Type::Pipe) continue;
@@ -820,10 +832,10 @@ void GameManager::SpawnEnemy(const ObjectData& data) {
         (data.flightMode == "verticalPatrol") ? KoopaParatroopa::FlightMode::VerticalPatrol
                                               : KoopaParatroopa::FlightMode::Hop;
 
-    if      (data.enemyType == "Goomba")       newEnemy = std::make_shared<Goomba>(data.x, data.y);
-    else if (data.enemyType == "Koopa")        newEnemy = std::make_shared<Koopa>(data.x, data.y, koopaVariant);
+    if      (data.enemyType == "Goomba")       newEnemy = std::make_shared<Goomba>(data.x, data.y, m_ThemeAssets);
+    else if (data.enemyType == "Koopa")        newEnemy = std::make_shared<Koopa>(data.x, data.y, koopaVariant, m_ThemeAssets);
     else if (data.enemyType == "KoopaParatroopa") {
-        newEnemy = std::make_shared<KoopaParatroopa>(data.x, data.y, koopaVariant, flightMode);
+        newEnemy = std::make_shared<KoopaParatroopa>(data.x, data.y, koopaVariant, flightMode, m_ThemeAssets);
     }
     else if (data.enemyType == "PiranhaPlant") newEnemy = std::make_shared<PiranhaPlant>(data.x, data.y);
 
@@ -1328,27 +1340,27 @@ void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
     std::string spawnedType;
 
     if (itemType == "Coin") {
-        newItem = std::make_shared<CoinItem>(position);
+        newItem = std::make_shared<CoinItem>(position, m_ThemeAssets);
         spawnedType = "Coin";
         m_Session.AddCoin();
         m_Session.AddScore(200);
         SpawnScorePopup(200, position);
     } else if (itemType == "PowerUp" || itemType == "Mushroom") {
         if (m_Player.GetForm() == Player::Form::SMALL) {
-            newItem = std::make_shared<MushroomItem>(position);
+            newItem = std::make_shared<MushroomItem>(position, m_ThemeAssets);
             spawnedType = "Mushroom";
         } else {
-            newItem = std::make_shared<FireFlowerItem>(position);
+            newItem = std::make_shared<FireFlowerItem>(position, m_ThemeAssets);
             spawnedType = "FireFlower";
         }
     } else if (itemType == "FireFlower") {
-        newItem = std::make_shared<FireFlowerItem>(position);
+        newItem = std::make_shared<FireFlowerItem>(position, m_ThemeAssets);
         spawnedType = "FireFlower";
     } else if (itemType == "OneUp" || itemType == "1Up") {
-        newItem = std::make_shared<OneUpMushroomItem>(position);
+        newItem = std::make_shared<OneUpMushroomItem>(position, m_ThemeAssets);
         spawnedType = "OneUp";
     } else if (itemType == "Star" || itemType == "Starman") {
-        newItem = std::make_shared<StarmanItem>(position);
+        newItem = std::make_shared<StarmanItem>(position, m_ThemeAssets);
         spawnedType = "Star";
     }
 
@@ -1493,7 +1505,7 @@ void GameManager::SpawnBrickDebris(glm::vec2 position) {
     };
 
     for (std::size_t i = 0; i < offsets.size(); ++i) {
-        auto debris = std::make_shared<BrickDebris>(center + offsets[i], velocities[i], m_Level.theme);
+        auto debris = std::make_shared<BrickDebris>(center + offsets[i], velocities[i], m_ThemeAssets);
         m_BrickDebris.push_back(debris);
         m_Renderer.AddChild(debris);
     }

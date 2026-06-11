@@ -2,6 +2,7 @@
 #define KOOPA_HPP
 
 #include <memory>
+#include "ThemeAssets.hpp"
 
 #include "Enemy.hpp"
 #include "Util/Animation.hpp"
@@ -25,7 +26,10 @@ public:
     /* 建構子
      * startX / startY：出生的世界座標位置。
      */
-    Koopa(float startX, float startY, Variant variant = Variant::Green);
+    Koopa(float startX,
+          float startY,
+          Variant variant = Variant::Green,
+          const ThemeAssets& assets = ThemeAssets(Theme::Ground));
 
     /* 每幀更新（覆寫 Enemy::Update）
      * 縮殼狀態下停止水平移動；縮殼 5s 後喚醒；其他時候和普通敵人一樣。
@@ -62,7 +66,7 @@ public:
 
 protected:
     void UpdateDrawable();
-    void LoadSprites(const std::string& theme = "ground");
+    void LoadSprites(const ThemeAssets& assets = ThemeAssets(Theme::Ground));
 
     std::shared_ptr<Util::Animation> m_WalkLeftAnim;
     std::shared_ptr<Util::Animation> m_WalkRightAnim;

@@ -7,21 +7,17 @@
 #include <cmath>
 #include <vector>
 
-QuestionBlock::QuestionBlock(glm::vec2 position, const std::string& theme)
-    : Block(position, {TILE_SIZE, TILE_SIZE}), m_Theme(theme), m_BaseY(position.y) {
+QuestionBlock::QuestionBlock(glm::vec2 position, const ThemeAssets& assets)
+    : Block(position, {TILE_SIZE, TILE_SIZE}), m_Assets(assets), m_BaseY(position.y) {
 
-    // 閃爍用的 3 幀動畫（question_block-1 ~ question_block-3）
     m_IdleAnim = std::make_shared<Util::Animation>(
         std::vector<std::string>{
-            MakeAssetPath("block/" + m_Theme + "/question_block/question_block-1.png"),
-            MakeAssetPath("block/" + m_Theme + "/question_block/question_block-2.png"),
-            MakeAssetPath("block/" + m_Theme + "/question_block/question_block-3.png"),
+            m_Assets.Sprite("block/{theme}/question_block/question_block-1.png"),
+            m_Assets.Sprite("block/{theme}/question_block/question_block-2.png"),
+            m_Assets.Sprite("block/{theme}/question_block/question_block-3.png"),
         },
-        true,   // hasMultipleFrames
-        120,    // frameTimeMs（每幀 120ms，三幀一圈 ≈ 360ms，接近 NES 節奏）
-        true);  // isLooping
+        true, 120, true);
 
-    // 計算正確的縮放比（同 Block::SetSprite 邏輯，但使用 Animation）
     SetDrawable(m_IdleAnim);
     const auto textureSize = m_IdleAnim->GetSize();
     if (textureSize.x > 0.0f && textureSize.y > 0.0f) {
@@ -61,9 +57,7 @@ BlockHitResult QuestionBlock::OnHit(Player* /*player*/) {
 
     m_IsUsed = true;
     StartBounce();
-
-    // 切換成已使用的靜態方塊圖片
-    SetSprite("block/" + m_Theme + "/used_block/used_block.png");
+    SetSprite(m_Assets.Sprite("block/{theme}/used_block/used_block.png"));
     LOG_INFO("QuestionBlock Hit! Spawning: {}", m_ItemType);
 
     BlockHitResult result;
