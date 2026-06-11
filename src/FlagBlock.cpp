@@ -12,8 +12,10 @@ static constexpr float POLE_HEIGHT = FLAG_POLE_TILES * TILE_SIZE;
 FlagBlock::FlagBlock(glm::vec2 bottomPosition)
     : Block({bottomPosition.x, bottomPosition.y - POLE_HEIGHT}, {TILE_SIZE, POLE_HEIGHT}) {
     // 只顯示旗杆頂端的球（旗杆本體可之後另外疊加圖層）
+    // TODO: Resources/Asset/item/flag/ 目前只有 ball.png，沒有旗幟 flag sprite。
+    //       若後續取得 flag.png，請在此加入旗幟子 GameObject 並同步下移。
     SetSprite("item/flag/ball.png", 1.0f);
-    
+
     // 修正 SetSprite 自動把 Y 縮放成 m_Size.y (POLE_HEIGHT) 的問題，
     // 強制把球的大小縮放回 1 格 TILE_SIZE
     if (auto img = std::dynamic_pointer_cast<Util::Image>(m_Drawable)) {
@@ -25,15 +27,39 @@ FlagBlock::FlagBlock(glm::vec2 bottomPosition)
             };
         }
     }
+
+    // 初始化球下降動畫：球在杆頂（偏移 = TILE_SIZE，避開最頂端）
+    m_BallOffsetY = TILE_SIZE;
+    // 下降目標：杆高 - 一格（到達杆底附近）
+    m_BallTargetY = POLE_HEIGHT - TILE_SIZE;
+}
+
+void FlagBlock::StartDescent() {
+    if (!m_IsDescending) {
+        m_IsDescending = true;
+        LOG_INFO("FlagBlock: ball descent started.");
+    }
+}
+
+void FlagBlock::Update(float dt) {
+    if (!m_IsDescending) return;
+
+    if (m_BallOffsetY < m_BallTargetY) {
+        m_BallOffsetY += DESCENT_SPEED * dt;
+        if (m_BallOffsetY >= m_BallTargetY) {
+            m_BallOffsetY = m_BallTargetY;
+            m_IsDescending = false;
+            LOG_INFO("FlagBlock: ball descent finished.");
+        }
+    }
 }
 
 void FlagBlock::Draw(const Camera& camera) {
-    // 覆寫 Draw，讓圖片不要置中於整個 10 格高的碰撞體，
-    // 而是固定畫在第二格（m_Position.y + TILE_SIZE）。
-    // JSON 的 y 是旗杆底部，m_Position.y 則是內部推算出的碰撞範圍頂點。
+    // 覆寫 Draw，讓球的位置隨 m_BallOffsetY 動態更新。
+    // m_Position.y 是碰撞範圍頂點（杆頂），加上偏移後得到球的世界 Y。
     glm::vec2 centerPos = {
-        m_Position.x,                     // 往左移半格（原本是 + TILE_SIZE * 0.5f）
-        m_Position.y + TILE_SIZE * 1.5f   // 往下移一格
+        m_Position.x,
+        m_Position.y + m_BallOffsetY
     };
     m_Transform.translation = camera.WorldToScreen(centerPos);
 }

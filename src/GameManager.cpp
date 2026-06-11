@@ -34,6 +34,15 @@
 // runtime 關卡 JSON 統一放在 Resources/data/
 static const std::string kDefaultInitialLevelName = "1-1";
 
+// ─── 關卡鏈定義（Batch A）────────────────────────────────────────────────
+// 過關順序：1-1 → 1-2 → 1-3 → 回標題
+// 新增關卡只需在此陣列末尾追加元素
+const std::vector<GameManager::LevelEntry> GameManager::kLevelChain = {
+    {"1-1",          "1-1"},
+    {"1-2_ground_1", "1-2"},
+    {"1-3_ground_1", "1-3"},
+};
+
 // ─── Combo 分數序列（NES Mario 踩踏 / 殼連殺）────────────────────────────
 // 第 n 次連殺的分值：100, 200, 400, 500, 800, 1000, 2000, 4000, 5000, 1UP...
 static const std::array<int, 9> kComboScores = {
@@ -166,6 +175,9 @@ void GameManager::Update() {
             break;
         case FlowState::LevelClearTransition:
             UpdateLevelClearTransition(dt);
+            break;
+        case FlowState::LevelClearPause:
+            UpdateLevelClearPause(dt);
             break;
     }
 }
@@ -370,15 +382,44 @@ void GameManager::UpdateGameOver(float dt) {
     m_Renderer.Update();
 }
 
+// 時間結算倒數：每秒固定扣約 N 單位時間並同步加分
+// NES 原版：約每幀扣 2 單位（30fps * 2 = 60/s），這裡用 dt 換算
 void GameManager::UpdateLevelClearTransition(float dt) {
-    m_LevelClearTransitionTimer += dt;
-    if (m_LevelClearTransitionTimer >= 3.0f) {
-        EnterTitleScreen();
-        DrawScene(false);
+    constexpr float TIME_DRAIN_PER_SECOND = 60.0f; // 每秒扣幾單位
+    constexpr float SCORE_PER_UNIT = 50.0f;        // 每單位加 50 分
+
+    if (m_TimeRemaining > 0.0f) {
+        m_CountdownAccum += dt * TIME_DRAIN_PER_SECOND;
+        const int unitsToDeduct = static_cast<int>(m_CountdownAccum);
+        if (unitsToDeduct > 0) {
+            m_CountdownAccum -= static_cast<float>(unitsToDeduct);
+
+            const int actualDeduct = std::min(unitsToDeduct, static_cast<int>(m_TimeRemaining));
+            m_TimeRemaining -= static_cast<float>(actualDeduct);
+            m_Session.AddScore(actualDeduct * static_cast<int>(SCORE_PER_UNIT));
+
+            if (m_TimeRemaining <= 0.0f) {
+                m_TimeRemaining = 0.0f;
+            }
+        }
+    } else {
+        // 時間已歸零，進入停頓狀態
+        EnterLevelClearPause();
         return;
     }
 
-    m_Renderer.Update();
+    // 每幀更新畫面（含 HUD 時間與分數的即時動態顯示）
+    DrawScene(true);
+}
+
+// 結算結束後停頓 1 秒，再進下一關
+void GameManager::UpdateLevelClearPause(float dt) {
+    m_StateTimer += dt;
+    if (m_StateTimer >= 1.0f) {
+        AdvanceToNextLevel();
+        return;
+    }
+    DrawScene(true);
 }
 
 void GameManager::DrawScene(bool updateHud) {
@@ -435,8 +476,25 @@ void GameManager::StartNewGame() {
     m_LastCheckpoint = std::nullopt;
     m_CheckpointRespawnOverride = std::nullopt;
 
+    // 找到標題畫面選的關卡在關卡鏈中的位置
+    m_CurrentLevelIndex = 0; // 預設從頭
+    for (int i = 0; i < static_cast<int>(kLevelChain.size()); ++i) {
+        if (kLevelChain[i].levelName == m_SelectedInitialLevelName) {
+            m_CurrentLevelIndex = i;
+            break;
+        }
+    }
+
+    // 套用關卡鏈的關卡名稱到目前關卡欄位
+    m_SelectedWorldLabel = kLevelChain[m_CurrentLevelIndex].worldLabel;
+    // 同步進度
+    m_Session.CurrentPlayer().levelName = kLevelChain[m_CurrentLevelIndex].levelName;
+
     EnterLevelIntro();
-    LOG_INFO("New game started.");
+    LOG_INFO("New game started. Level index={} name='{}' world='{}'",
+             m_CurrentLevelIndex,
+             kLevelChain[m_CurrentLevelIndex].levelName,
+             m_SelectedWorldLabel);
 }
 
 void GameManager::EnterLevelIntro() {
@@ -446,7 +504,18 @@ void GameManager::EnterLevelIntro() {
     m_LevelCleared = false;
     m_WaitingForTimeUpDeath = false;
 
-    LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
+    // 決定要載入的關卡：若 m_CurrentLevelIndex 有效則用關卡鏈，否則退回標題選關
+    const std::string levelToLoad = (m_CurrentLevelIndex >= 0 &&
+                                     m_CurrentLevelIndex < static_cast<int>(kLevelChain.size()))
+                                    ? kLevelChain[m_CurrentLevelIndex].levelName
+                                    : m_SelectedInitialLevelName;
+
+    // 同步 world label（確保 HUD 顯示正確關卡名）
+    if (m_CurrentLevelIndex >= 0 && m_CurrentLevelIndex < static_cast<int>(kLevelChain.size())) {
+        m_SelectedWorldLabel = kLevelChain[m_CurrentLevelIndex].worldLabel;
+    }
+
+    LoadLevel(MakeLevelPath(levelToLoad));
     ApplyPlayerProgress();
 
     // 若有中繼點重生覆蓋，套用後清除（只用一次）
@@ -482,7 +551,18 @@ void GameManager::EnterPlaying() {
     m_LevelCleared = false;
     m_WaitingForTimeUpDeath = false;
 
-    LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
+    // 決定要載入的關卡：若 m_CurrentLevelIndex 有效則用關卡鏈，否則退回標題選關
+    const std::string levelToLoad = (m_CurrentLevelIndex >= 0 &&
+                                     m_CurrentLevelIndex < static_cast<int>(kLevelChain.size()))
+                                    ? kLevelChain[m_CurrentLevelIndex].levelName
+                                    : m_SelectedInitialLevelName;
+
+    // 同步 world label（確保 HUD 顯示正確關卡名）
+    if (m_CurrentLevelIndex >= 0 && m_CurrentLevelIndex < static_cast<int>(kLevelChain.size())) {
+        m_SelectedWorldLabel = kLevelChain[m_CurrentLevelIndex].worldLabel;
+    }
+
+    LoadLevel(MakeLevelPath(levelToLoad));
     ApplyPlayerProgress();
     {
         const float lvW = static_cast<float>(m_Level.levelWidth);
@@ -573,11 +653,50 @@ void GameManager::EnterGameOver() {
 
 void GameManager::EnterLevelClearTransition() {
     SavePlayerProgress();
-    ResetSceneObjects();
+    // 不在此清空場景——保留畫面背景，等時間結算結束後再切關
+    // （ResetSceneObjects 會在進下一關 EnterLevelIntro 時呼叫）
     m_LevelClearTransitionTimer = 0.0f;
+    m_CountdownAccum = 0.0f;
     BuildLevelClearOverlay();
     m_FlowState = FlowState::LevelClearTransition;
-    LOG_INFO("Entered level clear transition.");
+    LOG_INFO("Entered level clear transition (time countdown). timeRemaining={}",
+             m_TimeRemaining);
+}
+
+void GameManager::EnterLevelClearPause() {
+    m_StateTimer = 0.0f;
+    m_FlowState = FlowState::LevelClearPause;
+    LOG_INFO("Entered level clear pause. Proceeding to next level in 1s.");
+}
+
+// 推進到下一關，或若已是最後一關則回標題
+void GameManager::AdvanceToNextLevel() {
+    const int nextIndex = m_CurrentLevelIndex + 1;
+
+    if (nextIndex >= static_cast<int>(kLevelChain.size())) {
+        // 已是最後一關，回標題
+        LOG_INFO("All levels cleared! Returning to title.");
+        // 重置進度 index，讓下次開始新遊戲從第一關開始
+        m_CurrentLevelIndex = -1;
+        EnterTitleScreen();
+        return;
+    }
+
+    // 推進到下一關
+    m_CurrentLevelIndex = nextIndex;
+    m_SelectedWorldLabel = kLevelChain[m_CurrentLevelIndex].worldLabel;
+    m_Session.CurrentPlayer().levelName = kLevelChain[m_CurrentLevelIndex].levelName;
+
+    // 換關時清空中繼點（新關卡從頭開始）
+    m_LastCheckpoint = std::nullopt;
+    m_CheckpointRespawnOverride = std::nullopt;
+
+    LOG_INFO("Advancing to level index={} name='{}' world='{}'",
+             m_CurrentLevelIndex,
+             kLevelChain[m_CurrentLevelIndex].levelName,
+             m_SelectedWorldLabel);
+
+    EnterLevelIntro();
 }
 
 void GameManager::BuildTitleOverlay() {
@@ -622,13 +741,9 @@ void GameManager::BuildLevelClearOverlay() {
     const auto context = Core::Context::GetInstance();
     const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
 
-    std::ostringstream scoreText;
-    scoreText << "SCORE " << std::setw(6) << std::setfill('0')
-              << m_Session.CurrentPlayer().score;
-
-    AddOverlayText("WORLD CLEAR", 24, {0.0f, halfH - 190.0f});
-    AddOverlayText(scoreText.str(), 16, {0.0f, halfH - 260.0f});
-    AddOverlayText("RETURNING TO TITLE", 14, {0.0f, halfH - 320.0f});
+    // 顯示過關訊息與時間結算提示（NES 風格）
+    AddOverlayText("WORLD CLEAR!", 24, {0.0f, halfH - 160.0f});
+    AddOverlayText("TIME BONUS", 18, {0.0f, halfH - 240.0f});
 }
 
 void GameManager::AddOverlayText(const std::string& text, int fontSize, glm::vec2 position, float zIndex) {
@@ -1767,14 +1882,16 @@ void GameManager::CheckFlagCollision() {
         const int score = flagBlock->GetContactScore(playerBottom);
         m_Session.AddScore(score);
         m_LevelCleared = true;
-        
+
+        // 觸發旗球下降動畫（與玩家下滑同時進行）
+        flagBlock->StartDescent();
+
         // 觸發玩家的過關下降演出
         m_Player.StartLevelClearSequence(fPos.x, fPos.y + fSize.y);
 
         LOG_INFO("=== LEVEL CLEAR! Flag score: {}  Total score: {} ===",
                  score,
                  m_Session.CurrentPlayer().score);
-        // TODO: 播放過關音樂、觸發旗子下降動畫、延遲幾秒後進下一關
         break;
     }
 }
