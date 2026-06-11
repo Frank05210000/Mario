@@ -5,8 +5,10 @@
 #include <string>
 
 #include "Util/Text.hpp"
+#include "Util/Image.hpp"
 #include "Util/Renderer.hpp"
 #include "Util/Color.hpp"
+#include "Util/GameObject.hpp"
 
 /*
  * HUD：遊戲狀態列
@@ -51,6 +53,7 @@ private:
     // Util::Text 是 Drawable，需包在 GameObject 才能加入 Renderer
 
     std::shared_ptr<Util::GameObject> m_ScoreObj;   // "MARIO\n000100"
+    std::shared_ptr<Util::GameObject> m_CoinImageObj;  // 金幣圖示（在數字左側）
     std::shared_ptr<Util::GameObject> m_CoinObj;    // "×03"
     std::shared_ptr<Util::GameObject> m_WorldObj;   // "WORLD\n 1-2"
     std::shared_ptr<Util::GameObject> m_TimeObj;    // "TIME\n 300"

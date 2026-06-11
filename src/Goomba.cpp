@@ -7,16 +7,17 @@
 #include "Util/Animation.hpp"
 #include "Util/Image.hpp"
 
-Goomba::Goomba(float startX, float startY) {
+Goomba::Goomba(float startX, float startY, const std::string& theme) {
     m_Position = {startX, startY};
     m_Size     = {TILE_SIZE, TILE_SIZE};      // 世界尺寸：16x16
     m_Transform.scale = {GAME_SCALE, GAME_SCALE};
 
     // 2 幀行走動畫（walk-1 + walk-2，每幀 200ms，循環）
+    // 依主題載入對應路徑
     m_WalkAnim = std::make_shared<Util::Animation>(
         std::vector<std::string>{
-            MakeAssetPath("enemy/Goomba/ground/normal/walk/walk-1.png"),
-            MakeAssetPath("enemy/Goomba/ground/normal/walk/walk-2.png"),
+            MakeAssetPath("enemy/Goomba/" + theme + "/normal/walk/walk-1.png"),
+            MakeAssetPath("enemy/Goomba/" + theme + "/normal/walk/walk-2.png"),
         },
         true,   // hasMultipleFrames
         200,    // frameTimeMs
@@ -24,7 +25,7 @@ Goomba::Goomba(float startX, float startY) {
 
     // 壓扁圖片
     m_StompImage = std::make_shared<Util::Image>(
-        MakeAssetPath("enemy/Goomba/ground/normal/stomp/stomp.png"));
+        MakeAssetPath("enemy/Goomba/" + theme + "/normal/stomp/stomp.png"));
 
     SetDrawable(m_WalkAnim);
 }

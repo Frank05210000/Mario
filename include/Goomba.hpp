@@ -20,8 +20,9 @@ class Goomba : public Enemy {
 public:
     /* 建構子
      * startX / startY：出生的世界座標位置。
+     * theme：關卡主題（"ground"、"underground" 等），預設 "ground"。
      */
-    Goomba(float startX, float startY);
+    Goomba(float startX, float startY, const std::string& theme = "ground");
 
     /* 每幀更新（覆寫 Enemy::Update）
      * 壓扁倒數計時 → 消滅；其他時候套用父類邏輯。

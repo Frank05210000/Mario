@@ -51,6 +51,16 @@ int GameManager::NextComboScore() {
     return -1; // 1UP
 }
 
+// 殼連殺計分：使用同一個 combo 分數表
+int GameManager::NextShellComboScore() {
+    int idx = m_ShellComboCount;
+    ++m_ShellComboCount;
+    if (idx < static_cast<int>(kComboScores.size())) {
+        return kComboScores[idx];
+    }
+    return -1; // 1UP
+}
+
 void GameManager::ResetCombo() {
     m_ComboCount = 0;
 }
@@ -820,8 +830,11 @@ void GameManager::SpawnEnemy(const ObjectData& data) {
         (data.flightMode == "verticalPatrol") ? KoopaParatroopa::FlightMode::VerticalPatrol
                                               : KoopaParatroopa::FlightMode::Hop;
 
-    if      (data.enemyType == "Goomba")       newEnemy = std::make_shared<Goomba>(data.x, data.y);
-    else if (data.enemyType == "Koopa")        newEnemy = std::make_shared<Koopa>(data.x, data.y, koopaVariant);
+    // 傳遞關卡主題，讓敵人載入對應的精靈
+    const std::string& theme = m_Level.theme;
+
+    if      (data.enemyType == "Goomba")       newEnemy = std::make_shared<Goomba>(data.x, data.y, theme);
+    else if (data.enemyType == "Koopa")        newEnemy = std::make_shared<Koopa>(data.x, data.y, koopaVariant, theme);
     else if (data.enemyType == "KoopaParatroopa") {
         newEnemy = std::make_shared<KoopaParatroopa>(data.x, data.y, koopaVariant, flightMode);
     }
@@ -957,8 +970,10 @@ void GameManager::CheckStompCollision() {
 
 // ─── CheckShellEnemyCollision ─────────────────────────────────────────────
 // 掃描所有正在滑行的 Koopa 殼，判斷是否與其他存活的敵人重疊。
-// 重疊則直接消滅被撞到的敵人，並使用連殺 combo 計分。
+// 重疊則直接消滅被撞到的敵人，並使用獨立的殼連殺 combo 計分。
 void GameManager::CheckShellEnemyCollision() {
+    bool shellKilledAny = false;  // 追蹤本幀是否有殼殺敵
+
     for (auto& shellEnemy : m_Enemies) {
         if (!shellEnemy->IsAlive()) continue;
 
@@ -985,8 +1000,8 @@ void GameManager::CheckShellEnemyCollision() {
                     target->SetAlive(false);
                     target->SetVisible(false);
                 }
-                // 殼連殺使用 combo 計分
-                const int pts = NextComboScore();
+                // 殼連殺使用獨立的殼 combo 計分
+                const int pts = NextShellComboScore();
                 if (pts < 0) {
                     m_Session.AddLife();
                     SpawnScorePopup(-1, tPos);
@@ -995,9 +1010,15 @@ void GameManager::CheckShellEnemyCollision() {
                     SpawnScorePopup(pts, tPos);
                 }
                 LOG_INFO("Shell killed enemy: combo={} score={} shellPos={} targetPos={}",
-                         m_ComboCount, pts, sPos, tPos);
+                         m_ShellComboCount, pts, sPos, tPos);
+                shellKilledAny = true;
             }
         }
+    }
+
+    // 如果本幀沒有殼殺到任何敵人，重置殼 combo
+    if (!shellKilledAny) {
+        m_ShellComboCount = 0;
     }
 }
 
