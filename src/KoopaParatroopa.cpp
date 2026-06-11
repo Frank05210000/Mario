@@ -8,8 +8,9 @@
 KoopaParatroopa::KoopaParatroopa(float startX,
                                  float startY,
                                  Variant variant,
-                                 FlightMode flightMode)
-    : Koopa(startX, startY, variant), m_FlightMode(flightMode), m_BaseY(startY - TILE_SIZE) {
+                                 FlightMode flightMode,
+                                 const ThemeAssets& assets)
+    : Koopa(startX, startY, variant, assets), m_FlightMode(flightMode), m_BaseY(startY - TILE_SIZE) {
 }
 
 void KoopaParatroopa::Update(float deltaTime) {
@@ -21,7 +22,6 @@ void KoopaParatroopa::Update(float deltaTime) {
     if (m_FlightMode == FlightMode::VerticalPatrol) {
         m_FlightTimer += deltaTime;
         m_Position.y = m_BaseY + std::sin(m_FlightTimer * 2.5f) * TILE_SIZE * 2.0f;
-        m_Position.x += m_Velocity.x * deltaTime;
         UpdateDrawable();
         return;
     }

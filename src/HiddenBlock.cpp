@@ -3,9 +3,9 @@
 #include "GameConstants.hpp"
 #include "Util/Logger.hpp"
 
-HiddenBlock::HiddenBlock(glm::vec2 position, const std::string& theme)
-    : Block(position, {TILE_SIZE, TILE_SIZE}), m_Theme(theme) {
-    SetSprite("block/" + m_Theme + "/used_block/used_block.png");
+HiddenBlock::HiddenBlock(glm::vec2 position, const ThemeAssets& assets)
+    : Block(position, {TILE_SIZE, TILE_SIZE}), m_Assets(assets) {
+    SetSprite(m_Assets.Sprite("block/{theme}/used_block/used_block.png"));
     SetVisible(false);
 }
 

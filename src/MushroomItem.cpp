@@ -4,9 +4,10 @@
 #include "Util/Image.hpp"
 #include "Util/Logger.hpp"
 
-MushroomItem::MushroomItem(glm::vec2 pos) : Item(pos) {
+MushroomItem::MushroomItem(glm::vec2 pos, const ThemeAssets& assets) : Item(pos) {
     m_Size = {TILE_SIZE, TILE_SIZE};
-    auto image = std::make_shared<Util::Image>(MakeAssetPath("item/powerup/mushroom/mushroom.png"));
+    auto image = std::make_shared<Util::Image>(
+        assets.Sprite("item/powerup/{theme}/mushroom/mushroom.png"));
     SetDrawable(image);
     SetZIndex(0.5f); // 在方塊後方一點點
 
@@ -40,5 +41,8 @@ void MushroomItem::OnCollect(Player* player) {
 
     LOG_INFO("Mushroom collected! Player -> SUPER");
     m_State = ItemState::Collected;
-    player->SetForm(Player::Form::SUPER);
+    // 只在SMALL時升級，已經是SUPER或FIRE就不變
+    if (player->GetForm() == Player::Form::SMALL) {
+        player->SetForm(Player::Form::SUPER);
+    }
 }

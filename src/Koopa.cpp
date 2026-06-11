@@ -8,27 +8,28 @@
 #include "GameConstants.hpp"
 #include "Util/Logger.hpp"
 
-Koopa::Koopa(float startX, float startY, Variant variant) : m_Variant(variant) {
+Koopa::Koopa(float startX, float startY, Variant variant, const ThemeAssets& assets)
+    : m_Variant(variant) {
     m_Position = {startX, startY - TILE_SIZE};
-    m_Size     = {TILE_SIZE, TILE_SIZE * 2.0f};  // 世界尺寸：16x32
+    m_Size     = {TILE_SIZE, TILE_SIZE * 2.0f};
     m_Transform.scale = {GAME_SCALE, GAME_SCALE};
 
-    LoadSprites("ground");
+    LoadSprites(assets);
     UpdateDrawable();
 }
 
-void Koopa::LoadSprites(const std::string& theme) {
-    // ─── 根據 Variant 決定用哪組路徑 ──────────────────────────────────
-    // Red Koopa：嘗試載入 ground/red/ 路徑（若不存在則 fallback 綠色）
-    std::string walkDir  = "enemy/Koopa/" + theme + "/normal";
-    std::string walkDirR = "enemy/Koopa/" + theme + "/reverse";
+void Koopa::LoadSprites(const ThemeAssets& assets) {
+    const std::string& seg = assets.Segment();
+
+    std::string walkDir  = "enemy/Koopa/" + seg + "/normal";
+    std::string walkDirR = "enemy/Koopa/" + seg + "/reverse";
 
     if (m_Variant == Variant::Red) {
         const std::string redWalkPath =
-            MakeAssetPath("enemy/Koopa/" + theme + "/red/walk/walk-1.png");
+            MakeAssetPath("enemy/Koopa/" + seg + "/red/walk/walk-1.png");
         if (std::filesystem::exists(redWalkPath)) {
-            walkDir  = "enemy/Koopa/" + theme + "/red";
-            walkDirR = "enemy/Koopa/" + theme + "/red_reverse";
+            walkDir  = "enemy/Koopa/" + seg + "/red";
+            walkDirR = "enemy/Koopa/" + seg + "/red_reverse";
             LOG_INFO("Koopa: loaded Red variant sprites from '{}'", redWalkPath);
         } else {
             LOG_WARN("Koopa: Red variant sprites not found ({}), using Green fallback.",
@@ -53,15 +54,14 @@ void Koopa::LoadSprites(const std::string& theme) {
         160,
         true);
     m_ShellImage = std::make_shared<Util::Image>(
-        MakeAssetPath("enemy/Koopa/" + theme + "/normal/shell/shell.png"));
+        MakeAssetPath("enemy/Koopa/" + seg + "/normal/shell/shell.png"));
 
-    // 翻轉殼圖片（死亡動畫用）；ground 目錄有 shell_flip.png，underground 沒有則 fallback
-    const std::string flipPath = MakeAssetPath("enemy/Koopa/" + theme + "/normal/shell/shell_flip.png");
+    const std::string flipPath = MakeAssetPath("enemy/Koopa/" + seg + "/normal/shell/shell_flip.png");
     if (std::filesystem::exists(flipPath)) {
         m_ShellFlipImage = std::make_shared<Util::Image>(flipPath);
     } else {
-        LOG_WARN("Koopa: shell_flip.png not found for theme '{}', using shell as fallback.", theme);
-        m_ShellFlipImage = m_ShellImage; // fallback
+        LOG_WARN("Koopa: shell_flip.png not found for theme '{}', using shell as fallback.", seg);
+        m_ShellFlipImage = m_ShellImage;
     }
 }
 

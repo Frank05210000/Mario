@@ -7,24 +7,20 @@
 #include "Util/Animation.hpp"
 #include "Util/Image.hpp"
 
-Goomba::Goomba(float startX, float startY) {
+Goomba::Goomba(float startX, float startY, const ThemeAssets& assets) {
     m_Position = {startX, startY};
-    m_Size     = {TILE_SIZE, TILE_SIZE};      // 世界尺寸：16x16
+    m_Size     = {TILE_SIZE, TILE_SIZE};
     m_Transform.scale = {GAME_SCALE, GAME_SCALE};
 
-    // 2 幀行走動畫（walk-1 + walk-2，每幀 200ms，循環）
     m_WalkAnim = std::make_shared<Util::Animation>(
         std::vector<std::string>{
-            MakeAssetPath("enemy/Goomba/ground/normal/walk/walk-1.png"),
-            MakeAssetPath("enemy/Goomba/ground/normal/walk/walk-2.png"),
+            assets.Sprite("enemy/Goomba/{theme}/normal/walk/walk-1.png"),
+            assets.Sprite("enemy/Goomba/{theme}/normal/walk/walk-2.png"),
         },
-        true,   // hasMultipleFrames
-        200,    // frameTimeMs
-        true);  // isLooping
+        true, 200, true);
 
-    // 壓扁圖片
     m_StompImage = std::make_shared<Util::Image>(
-        MakeAssetPath("enemy/Goomba/ground/normal/stomp/stomp.png"));
+        assets.Sprite("enemy/Goomba/{theme}/normal/stomp/stomp.png"));
 
     SetDrawable(m_WalkAnim);
 }
@@ -33,7 +29,6 @@ void Goomba::Update(float deltaTime) {
     if (!m_IsAlive) return;
 
     if (m_IsSquashed) {
-        // 壓扁倒數中：停在原位，等待動畫結束後死亡
         m_SquashTimer -= deltaTime;
         if (m_SquashTimer <= 0.0f) {
             SetAlive(false);
@@ -41,7 +36,6 @@ void Goomba::Update(float deltaTime) {
         return;
     }
 
-    // 正常行走：使用父類邏輯（重力 + 水平移動）
     SetDrawable(m_WalkAnim);
     Enemy::Update(deltaTime);
 }
