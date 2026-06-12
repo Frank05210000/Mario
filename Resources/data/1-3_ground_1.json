@@ -309,6 +309,7 @@
       "moveMode": "oscillate",
       "startDirection": "left",
       "moveTiles": 6,
+      "startOffsetTiles": 6,
       "moveSpeed": 35.0,
       "segments": 3
     },

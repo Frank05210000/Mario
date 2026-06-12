@@ -4,6 +4,25 @@
   "levelHeight": 240,
   "objects": [
     {
+      "type": "Ground",
+      "x": 0.0,
+      "y": 208.0,
+      "width": 272.0,
+      "height": 32.0
+    },
+    {
+      "type": "EnterablePipe",
+      "x": 208.0,
+      "y": 176.0,
+      "opening": "left",
+      "segments": 2,
+      "targetLevel": "1-2_underground_1",
+      "targetSpawn": {
+        "x": 1752.0,
+        "y": 144.0
+      }
+    },
+    {
       "type": "QuestionBlock",
       "x": 64.0,
       "y": 128.0,

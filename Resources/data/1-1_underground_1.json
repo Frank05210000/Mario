@@ -239,7 +239,8 @@
       "x": 208.0,
       "y": 176.0,
       "opening": "left",
-      "targetLevel": "1-1_ground_1",
+      "targetLevel": "1-1",
+      "targetSpawn": { "x": 2608.0, "y": 144.0 },
       "segments": 2
     },
     {

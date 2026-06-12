@@ -1433,11 +1433,12 @@
     {
       "type": "MovingPlatform",
       "x": 2480.0,
-      "y": 96.0,
+      "y": 256.0,
       "moveAxis": "vertical",
       "moveMode": "verticalWrap",
       "startDirection": "up",
-      "moveTiles": 4,
+      "moveTiles": 20,
+      "startOffsetTiles": 10,
       "moveSpeed": 35.0,
       "segments": 3
     },
@@ -2112,11 +2113,12 @@
       "itemType": "None"
     },
     {
-      "type": "PipeCollision",
+      "type": "EnterablePipe",
       "x": 1744.0,
       "y": 144.0,
-      "width": 32.0,
-      "height": 32.0
+      "opening": "up",
+      "segments": 2,
+      "targetLevel": "1-2_underground_2"
     },
     {
       "type": "EnemySpawn",
@@ -2838,11 +2840,11 @@
     {
       "type": "MovingPlatform",
       "x": 2480.0,
-      "y": 208.0,
+      "y": 256.0,
       "moveAxis": "vertical",
       "moveMode": "verticalWrap",
       "startDirection": "up",
-      "moveTiles": 4,
+      "moveTiles": 20,
       "moveSpeed": 35.0,
       "segments": 3
     },
