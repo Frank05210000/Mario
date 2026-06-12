@@ -171,8 +171,9 @@ private:
     std::vector<std::shared_ptr<Fireball>> m_Fireballs;
     std::vector<std::shared_ptr<BrickDebris>> m_BrickDebris;
 
-    Camera     m_Camera;                               // 鏡頭（追蹤玩家，計算捲動偏移）
-    LevelData  m_Level;                                // 關卡資料（供 Camera 取得 levelWidth）
+    Camera      m_Camera;                              // 鏡頭（追蹤玩家，計算捲動偏移）
+    LevelData   m_Level;                               // 關卡資料（供 Camera 取得 levelWidth）
+    ThemeAssets m_ThemeAssets;                         // 當前關卡主題，隨 LoadLevel 更新
 
     std::shared_ptr<Util::GameObject>    m_Background; // 背景圖（zIndex=0，畫在最底層）
 

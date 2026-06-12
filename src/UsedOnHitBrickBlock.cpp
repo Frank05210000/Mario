@@ -5,9 +5,9 @@
 
 #include <cmath>
 
-UsedOnHitBrickBlock::UsedOnHitBrickBlock(glm::vec2 position, const std::string& theme)
-    : Block(position, {TILE_SIZE, TILE_SIZE}), m_Theme(theme), m_BaseY(position.y) {
-    SetSprite("block/" + m_Theme + "/brick/brick.png");
+UsedOnHitBrickBlock::UsedOnHitBrickBlock(glm::vec2 position, const ThemeAssets& assets)
+    : Block(position, {TILE_SIZE, TILE_SIZE}), m_Assets(assets), m_BaseY(position.y) {
+    SetSprite(m_Assets.Sprite("block/{theme}/brick/brick.png"));
 }
 
 void UsedOnHitBrickBlock::Update(float deltaTime) {
@@ -39,7 +39,7 @@ BlockHitResult UsedOnHitBrickBlock::OnHit(Player*) {
 
     m_IsUsed = true;
     StartBounce();
-    SetSprite("block/" + m_Theme + "/used_block/used_block.png");
+    SetSprite(m_Assets.Sprite("block/{theme}/used_block/used_block.png"));
     if (m_ItemType != "None" && !m_ItemType.empty()) {
         result.spawnItem = m_ItemType;
     }

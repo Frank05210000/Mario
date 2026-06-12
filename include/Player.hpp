@@ -225,6 +225,7 @@ private:
     // ── 死亡動畫狀態 ──
     bool  m_IsDying = false;
     float m_DeathTimer = 0.0f;
+    bool  m_DeathBounced = false;
 
     // ── 變身動畫狀態 ──
     Form  m_TransformFromForm = Form::SMALL; // 變身前形態

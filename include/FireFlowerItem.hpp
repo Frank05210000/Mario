@@ -4,10 +4,11 @@
 #include "Item.hpp"
 #include "Util/Animation.hpp"
 #include <memory>
+#include "ThemeAssets.hpp"
 
 class FireFlowerItem : public Item {
 public:
-    FireFlowerItem(glm::vec2 pos);
+    FireFlowerItem(glm::vec2 pos, const ThemeAssets& assets = ThemeAssets(Theme::Ground));
 
     void Update(float deltaTime) override;
     void OnCollect(Player* player) override;

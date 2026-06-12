@@ -5,11 +5,11 @@
 #include "GameConstants.hpp"
 #include "Util/Logger.hpp"
 
-MultiCoinBlock::MultiCoinBlock(glm::vec2 position, const std::string& theme, int coinCount)
+MultiCoinBlock::MultiCoinBlock(glm::vec2 position, const ThemeAssets& assets, int coinCount)
     : Block(position, {TILE_SIZE, TILE_SIZE}),
-      m_Theme(theme),
+      m_Assets(assets),
       m_RemainingCoins(std::max(1, coinCount)) {
-    SetSprite("block/" + m_Theme + "/brick/brick.png");
+    SetSprite(m_Assets.Sprite("block/{theme}/brick/brick.png"));
 }
 
 BlockHitResult MultiCoinBlock::OnHit(Player* /*player*/) {
@@ -22,7 +22,7 @@ BlockHitResult MultiCoinBlock::OnHit(Player* /*player*/) {
 
     if (m_RemainingCoins == 0) {
         m_IsUsed = true;
-        SetSprite("block/" + m_Theme + "/used_block/used_block.png");
+        SetSprite(m_Assets.Sprite("block/{theme}/used_block/used_block.png"));
     }
 
     return result;

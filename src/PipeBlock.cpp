@@ -105,4 +105,6 @@ std::optional<glm::vec2> EnterablePipeBlock::GetDestinationSpawn() const {
 }
 
 PipeCollisionBlock::PipeCollisionBlock(glm::vec2 position, glm::vec2 size)
-    : PipeBlock(position, size, "up") {}
+    : PipeBlock(position, size, "up") {
+    SetVisible(false);
+}
