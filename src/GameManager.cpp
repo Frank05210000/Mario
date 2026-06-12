@@ -911,7 +911,7 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
     );
 
     // ── 依關卡主題決定背景音樂（載入時決定，EnterPlaying 時才真正播放）──
-    m_LevelBGMName = (m_Level.theme == "underground") ? "underground" : "overworld";
+    m_LevelBGMName = (m_Level.theme == Theme::Underground) ? "underground" : "overworld";
 
     // ── 背景圖 ──────────────────────────────────────────────────────
     if (!m_Level.backgroundImagePath.empty()) {
