@@ -85,6 +85,7 @@ private:
     void ChangeLevel(const std::string& levelName, std::optional<glm::vec2> spawnOverride = std::nullopt);
     void ResetSceneObjects();
     void StartNewGame();
+    bool HandleLevelCheatShortcut();
     void EnterTitleScreen();
     void EnterLevelIntro();
     void EnterPlaying();
@@ -93,12 +94,10 @@ private:
     void EnterLevelClearTransition();   // 進入時間結算倒數狀態
     void EnterLevelClearPause();        // 進入結算後停頓狀態
     void AdvanceToNextLevel();          // 推進到下一關（或回標題）
-    void SelectInitialLevel(const std::string& levelName, const std::string& worldLabel);
     void BuildTitleOverlay();
     void BuildLevelIntroOverlay();
     void BuildTimeUpOverlay();
     void BuildGameOverOverlay();
-    void BuildLevelClearOverlay();
     void AddOverlayText(const std::string& text, int fontSize, glm::vec2 position, float zIndex = 30.0f);
     void AddOverlayImage(const std::string& assetPath, glm::vec2 position, glm::vec2 scale, float zIndex = 30.0f);
     void UpdateTitle(float dt);
@@ -138,15 +137,14 @@ private:
     void HandleLifeLost();
 
     /* 踩踏碰撞判斷
-     * 檢查 Player 是否從上方踩到任何 Enemy。
-     * 若是，呼叫 enemy.Stomp() 讓敵人消失。
+     * 檢查 Player 是否從上方踩到任何 Enemy，並依 StompOutcome
+     * 處理縮殼、停殼、掉翅膀、得分與反彈。
      */
     void CheckStompCollision();
 
     /* 殼對敵人碰撞判斷
      * 檢查正在滑行中的 Koopa 殼是否撞到其他存活的敵人。
-     * 若重疊則直接消滅被撞的敵人。
-     * TODO(Batch 5)：加入連殺 combo 計分機制。
+     * 若重疊則直接消滅被撞的敵人；連殺進度由各滑行殼自行持有。
      */
     void CheckShellEnemyCollision();
 
@@ -240,11 +238,6 @@ private:
     int m_ComboCount = 0;   // 當前連殺次數（0 = 尚未觸發）
     // 根據 NES Mario 規則返回下一擊的分數，並推進 combo 計數
     int NextComboScore();
-
-    // 殼滑行連殺（獨立計數）
-    int m_ShellComboCount = 0;   // 當前殼連殺次數
-    // 返回殼連殺的下一擊分數，並推進殼 combo 計數
-    int NextShellComboScore();
 
     // 重置踩踏 combo（落地時呼叫）
     void ResetCombo();

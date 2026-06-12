@@ -1,7 +1,9 @@
 #ifndef PLAYER_HPP
 #define PLAYER_HPP
 
+#include <array>
 #include <memory>
+#include <string>
 
 #include "Character.hpp"
 #include "Util/Animation.hpp"
@@ -110,7 +112,7 @@ public:
      */
     void SetSpawnPosition(glm::vec2 position);
 
-    void SetOnGround(bool state) { m_OnGround = state; }
+    void SetOnGround(bool state);
 
     /* 限制不得超過鏡頭左邊
      * 防止馬力歐往左跑回已經過去的場景。
@@ -132,6 +134,17 @@ public:
     void StartPipeEntry(glm::vec2 pipePosition, glm::vec2 pipeSize, const std::string& opening, float duration = 1.0f);
     void StartPipeExit(glm::vec2 pipePosition, glm::vec2 pipeSize, const std::string& opening, float duration = 1.0f);
     bool IsAnimationFinished() const { return m_AnimTimer >= m_AnimDuration; }
+
+    /* 鑽出水管動畫播完後恢復正常操作
+     * 由 GameManager 在 ExitingPipe && IsAnimationFinished() 時呼叫，
+     * 否則 ExitingPipe 永遠不會結束（玩家凍結在管口）。
+     */
+    void FinishPipeExit() {
+        if (m_State != State::ExitingPipe) return;
+        m_State = State::Normal;
+        m_Velocity = {0.0f, 0.0f};
+        m_OnGround = false; // 下一幀由方塊碰撞重新判定（通常正站在管口上）
+    }
 
 private:
     /* 處理鍵盤輸入
@@ -161,7 +174,19 @@ private:
     void UpdateTransformAnimation(float deltaTime); // 變身閃爍動畫更新
     void ResetTransientState();
 
+    struct VisualAssets {
+        std::shared_ptr<Util::Image> idle;
+        std::shared_ptr<Util::Animation> walk;
+        std::shared_ptr<Util::Image> jump;
+        std::shared_ptr<Util::Animation> climb;
+        std::shared_ptr<Util::Image> skid;
+        std::shared_ptr<Util::Image> duck;
+        std::shared_ptr<Util::Image> shoot;
+    };
 
+    VisualAssets CreateVisualAssets(const std::string& dir, bool includeShoot);
+    static std::size_t FormIndex(Form form);
+    const VisualAssets& CurrentVisualAssets() const;
 
     // ─── Player 專屬屬性 ───────────────────────────────────────────
 
@@ -180,40 +205,14 @@ private:
     bool  m_FacingLeft = false;    // 面向左邊嗎？（決定是否翻轉圖片）
 
     float m_DamageInvincibleTimer = 0.0f;
-    float m_DamageBlinkTimer = 0.0f;
-    bool  m_DamageBlinkVisible = true;
     float m_StarTimer = 0.0f;
-    float m_StarBlinkTimer = 0.0f;   // 星星閃爍計時器
-    bool  m_StarBlinkVisible = true; // 星星閃爍時的顯示狀態
 
     Form m_Form = Form::SMALL;     // 預設小馬力歐
-    // ─── 動畫資源（三套形態，right 方向；Draw() 裡用 scaleX 翻轉） ──
-
-    // SMALL Mario
-    std::shared_ptr<Util::Image>     m_SmallIdleImage;
-    std::shared_ptr<Util::Animation> m_SmallWalkAnim;
-    std::shared_ptr<Util::Image>     m_SmallJumpImage;
-    std::shared_ptr<Util::Animation> m_SmallClimbAnim;
-    std::shared_ptr<Util::Image>     m_SmallSkidImage;
-    std::shared_ptr<Util::Image>     m_SmallDuckImage;
-    std::shared_ptr<Util::Image>     m_DeadImage;      // 瑪利歐死亡專用圖片
-
-    // SUPER Mario
-    std::shared_ptr<Util::Image>     m_SuperIdleImage;
-    std::shared_ptr<Util::Animation> m_SuperWalkAnim;
-    std::shared_ptr<Util::Image>     m_SuperJumpImage;
-    std::shared_ptr<Util::Animation> m_SuperClimbAnim;
-    std::shared_ptr<Util::Image>     m_SuperSkidImage;
-    std::shared_ptr<Util::Image>     m_SuperDuckImage;
-
-    // FIRE Mario
-    std::shared_ptr<Util::Image>     m_FireIdleImage;
-    std::shared_ptr<Util::Animation> m_FireWalkAnim;
-    std::shared_ptr<Util::Image>     m_FireJumpImage;
-    std::shared_ptr<Util::Animation> m_FireClimbAnim;
-    std::shared_ptr<Util::Image>     m_FireSkidImage;
-    std::shared_ptr<Util::Image>     m_FireShootImage;
-    std::shared_ptr<Util::Image>     m_FireDuckImage;
+    static constexpr std::size_t FORM_COUNT = 3;
+    std::array<VisualAssets, FORM_COUNT> m_NormalVisuals;
+    std::array<VisualAssets, FORM_COUNT> m_DamageVisuals;
+    std::array<VisualAssets, FORM_COUNT> m_StarVisuals;
+    std::shared_ptr<Util::Image> m_DeadImage;
 
     // ── 過關動畫狀態 ──
     bool  m_IsLevelCleared    = false;

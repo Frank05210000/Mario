@@ -95,6 +95,7 @@ void PiranhaPlant::Update(float deltaTime) {
     }
 }
 
-void PiranhaPlant::Stomp() {
+Enemy::StompOutcome PiranhaPlant::Stomp() {
     // 食人花不可被踩（保持現有行為）
+    return StompOutcome::NoEffect;
 }

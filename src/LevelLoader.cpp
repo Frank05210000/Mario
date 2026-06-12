@@ -105,6 +105,7 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
                     od.moveDistance = obj.value("moveDistance", 0.0f);
                     od.moveTiles = std::max(0, static_cast<int>(std::round(od.moveDistance / TILE_SIZE)));
                 }
+                od.startOffsetTiles = std::max(0, obj.value("startOffsetTiles", 0));
             } else {
                 od.moveDistance = obj.value("moveDistance", 0.0f);
             }

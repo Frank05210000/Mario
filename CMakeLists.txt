@@ -68,3 +68,21 @@ target_link_libraries(${PROJECT_NAME}
     PTSD
     nlohmann_json::nlohmann_json
 )
+
+add_executable(KoopaBehaviorTests
+    tests/KoopaBehaviorTest.cpp
+)
+target_include_directories(KoopaBehaviorTests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/PTSD/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_include_directories(KoopaBehaviorTests SYSTEM PRIVATE
+    ${DEPENDENCY_INCLUDE_DIRS}
+)
+target_compile_definitions(KoopaBehaviorTests PRIVATE
+    RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/Resources"
+)
+target_link_libraries(KoopaBehaviorTests
+    GTest::gtest_main
+    PTSD
+)

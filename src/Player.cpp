@@ -22,7 +22,7 @@ Player::Player() {
     InitAnimations();
 
     // 預設顯示 Small Mario 待機圖（InitAnimations 之後才有值）
-    SetDrawable(m_SmallIdleImage);
+    SetDrawable(m_NormalVisuals[FormIndex(Form::SMALL)].idle);
 }
 
 void Player::ResetForNewGame() {
@@ -35,33 +35,75 @@ void Player::ResetForNewGame() {
 // ─── 初始化所有動畫資源 ───────────────────────────────────────────────
 
 void Player::InitAnimations() {
-    // ─ Small Mario ─
-    m_SmallIdleImage = std::make_shared<Util::Image>(kSmallIdle);
-    m_SmallJumpImage = std::make_shared<Util::Image>(kSmallJump);
-    m_SmallWalkAnim  = std::make_shared<Util::Animation>(kSmallWalk, true, 120, true);
-    m_SmallClimbAnim = std::make_shared<Util::Animation>(kSmallClimb, true, 150, true);
-    m_SmallSkidImage = std::make_shared<Util::Image>(kSmallSkid);
-    m_SmallDuckImage = std::make_shared<Util::Image>(kSmallDir + "Duck/Duck.png");
-    m_DeadImage      = std::make_shared<Util::Image>(kSmallDir + "Dead/Dead.png");
+    const std::array<std::string, FORM_COUNT> formNames = {
+        "Mario", "Super Mario", "Fiery Mario"
+    };
+    const std::array<std::string, FORM_COUNT> normalDirs = {
+        kSmallDir, kSuperDir, kFireDir
+    };
 
-    // ─ Super Mario ─
-    m_SuperIdleImage = std::make_shared<Util::Image>(kSuperIdle);
-    m_SuperJumpImage = std::make_shared<Util::Image>(kSuperJump);
-    m_SuperWalkAnim  = std::make_shared<Util::Animation>(kSuperWalk, true, 120, true);
-    m_SuperClimbAnim = std::make_shared<Util::Animation>(kSuperClimb, true, 150, true);
-    m_SuperSkidImage = std::make_shared<Util::Image>(kSuperSkid);
-    m_SuperDuckImage = std::make_shared<Util::Image>(kSuperDir + "Duck/Duck.png");
+    for (std::size_t form = 0; form < FORM_COUNT; ++form) {
+        const bool includeShoot = form == FormIndex(Form::FIRE);
+        m_NormalVisuals[form] = CreateVisualAssets(normalDirs[form], includeShoot);
+        m_DamageVisuals[form] = CreateVisualAssets(
+            MakeAssetPath("player/Effects/Damage/" + formNames[form] + "/right/"),
+            includeShoot);
+        m_StarVisuals[form] = CreateVisualAssets(
+            MakeAssetPath("player/Effects/Star1/" + formNames[form] + "/right/"),
+            includeShoot);
+    }
 
-    // ─ Fire Mario ─
-    m_FireIdleImage = std::make_shared<Util::Image>(kFireIdle);
-    m_FireJumpImage = std::make_shared<Util::Image>(kFireJump);
-    m_FireWalkAnim  = std::make_shared<Util::Animation>(kFireWalk, true, 120, true);
-    m_FireClimbAnim = std::make_shared<Util::Animation>(kFireClimb, true, 150, true);
-    m_FireSkidImage = std::make_shared<Util::Image>(kFireSkid);
-    m_FireShootImage = std::make_shared<Util::Image>(kFireShoot);
-    m_FireDuckImage  = std::make_shared<Util::Image>(kFireDir + "Duck/Duck.png");
+    m_DeadImage = std::make_shared<Util::Image>(kSmallDir + "Dead/Dead.png");
 
-    LOG_INFO("Player::InitAnimations done (Small / Super / Fire with Duck states)");
+    LOG_INFO("Player::InitAnimations done (normal / damage / star palettes)");
+}
+
+Player::VisualAssets Player::CreateVisualAssets(const std::string& dir,
+                                                 bool includeShoot) {
+    VisualAssets assets;
+    assets.idle = std::make_shared<Util::Image>(dir + "Walk1/Walk1.png");
+    assets.walk = std::make_shared<Util::Animation>(
+        std::vector<std::string>{
+            dir + "Walk1/Walk1-1.png",
+            dir + "Walk1/Walk1-2.png",
+            dir + "Walk1/Walk1-3.png",
+        },
+        true,
+        120,
+        true);
+    assets.jump = std::make_shared<Util::Image>(dir + "Jump/Jump.png");
+    assets.climb = std::make_shared<Util::Animation>(
+        std::vector<std::string>{
+            dir + "Climb/Climb-1.png",
+            dir + "Climb/Climb-2.png",
+        },
+        true,
+        150,
+        true);
+    assets.skid = std::make_shared<Util::Image>(dir + "Skid/Skid.png");
+    assets.duck = std::make_shared<Util::Image>(dir + "Duck/Duck.png");
+    if (includeShoot) {
+        assets.shoot = std::make_shared<Util::Image>(dir + "Shoot/Shoot.png");
+    }
+    return assets;
+}
+
+std::size_t Player::FormIndex(Form form) {
+    return static_cast<std::size_t>(form);
+}
+
+const Player::VisualAssets& Player::CurrentVisualAssets() const {
+    const std::size_t form = FormIndex(m_Form);
+
+    if (m_DamageInvincibleTimer > 0.0f) {
+        return m_DamageVisuals[form];
+    }
+
+    if (m_StarTimer > 0.0f) {
+        return m_StarVisuals[form];
+    }
+
+    return m_NormalVisuals[form];
 }
 
 // ─── 每幀主要更新 ────────────────────────────────────────────────────
@@ -182,25 +224,12 @@ void Player::UpdateDamageInvincibility(float deltaTime) {
     }
 
     if (m_DamageInvincibleTimer <= 0.0f) {
-        SetVisible(true);
         return;
     }
 
     m_DamageInvincibleTimer -= deltaTime;
     if (m_DamageInvincibleTimer <= 0.0f) {
         m_DamageInvincibleTimer = 0.0f;
-        m_DamageBlinkTimer = 0.0f;
-        m_DamageBlinkVisible = true;
-        SetVisible(true);
-        return;
-    }
-
-    constexpr float BLINK_INTERVAL = 0.1f;
-    m_DamageBlinkTimer += deltaTime;
-    if (m_DamageBlinkTimer >= BLINK_INTERVAL) {
-        m_DamageBlinkTimer = 0.0f;
-        m_DamageBlinkVisible = !m_DamageBlinkVisible;
-        SetVisible(m_DamageBlinkVisible);
     }
 }
 
@@ -210,25 +239,7 @@ void Player::UpdateStarInvincibility(float deltaTime) {
     m_StarTimer -= deltaTime;
     if (m_StarTimer <= 0.0f) {
         m_StarTimer = 0.0f;
-        // 星星效果結束：確保玩家可見（只在非受傷閃爍時才強制設回 visible）
-        if (!IsDamageInvincible()) {
-            SetVisible(true);
-        }
-        m_StarBlinkTimer = 0.0f;
         m_StarEndedEventPending = true; // 通知 AudioManager 切回關卡 BGM
-        return;
-    }
-
-    // 只有星星有效且玩家不在受傷閃爍狀態時才執行星星閃爍
-    // （兩者都有時，受傷閃爍優先，避免衝突）
-    if (IsDamageInvincible()) return;
-
-    constexpr float STAR_BLINK_INTERVAL = 0.06f;
-    m_StarBlinkTimer += deltaTime;
-    if (m_StarBlinkTimer >= STAR_BLINK_INTERVAL) {
-        m_StarBlinkTimer = 0.0f;
-        m_StarBlinkVisible = !m_StarBlinkVisible;
-        SetVisible(m_StarBlinkVisible);
     }
 }
 
@@ -310,79 +321,47 @@ void Player::UpdateAnimation() {
     // 小馬力歐 Y 身體只有一格，SUPER/FIRE 是兩格
     // SetForm() 已調整 m_Size，這裡只要切换圖片
 
-    std::shared_ptr<Util::Image>     idleImg;
-    std::shared_ptr<Util::Animation> walkAnim;
-    std::shared_ptr<Util::Image>     jumpImg;
-    std::shared_ptr<Util::Animation> climbAnim;
-    std::shared_ptr<Util::Image>     skidImg;
-    std::shared_ptr<Util::Image>     duckImg;
-
-    switch (m_Form) {
-        case Form::SMALL:
-            idleImg   = m_SmallIdleImage;
-            walkAnim  = m_SmallWalkAnim;
-            jumpImg   = m_SmallJumpImage;
-            climbAnim = m_SmallClimbAnim;
-            skidImg   = m_SmallSkidImage;
-            duckImg   = m_SmallDuckImage;
-            break;
-        case Form::SUPER:
-            idleImg   = m_SuperIdleImage;
-            walkAnim  = m_SuperWalkAnim;
-            jumpImg   = m_SuperJumpImage;
-            climbAnim = m_SuperClimbAnim;
-            skidImg   = m_SuperSkidImage;
-            duckImg   = m_SuperDuckImage;
-            break;
-        case Form::FIRE:
-            idleImg   = m_FireIdleImage;
-            walkAnim  = m_FireWalkAnim;
-            jumpImg   = m_FireJumpImage;
-            climbAnim = m_FireClimbAnim;
-            skidImg   = m_FireSkidImage;
-            duckImg   = m_FireDuckImage;
-            break;
-    }
+    const VisualAssets& visuals = CurrentVisualAssets();
 
     if (m_State == State::EnteringPipe || m_State == State::ExitingPipe) {
         if (m_PipeOpening == "up" || m_PipeOpening == "down") {
-            SetDrawable(duckImg);
+            SetDrawable(visuals.duck);
         } else {
-            SetDrawable(walkAnim);
+            SetDrawable(visuals.walk);
         }
         return;
     }
 
     // 變身動畫中：顯示當前 m_Form 的待機圖（m_Form 由閃爍邏輯交替切換）
     if (m_State == State::Transforming) {
-        SetDrawable(idleImg);
+        SetDrawable(visuals.idle);
         return;
     }
 
     if (m_State == State::LevelClear) {
         if (m_IsSlidingDown) {
-            SetDrawable(climbAnim);
+            SetDrawable(visuals.climb);
         } else if (m_IsWalkingToCastle) {
-            SetDrawable(walkAnim);
+            SetDrawable(visuals.walk);
         } else {
-            SetDrawable(idleImg);
+            SetDrawable(visuals.idle);
         }
         return;
     }
 
     if (m_Form == Form::FIRE && m_ShootingTimer > 0.0f) {
-        SetDrawable(m_FireShootImage);
+        SetDrawable(visuals.shoot);
         return;
     }
 
     if (!m_OnGround) {
-        SetDrawable(jumpImg);
+        SetDrawable(visuals.jump);
     } else if (m_IsSkidding) {
-        SetDrawable(skidImg);
+        SetDrawable(visuals.skid);
     } else if (m_IsMoving) {
-        SetDrawable(walkAnim);
+        SetDrawable(visuals.walk);
     } else {
-        SetDrawable(idleImg);
+        SetDrawable(visuals.idle);
     }
 }
 
@@ -504,11 +483,20 @@ void Player::Jump() {
 // ─── 其他方法 ────────────────────────────────────────────────────────
 
 void Player::SetSpawnPosition(glm::vec2 position) {
-    m_Position = position;
-    m_PreviousPosition = position;
+    // 關卡 JSON 的出生點以「小馬力歐（16px 高）的左上角」為基準。
+    // 這裡改以腳底對齊（bottom 固定在 y + TILE_SIZE），讓 SUPER/FIRE（32px 高）
+    // 抵達時頭頂自動上移，而不是腳底嵌進地板 16px——嵌住後落地判定永遠
+    // 不成立，會被側碰推擠並一路下沉到 killZ（換關開場即死的原因）。
+    m_Position = {position.x, position.y + TILE_SIZE - m_Size.y};
+    m_PreviousPosition = m_Position;
     ResetTransientState();
     UpdateAnimation();
     SetVisible(true);
+}
+
+void Player::SetOnGround(bool state) {
+    m_OnGround = state;
+    UpdateAnimation();
 }
 
 void Player::ResetTransientState() {
@@ -531,8 +519,6 @@ void Player::ResetTransientState() {
     m_IsWalkingToCastle = false;
     m_WalkTargetX = 0.0f;
     m_DamageInvincibleTimer = 0.0f;
-    m_DamageBlinkTimer = 0.0f;
-    m_DamageBlinkVisible = true;
     m_StarTimer = 0.0f;
     // 變身動畫狀態重置
     m_TransformTimer     = 0.0f;
@@ -557,8 +543,6 @@ void Player::StartLevelClearSequence(float poleX, float bottomY) {
     m_IsSlidingDown = true;
     m_IsWalkingToCastle = false;
     m_DamageInvincibleTimer = 0.0f;
-    m_DamageBlinkTimer = 0.0f;
-    m_DamageBlinkVisible = true;
     SetVisible(true);
     
     m_Position.x = poleX + TILE_SIZE * 0.5f; 
@@ -576,16 +560,12 @@ void Player::StartDamageInvincibility(float duration) {
     if (duration <= 0.0f || m_State == State::Dying || m_State == State::LevelClear) return;
 
     m_DamageInvincibleTimer = duration;
-    m_DamageBlinkTimer = 0.0f;
-    m_DamageBlinkVisible = true;
     SetVisible(true);
 }
 
 void Player::ActivateStarInvincibility(float duration) {
     if (duration <= 0.0f || m_State == State::Dying || m_State == State::LevelClear) return;
     m_StarTimer = duration;
-    m_StarBlinkTimer = 0.0f;
-    m_StarBlinkVisible = true;
     SetVisible(true);
     LOG_INFO("Player star invincibility activated for {} seconds.", duration);
 }
@@ -630,8 +610,6 @@ void Player::Downgrade() {
             m_IsDying = true;
             m_DeathTimer = 0.0f;
             m_DamageInvincibleTimer = 0.0f;
-            m_DamageBlinkTimer = 0.0f;
-            m_DamageBlinkVisible = true;
             m_StarTimer = 0.0f;
             m_Velocity = {0.0f, 0.0f};
             SetDrawable(m_DeadImage);

@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <array>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 
 #include "MushroomItem.hpp"
@@ -28,11 +29,6 @@
 #include "MultiCoinBlock.hpp"
 #include "OneUpMushroomItem.hpp"
 #include "StarmanItem.hpp"
-
-// ─── 關卡 JSON 路徑 ────────────────────────────────────────────────────────
-// RESOURCE_DIR 定義在 CMakeLists.txt，指向 Mario/Resources/
-// runtime 關卡 JSON 統一放在 Resources/data/
-static const std::string kDefaultInitialLevelName = "1-1";
 
 // ─── 關卡鏈定義（Batch A）────────────────────────────────────────────────
 // 過關順序：1-1 → 1-2 → 1-3 → 回標題
@@ -60,14 +56,11 @@ int GameManager::NextComboScore() {
     return -1; // 1UP
 }
 
-// 殼連殺計分：使用同一個 combo 分數表
-int GameManager::NextShellComboScore() {
-    int idx = m_ShellComboCount;
-    ++m_ShellComboCount;
+static int ShellComboScore(int idx) {
     if (idx < static_cast<int>(kComboScores.size())) {
         return kComboScores[idx];
     }
-    return -1; // 1UP
+    return -1;
 }
 
 void GameManager::ResetCombo() {
@@ -119,7 +112,6 @@ void GameManager::UpdateScorePopups(float dt) {
 }
 
 namespace {
-constexpr float kTitleBackdropZ = 25.0f;
 constexpr float kTitleTextZ = 30.0f;
 
 glm::vec2 GetPipeSize(const std::string& opening, int segments) {
@@ -160,6 +152,10 @@ void GameManager::Update() {
         LOG_WARN("Large frame dt detected: {}s, clamped to {}s", rawDt, dt);
     }
 
+    if (HandleLevelCheatShortcut()) {
+        return;
+    }
+
     switch (m_FlowState) {
         case FlowState::Title:
             UpdateTitle(dt);
@@ -187,22 +183,6 @@ void GameManager::Update() {
 
 void GameManager::UpdateTitle(float dt) {
     (void)dt;
-
-    if (Util::Input::IsKeyDown(Util::Keycode::NUM_4)) {
-        SelectInitialLevel("1-1", "1-1");
-        DrawScene(false);
-        return;
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::NUM_5)) {
-        SelectInitialLevel("1-2_ground_1", "1-2");
-        DrawScene(false);
-        return;
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::NUM_6)) {
-        SelectInitialLevel("1-3_ground_1", "1-3");
-        DrawScene(false);
-        return;
-    }
 
     if (Util::Input::IsKeyDown(Util::Keycode::RETURN) ||
         Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
@@ -260,6 +240,13 @@ void GameManager::UpdatePlaying(float dt) {
     if (m_Player.GetState() == Player::State::EnteringPipe && m_Player.IsAnimationFinished()) {
         ChangeLevel(m_PendingLevel, m_PendingSpawn);
         return;
+    }
+
+    // 鑽出水管動畫播完：恢復正常操作狀態。
+    // 沒有這個檢查的話，ExitingPipe 永遠不會結束，
+    // 玩家會凍結在管口（出口 spawn 落在水管內時觸發的鑽出動畫）。
+    if (m_Player.GetState() == Player::State::ExitingPipe && m_Player.IsAnimationFinished()) {
+        m_Player.FinishPipeExit();
     }
 
     // 1. 更新所有角色邏輯
@@ -461,7 +448,10 @@ void GameManager::UpdateLevelClearTransition(float dt) {
     constexpr float TIME_DRAIN_PER_SECOND = 60.0f; // 每秒扣幾單位
     constexpr float SCORE_PER_UNIT = 50.0f;        // 每單位加 50 分
 
-    if (m_TimeRemaining > 0.0f) {
+    // 注意：遊玩時 m_TimeRemaining 以 dt×2.5 扣減，結算開始時幾乎必帶小數。
+    // 必須把殘餘小數（< 1 單位）視為 0，否則 actualDeduct = min(n, int(0.x)) = 0
+    // 會永遠扣不完，卡死在結算狀態（1-1 過關後進不了 1-2 的原因）。
+    if (m_TimeRemaining >= 1.0f) {
         m_CountdownAccum += dt * TIME_DRAIN_PER_SECOND;
         const int unitsToDeduct = static_cast<int>(m_CountdownAccum);
         if (unitsToDeduct > 0) {
@@ -471,11 +461,16 @@ void GameManager::UpdateLevelClearTransition(float dt) {
             m_TimeRemaining -= static_cast<float>(actualDeduct);
             m_Session.AddScore(actualDeduct * static_cast<int>(SCORE_PER_UNIT));
 
-            if (m_TimeRemaining <= 0.0f) {
+            // 結算 tick 音效（原版每扣一單位嗶一聲；暫用 coin，之後可換專用 tick wav）
+            m_Audio.PlaySFX("coin");
+
+            // 扣完整數單位後若只剩小數，直接歸零，下一幀進入停頓
+            if (m_TimeRemaining < 1.0f) {
                 m_TimeRemaining = 0.0f;
             }
         }
     } else {
+        m_TimeRemaining = 0.0f;
         // 時間已歸零，進入停頓狀態
         EnterLevelClearPause();
         return;
@@ -540,6 +535,34 @@ void GameManager::ResetSceneObjects() {
     ResetCombo();
 }
 
+bool GameManager::HandleLevelCheatShortcut() {
+    int targetIndex = -1;
+
+    if (Util::Input::IsKeyDown(Util::Keycode::NUM_4)) {
+        targetIndex = 0;
+    } else if (Util::Input::IsKeyDown(Util::Keycode::NUM_5)) {
+        targetIndex = 1;
+    } else if (Util::Input::IsKeyDown(Util::Keycode::NUM_6)) {
+        targetIndex = 2;
+    }
+
+    if (targetIndex < 0 || targetIndex >= static_cast<int>(kLevelChain.size())) {
+        return false;
+    }
+
+    const auto& target = kLevelChain[targetIndex];
+    m_SelectedInitialLevelName = target.levelName;
+    m_SelectedWorldLabel = target.worldLabel;
+
+    LOG_INFO("Level cheat activated: key={} level='{}' world='{}'",
+             targetIndex + 4,
+             target.levelName,
+             target.worldLabel);
+
+    StartNewGame();
+    return true;
+}
+
 void GameManager::StartNewGame() {
     ResetSceneObjects();
     m_Session.ResetNewGame(1);
@@ -595,7 +618,8 @@ void GameManager::EnterLevelIntro() {
     ApplyPlayerProgress();
 
     // 若有中繼點重生覆蓋，套用後清除（只用一次）
-    if (m_CheckpointRespawnOverride.has_value()) {
+    const bool isCheckpointRespawn = m_CheckpointRespawnOverride.has_value();
+    if (isCheckpointRespawn) {
         m_Player.SetSpawnPosition(*m_CheckpointRespawnOverride);
         LOG_INFO("Checkpoint respawn override applied: x={} y={}",
                  m_CheckpointRespawnOverride->x,
@@ -608,6 +632,22 @@ void GameManager::EnterLevelIntro() {
         m_Camera.SetX(std::clamp(
             m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
             0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
+    }
+
+    // 中繼點重生：仿原版 NES——鏡頭右緣以左（已被越過、或重生當下已在畫面內）
+    // 的敵人不再生成。否則第一幀 CheckEnemySpawnQueue 會把整段路的敵人全部生出來，
+    // 其中站在中繼點旁的敵人直接疊在玩家身上 → 重生即死循環。
+    // 注意：只在中繼點重生時修剪；一般開場/水管抵達保留刻意設計在畫面內的敵人
+    // （例如 1-2 水管口的食人花）。
+    if (isCheckpointRespawn) {
+        const float viewRight = m_Camera.GetX() + m_Camera.GetViewWorldWidth();
+        const auto removeBegin = std::remove_if(
+            m_EnemySpawnQueue.begin(), m_EnemySpawnQueue.end(),
+            [&](const ObjectData& d) { return d.x < viewRight; });
+        const auto removedCount = std::distance(removeBegin, m_EnemySpawnQueue.end());
+        m_EnemySpawnQueue.erase(removeBegin, m_EnemySpawnQueue.end());
+        LOG_INFO("Checkpoint respawn: pruned {} enemy spawns left of viewRight={}",
+                 removedCount, viewRight);
     }
     BuildScene();
     m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
@@ -658,42 +698,18 @@ void GameManager::EnterTitleScreen() {
     // 回標題畫面時停止所有音樂
     m_Audio.StopBGM();
 
-    LoadLevel(MakeLevelPath(m_SelectedInitialLevelName.empty() ? kDefaultInitialLevelName : m_SelectedInitialLevelName));
-    {
-        const float lvW = static_cast<float>(m_Level.levelWidth);
-        m_Camera.SetX(std::clamp(
-            m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
-            0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
-    }
+    // 仿原版 NES：標題畫面以 1-1 開頭實景當背景（藍天、地面、馬力歐站在出生點），
+    // logo 與選單疊在場景上。標題狀態不更新世界邏輯（UpdateTitle 只 DrawScene），
+    // 敵人生成佇列只在 Playing 的 CheckEnemySpawnQueue 觸發，不會跑出怪。
+    m_Camera.Reset();
+    LoadLevel(MakeLevelPath("1-1"));
+    m_Player.SetOnGround(true);
     BuildScene();
+    m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
     BuildTitleOverlay();
 
     m_FlowState = FlowState::Title;
     LOG_INFO("Entered title screen.");
-}
-
-void GameManager::SelectInitialLevel(const std::string& levelName, const std::string& worldLabel) {
-    if (m_SelectedInitialLevelName == levelName && m_SelectedWorldLabel == worldLabel) {
-        return;
-    }
-
-    m_SelectedInitialLevelName = levelName;
-    m_SelectedWorldLabel = worldLabel;
-
-    ResetSceneObjects();
-    m_Player.ResetForNewGame();
-    LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
-    {
-        const float lvW = static_cast<float>(m_Level.levelWidth);
-        m_Camera.SetX(std::clamp(
-            m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
-            0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
-    }
-    BuildScene();
-    BuildTitleOverlay();
-    m_FlowState = FlowState::Title;
-
-    LOG_INFO("Selected initial level: '{}' ({})", m_SelectedInitialLevelName, m_SelectedWorldLabel);
 }
 
 void GameManager::EnterTimeUp() {
@@ -732,7 +748,8 @@ void GameManager::EnterLevelClearTransition() {
     // （ResetSceneObjects 會在進下一關 EnterLevelIntro 時呼叫）
     m_LevelClearTransitionTimer = 0.0f;
     m_CountdownAccum = 0.0f;
-    BuildLevelClearOverlay();
+    // 原版 NES 的時間結算沒有任何提示文字，直接在遊戲畫面上
+    // TIME 遞減、SCORE 遞增（見 UpdateLevelClearTransition）
     m_FlowState = FlowState::LevelClearTransition;
     // 播放過關 BGM（播一次，不循環）
     m_Audio.PlayBGM("level_clear", 0);
@@ -776,35 +793,61 @@ void GameManager::AdvanceToNextLevel() {
     EnterLevelIntro();
 }
 
-void GameManager::BuildTitleOverlay() {
+// 把 NES 像素座標換算成螢幕座標（視窗 960×720、GAME_SCALE=3）：
+// 可視世界寬 320px 比 NES 的 256px 多 64px，版面水平置中（左右各 32 世界px 邊距）；
+// 垂直方向 240px 剛好填滿，無邊距。傳入元素「中心」的 NES 座標。
+static glm::vec2 NesToScreen(float nesX, float nesY) {
     const auto context = Core::Context::GetInstance();
     const float halfW = static_cast<float>(context->GetWindowWidth()) * 0.5f;
     const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
+    const float marginX = (static_cast<float>(context->GetWindowWidth()) / GAME_SCALE - 256.0f) * 0.5f;
+    return {(nesX + marginX) * GAME_SCALE - halfW, halfH - nesY * GAME_SCALE};
+}
 
-    AddOverlayImage(
-        "ui/title/black.png",
-        {0.0f, 0.0f},
-        {halfW * 2.0f, halfH * 2.0f},
-        kTitleBackdropZ);
+void GameManager::BuildTitleOverlay() {
+    // 仿原版 NES 標題版面（NES 座標）：
+    //   logo        x 40..216, y 24..112 → 中心 (128, 68)
+    //   (C)1985     右緣對齊 logo 右緣 216，y 116..124
+    //   選單        文字左緣 x=88，y=144（1P）/ y=160（2P），蘑菇游標在 x≈76
+    //   TOP- 000000 左緣 x=88，y=184
+    constexpr int kTitleFontSize = 24; // NES 8px 字 × GAME_SCALE(3)
 
-    AddOverlayImage("ui/title/logo.png", {0.0f, halfH - 150.0f}, {3.0f, 3.0f}, kTitleTextZ);
-    AddOverlayText("TOP - 000000", 14, {0.0f, halfH - 270.0f}, kTitleTextZ);
-    AddOverlayText("1 PLAYER GAME", 16, {0.0f, halfH - 335.0f}, kTitleTextZ);
-    AddOverlayText("WORLD " + m_SelectedWorldLabel, 14, {0.0f, halfH - 380.0f}, kTitleTextZ);
-    AddOverlayText("4:1-1  5:1-2  6:1-3", 12, {0.0f, halfH - 420.0f}, kTitleTextZ);
-    AddOverlayText("PRESS ENTER OR SPACE", 12, {0.0f, halfH - 465.0f}, kTitleTextZ);
+    AddOverlayImage("ui/title/logo.png", NesToScreen(128.0f, 68.0f), {GAME_SCALE, GAME_SCALE}, kTitleTextZ);
+    AddOverlayText("(C)1985 NINTENDO", kTitleFontSize, NesToScreen(152.0f, 120.0f), kTitleTextZ);
+
+    // 原版 8x8 選單游標（固定指向 1 PLAYER GAME；2P 尚未開放，見 B-2）
+    AddOverlayImage("ui/title/cursor.png",
+                    NesToScreen(76.0f, 148.0f),
+                    {GAME_SCALE, GAME_SCALE},
+                    kTitleTextZ);
+    AddOverlayText("1 PLAYER GAME", kTitleFontSize, NesToScreen(140.0f, 148.0f), kTitleTextZ);
+    AddOverlayText("2 PLAYER GAME", kTitleFontSize, NesToScreen(140.0f, 164.0f), kTitleTextZ);
+
+    AddOverlayText("TOP- 000000", kTitleFontSize, NesToScreen(132.0f, 188.0f), kTitleTextZ);
 }
 
 void GameManager::BuildLevelIntroOverlay() {
-    const auto context = Core::Context::GetInstance();
-    const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
+    // 仿原版 NES 串場畫面：純黑底 + 頂部 HUD + 置中 WORLD x-x + 馬力歐小圖示 × 命數。
+    // 黑底 zIndex=15：蓋住已載入的場景（場景物件 z ≦ 10），
+    // 但讓 HUD（z=20）與本 overlay 的文字／圖示（z=30）透出。
+    constexpr float kIntroBackdropZ = 15.0f;
+    constexpr int kIntroFontSize = 24; // NES 8px 字 × GAME_SCALE(3)
 
-    AddOverlayText("WORLD  " + m_SelectedWorldLabel, 22, {0.0f, halfH - 260.0f});
+    const auto context = Core::Context::GetInstance();
+    const float windowW = static_cast<float>(context->GetWindowWidth());
+    const float windowH = static_cast<float>(context->GetWindowHeight());
+    AddOverlayImage("ui/title/black.png", {0.0f, 0.0f}, {windowW, windowH}, kIntroBackdropZ);
+
+    // 原版版面（NES 座標）：WORLD x-x 在 y≈84 列；馬力歐圖示 + 命數在 y≈112 列
+    AddOverlayText("WORLD " + m_SelectedWorldLabel, kIntroFontSize, NesToScreen(128.0f, 84.0f));
+
+    AddOverlayImage("player/Mario/right/Walk1/Walk1.png",
+                    NesToScreen(104.0f, 112.0f),
+                    {GAME_SCALE, GAME_SCALE});
 
     std::ostringstream livesText;
-    livesText << m_Session.GetCurrentPlayerName()
-              << " x " << m_Session.CurrentPlayer().lives;
-    AddOverlayText(livesText.str(), 18, {0.0f, halfH - 380.0f});
+    livesText << "x  " << m_Session.CurrentPlayer().lives;
+    AddOverlayText(livesText.str(), kIntroFontSize, NesToScreen(138.0f, 112.0f));
 }
 
 void GameManager::BuildTimeUpOverlay() {
@@ -820,15 +863,6 @@ void GameManager::BuildGameOverOverlay() {
 
     // 仿 NES 原版：黑底居中顯示 GAME OVER
     AddOverlayText("GAME OVER", 28, {0.0f, halfH - 400.0f});
-}
-
-void GameManager::BuildLevelClearOverlay() {
-    const auto context = Core::Context::GetInstance();
-    const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
-
-    // 顯示過關訊息與時間結算提示（NES 風格）
-    AddOverlayText("WORLD CLEAR!", 24, {0.0f, halfH - 160.0f});
-    AddOverlayText("TIME BONUS", 18, {0.0f, halfH - 240.0f});
 }
 
 void GameManager::AddOverlayText(const std::string& text, int fontSize, glm::vec2 position, float zIndex) {
@@ -977,7 +1011,8 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
                 moveDistance,
                 obj.moveSpeed,
                 obj.moveMode,
-                obj.startDirection));
+                obj.startDirection,
+                static_cast<float>(std::max(0, obj.startOffsetTiles)) * TILE_SIZE));
         } else if (obj.type == "TreePlatform") {
             m_Blocks.push_back(std::make_shared<TreePlatformBlock>(pos, obj.segments));
         } else if (obj.type == "Wall") {
@@ -1160,7 +1195,7 @@ void GameManager::CheckStompCollision() {
     }
 
     for (auto& enemy : m_Enemies) {
-        if (!enemy->IsAlive()) continue;
+        if (!enemy->CanCollide()) continue;
 
         const glm::vec2 ePos  = enemy->GetPosition();
         const glm::vec2 eSize = enemy->GetSize();
@@ -1199,7 +1234,7 @@ void GameManager::CheckStompCollision() {
 
         // ── 判斷是否為靜止的龜殼 ──
         auto* koopa = dynamic_cast<Koopa*>(enemy.get());
-        bool isStationaryShell = koopa && koopa->IsInShell() && !koopa->IsSliding();
+        const bool isStationaryShell = koopa && koopa->IsStationaryShell();
         const bool isPiranha = dynamic_cast<PiranhaPlant*>(enemy.get()) != nullptr;
 
         // ── 踩踏判定：必須是玩家從上方往下落到敵人頭上 ──
@@ -1212,19 +1247,9 @@ void GameManager::CheckStompCollision() {
             playerBottom <= enemyTop + 12.0f;
 
         if (fallingOntoEnemy && !isPiranha) {
-            if (isStationaryShell) {
-                // 從上方踩到縮殼中的龜 → 踢殼！（踢殼算 400 分，不進 combo）
-                const bool playerIsLeftOfShell =
-                    (pPos.x + pSize.x * 0.5f) < (ePos.x + eSize.x * 0.5f);
-                const bool kickLeft = !playerIsLeftOfShell;
-                koopa->Kick(kickLeft);
-                m_Session.AddScore(400);
-                SpawnScorePopup(400, ePos);
-                m_Audio.PlaySFX("kick"); // 踢殼音效
-                LOG_INFO("Koopa shell kicked {} from top!", kickLeft ? "left" : "right");
-            } else {
-                // 一般踩踏（包含首次踩到正常行走的龜）— combo 計分
-                enemy->Stomp();
+            const Enemy::StompOutcome outcome = enemy->Stomp();
+            if (outcome == Enemy::StompOutcome::Defeated ||
+                outcome == Enemy::StompOutcome::EnteredShell) {
                 const int pts = NextComboScore();
                 if (pts < 0) {
                     m_Session.AddLife();
@@ -1236,12 +1261,22 @@ void GameManager::CheckStompCollision() {
                 }
                 m_Audio.PlaySFX("stomp"); // 踩踏音效
                 LOG_INFO("Stomp! combo={} score={}", m_ComboCount, pts);
+            } else if (outcome == Enemy::StompOutcome::LostWings) {
+                constexpr int PARATROOPA_DEMOTE_SCORE = 400;
+                m_Session.AddScore(PARATROOPA_DEMOTE_SCORE);
+                SpawnScorePopup(PARATROOPA_DEMOTE_SCORE, ePos);
+                m_Audio.PlaySFX("stomp");
+                LOG_INFO("KoopaParatroopa demoted: score={}", PARATROOPA_DEMOTE_SCORE);
+            } else if (outcome == Enemy::StompOutcome::StoppedShell) {
+                m_Audio.PlaySFX("stomp");
+                LOG_INFO("Koopa shell stopped or revive timer reset.");
             }
 
-            // 踩踏後給玩家一個小彈跳
-            glm::vec2 vel = m_Player.GetVelocity();
-            vel.y = -180.0f;
-            m_Player.SetVelocity(vel);
+            if (outcome != Enemy::StompOutcome::NoEffect) {
+                glm::vec2 vel = m_Player.GetVelocity();
+                vel.y = -180.0f;
+                m_Player.SetVelocity(vel);
+            }
         } else {
             // ── 側碰 / 從下方衝入 ──
             if (isStationaryShell) {
@@ -1277,10 +1312,8 @@ void GameManager::CheckStompCollision() {
 // 掃描所有正在滑行的 Koopa 殼，判斷是否與其他存活的敵人重疊。
 // 重疊則直接消滅被撞到的敵人，並使用獨立的殼連殺 combo 計分。
 void GameManager::CheckShellEnemyCollision() {
-    bool shellKilledAny = false;  // 追蹤本幀是否有殼殺敵
-
     for (auto& shellEnemy : m_Enemies) {
-        if (!shellEnemy->IsAlive()) continue;
+        if (!shellEnemy->CanCollide()) continue;
 
         auto* koopa = dynamic_cast<Koopa*>(shellEnemy.get());
         if (!koopa || !koopa->IsSliding()) continue;  // 只有滑行中的殼才能傷到敵人
@@ -1290,7 +1323,7 @@ void GameManager::CheckShellEnemyCollision() {
 
         for (auto& target : m_Enemies) {
             if (target.get() == shellEnemy.get()) continue;  // 不撞自己
-            if (!target->IsAlive()) continue;
+            if (!target->CanCollide()) continue;
 
             const glm::vec2 tPos  = target->GetPosition();
             const glm::vec2 tSize = target->GetSize();
@@ -1306,7 +1339,7 @@ void GameManager::CheckShellEnemyCollision() {
                     target->SetVisible(false);
                 }
                 // 殼連殺使用獨立的殼 combo 計分
-                const int pts = NextShellComboScore();
+                const int pts = ShellComboScore(koopa->ConsumeShellChainIndex());
                 if (pts < 0) {
                     m_Session.AddLife();
                     SpawnScorePopup(-1, tPos);
@@ -1315,15 +1348,9 @@ void GameManager::CheckShellEnemyCollision() {
                     SpawnScorePopup(pts, tPos);
                 }
                 LOG_INFO("Shell killed enemy: combo={} score={} shellPos={} targetPos={}",
-                         m_ShellComboCount, pts, sPos, tPos);
-                shellKilledAny = true;
+                         koopa->GetShellChainCount(), pts, sPos, tPos);
             }
         }
-    }
-
-    // 如果本幀沒有殼殺到任何敵人，重置殼 combo
-    if (!shellKilledAny) {
-        m_ShellComboCount = 0;
     }
 }
 
@@ -1369,6 +1396,8 @@ void GameManager::CheckBlockCollision() {
             const auto* hiddenBlk = dynamic_cast<const HiddenBlock*>(block.get());
             const bool isUnrevealedHidden = hiddenBlk && !hiddenBlk->IsRevealed();
             if (!block->IsSolid() && !isUnrevealedHidden) continue;
+            // 單向平台：從下方上升直接穿過，不觸發頂磚
+            if (block->IsOneWay()) continue;
 
             const glm::vec2 bPos  = block->GetPosition();
             const glm::vec2 bSize = block->GetSize();
@@ -1439,7 +1468,7 @@ void GameManager::CheckBlockCollision() {
         const float blockRight  = bPos.x + bSize.x;
 
         for (auto& enemy : m_Enemies) {
-            if (!enemy->IsAlive()) continue;
+            if (!enemy->CanCollide()) continue;
 
             const glm::vec2 ePos  = enemy->GetPosition();
             const glm::vec2 eSize = enemy->GetSize();
@@ -1450,8 +1479,12 @@ void GameManager::CheckBlockCollision() {
             // 底部接近方塊頂面，且水平有重疊
             if (std::abs(enemyBottom - blockTopY) <= BUMP_ABOVE_TOL &&
                 enemyCenterX >= blockLeft && enemyCenterX <= blockRight) {
-                // 踩踏式消滅（效果等同被從上方踩）
-                enemy->Stomp();
+                if (auto* koopa = dynamic_cast<Koopa*>(enemy.get())) {
+                    const bool flipLeft = enemyCenterX < (bPos.x + bSize.x * 0.5f);
+                    koopa->Die(flipLeft);
+                } else {
+                    enemy->Stomp();
+                }
                 LOG_INFO("Bump-block killed enemy above block at ({}, {})", bPos.x, bPos.y);
             }
         }
@@ -1476,68 +1509,74 @@ void GameManager::CheckBlockCollision() {
         }
     }
 
-    // ── Pass 2：處理落地與側碰（使用累積修正後的 pPos）─────────────────
+    // ── Pass 2A：只用頂面接觸判斷落地 ───────────────────────────────────
+    // 落地與側碰分開處理，避免左右牆壁的穿透被誤判為站在地面上。
+    constexpr float SUPPORT_TOLERANCE = 0.5f;
+    // 最小支撐重疊：原版 NES 的腳是內縮約 2px 的取樣點，
+    // 不足此值視為沒踩到——防止「次像素腳尖」掛在方塊邊緣懸空站立，
+    // 也削弱貼牆下落時把牆磚頂邊誤判為地板的貼牆跳。
+    constexpr float MIN_SUPPORT_OVERLAP = 3.0f;
+    const float previousBottom = pPrev.y + pSize.y;
+    const float currentBottom = pPos.y + pSize.y;
+    std::shared_ptr<Block> landingBlock = nullptr;
+    float landingTop = std::numeric_limits<float>::max();
+
     for (const auto& block : m_Blocks) {
         if (!block->IsSolid()) continue;
-        if (block == hitBelowBlock) continue; // 已在 Pass 1 處理
+        if (block == hitBelowBlock) continue;
 
-        const glm::vec2 bPos  = block->GetPosition();
+        const glm::vec2 bPos = block->GetPosition();
         const glm::vec2 bSize = block->GetSize();
+        const float overlapLeft = std::max(pPos.x, bPos.x);
+        const float overlapRight = std::min(pPos.x + pSize.x, bPos.x + bSize.x);
+        const float overlapX = overlapRight - overlapLeft;
+        if (overlapX < MIN_SUPPORT_OVERLAP) continue;
 
+        const bool restingOnSurface =
+            pVel.y >= 0.0f &&
+            std::abs(currentBottom - bPos.y) <= SUPPORT_TOLERANCE;
+        const bool crossedSurface =
+            pVel.y >= 0.0f &&
+            previousBottom <= bPos.y &&
+            currentBottom >= bPos.y;
+
+        // 當一幀跨過多個頂面時，選下降路徑中最先碰到的最高表面。
+        if ((restingOnSurface || crossedSurface) && bPos.y < landingTop) {
+            landingBlock = block;
+            landingTop = bPos.y;
+        }
+    }
+
+    if (landingBlock) {
+        pPos.y = landingTop - pSize.y;
+        if (pVel.y > 0.0f) pVel.y = 0.0f;
+        onGround = true;
+
+        if (auto* platform = dynamic_cast<MovingPlatformBlock*>(landingBlock.get())) {
+            pPos += platform->GetFrameDelta();
+        }
+    }
+
+    // ── Pass 2B：剩餘重疊一律視為水平側碰 ───────────────────────────────
+    // 側碰只修正 X，不得停止下落或把玩家設為 grounded。
+    for (const auto& block : m_Blocks) {
+        if (!block->IsSolid()) continue;
+        if (block == hitBelowBlock) continue;
+        // 單向平台：側面接觸直接穿過，不側推（只能從上方落地，見 Pass 2A）
+        if (block->IsOneWay()) continue;
+
+        const glm::vec2 bPos = block->GetPosition();
+        const glm::vec2 bSize = block->GetSize();
         if (!CollisionUtils::CheckAABB(pPos, pSize, bPos, bSize)) continue;
 
         const float pCenterX = pPos.x + pSize.x * 0.5f;
-        const float pCenterY = pPos.y + pSize.y * 0.5f;
         const float bCenterX = bPos.x + bSize.x * 0.5f;
-        const float bCenterY = bPos.y + bSize.y * 0.5f;
+        const float dx = pCenterX - bCenterX;
+        const float penX =
+            (pSize.x * 0.5f + bSize.x * 0.5f) - std::abs(dx);
 
-        const float dx   = pCenterX - bCenterX;
-        const float dy   = pCenterY - bCenterY;
-        const float penX = (pSize.x * 0.5f + bSize.x * 0.5f) - std::abs(dx);
-        const float penY = (pSize.y * 0.5f + bSize.y * 0.5f) - std::abs(dy);
-
-        const float previousBottom = pPrev.y + pSize.y;
-        const float currentBottom  = pPos.y + pSize.y;
-        const float overlapLeft    = std::max(pPos.x, bPos.x);
-        const float overlapRight   = std::min(pPos.x + pSize.x, bPos.x + bSize.x);
-        const float overlapX       = std::max(0.0f, overlapRight - overlapLeft);
-        const float blockTop       = bPos.y;
-
-        // 修復（快速下落著地）：讓容忍值隨下落速度自適應。
-        // 高速下落時玩家一幀穿過的距離可能超過固定的 SURFACE_TOLERANCE，
-        // 改用 max(固定值, |vy|*dt + 小緩衝) 確保都能被正確接住。
-        // dt 固定用 MAX_FRAME_DT 的上界防止超大值；+2 是最小緩衝。
-        const float adaptiveTol = std::max(SURFACE_TOLERANCE,
-                                           std::abs(pVel.y) * MAX_FRAME_DT + 2.0f);
-        const bool landedFromAbove =
-            pVel.y >= 0.0f &&
-            previousBottom <= blockTop + adaptiveTol &&
-            currentBottom >= blockTop;
-
-        // Bug 2 修復：standingOverlap 加入 penY < penX 條件，
-        // 確保 Y 軸穿透比 X 軸小才視為從上方著地，
-        // 避免快速水平移動側碰地板被誤判為落地而「被拉上去」。
-        // 修復（擴充）：原本只涵蓋 Ground，現在擴充到所有 solid 方塊，
-        // 確保玩家站在磚塊、問號磚、牆壁等方塊頂部也能正確落地。
-        const bool standingOverlap =
-            pVel.y >= 0.0f &&
-            dy < 0.0f &&
-            penY < penX &&
-            penY <= TILE_SIZE + 4.0f &&
-            overlapX >= pSize.x * 0.5f;
-
-        if (landedFromAbove || standingOverlap) {
-            pPos.y -= penY;
-            if (pVel.y > 0.0f) pVel.y = 0.0f;
-            onGround = true;
-            if (auto* platform = dynamic_cast<MovingPlatformBlock*>(block.get())) {
-                pPos += platform->GetFrameDelta();
-            }
-        } else {
-            // 側碰（hitFromBelow 已在 Pass 1 排除）
-            if (dx > 0.0f) pPos.x += penX;
-            else           pPos.x -= penX;
-        }
+        if (dx > 0.0f) pPos.x += penX;
+        else           pPos.x -= penX;
     }
 
     m_Player.SetPosition(pPos);
@@ -1553,12 +1592,13 @@ void GameManager::CheckBlockCollision() {
 
 void GameManager::CheckEnemyBlockCollision() {
     for (auto& enemy : m_Enemies) {
-        if (!enemy->IsAlive()) continue;
+        if (!enemy->CanCollide()) continue;
         if (!enemy->UsesBlockCollision()) continue;
 
         glm::vec2 ePos  = enemy->GetPosition();
         glm::vec2 eSize = enemy->GetSize();
         glm::vec2 eVel  = enemy->GetVelocity();
+        bool grounded = false;
 
         for (const auto& block : m_Blocks) {
             if (!block->IsSolid()) continue;
@@ -1593,13 +1633,18 @@ void GameManager::CheckEnemyBlockCollision() {
                     if (eVel.y < 0) eVel.y = 0.0f;
                 } else {
                     ePos.y -= penY;
-                    if (eVel.y > 0) eVel.y = 0.0f;
+                    if (eVel.y > 0) {
+                        eVel.y = 0.0f;
+                        grounded = true;
+                    }
                 }
             }
         }
 
         if (auto* koopa = dynamic_cast<Koopa*>(enemy.get())) {
-            if (koopa->GetVariant() == Koopa::Variant::Red && !koopa->IsInShell()) {
+            if (koopa->GetVariant() == Koopa::Variant::Red &&
+                koopa->IsWalking() &&
+                grounded) {
                 const float lookAheadX = eVel.x < 0.0f ? ePos.x - 2.0f : ePos.x + eSize.x + 2.0f;
                 const glm::vec2 probePos = {lookAheadX, ePos.y + eSize.y + 1.0f};
                 const glm::vec2 probeSize = {2.0f, 2.0f};
@@ -1613,7 +1658,7 @@ void GameManager::CheckEnemyBlockCollision() {
                     }
                 }
 
-                if (!hasSupportAhead && eVel.y == 0.0f) {
+                if (!hasSupportAhead) {
                     enemy->ReverseDirection();
                     eVel = enemy->GetVelocity();
                 }
@@ -1622,6 +1667,7 @@ void GameManager::CheckEnemyBlockCollision() {
 
         enemy->SetPosition(ePos);
         enemy->SetVelocity(eVel);
+        enemy->SetGrounded(grounded);
     }
 }
 
@@ -1900,7 +1946,7 @@ void GameManager::CheckFireballCollision() {
 
         // 2. 與敵人的碰撞
         for (auto& enemy : m_Enemies) {
-            if (!enemy->IsAlive()) continue;
+            if (!enemy->CanCollide()) continue;
 
             // 食人花隱藏中不受火球傷害（由 PiranhaPlant::IsHidden() 保護）
             auto* piranha = dynamic_cast<PiranhaPlant*>(enemy.get());

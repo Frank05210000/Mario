@@ -16,6 +16,14 @@
  */
 class Enemy : public Character {
 public:
+    enum class StompOutcome {
+        NoEffect,
+        Defeated,
+        EnteredShell,
+        StoppedShell,
+        LostWings,
+    };
+
     Enemy();
     virtual ~Enemy() = default;
 
@@ -44,12 +52,17 @@ public:
      * Goomba：直接死亡
      * Koopa ：縮進殼裡
      */
-    virtual void Stomp() = 0;
+    virtual StompOutcome Stomp() = 0;
 
     virtual bool UsesBlockCollision() const { return true; }
+    virtual bool CanCollide() const { return m_IsAlive; }
+
+    bool IsGrounded() const { return m_IsGrounded; }
+    void SetGrounded(bool grounded) { m_IsGrounded = grounded; }
 
 protected:
     float m_WalkSpeed = 40.0f;  // 行走速度（像素/秒），子類別可覆蓋（原版 NES 栗寶寶 ≈ 0.75 tiles/s × 16 × 3 ≈ 36，取 40）
+    bool m_IsGrounded = false;
 
 private:
 

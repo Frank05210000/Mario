@@ -17,7 +17,8 @@ MovingPlatformBlock::MovingPlatformBlock(glm::vec2 position,
                                          float moveDistance,
                                          float moveSpeed,
                                          const std::string& moveMode,
-                                         const std::string& startDirection)
+                                         const std::string& startDirection,
+                                         float startOffset)
     : Block(position, size),
       m_StartPosition(position),
       m_MoveAxis(moveAxis),
@@ -28,6 +29,15 @@ MovingPlatformBlock::MovingPlatformBlock(glm::vec2 position,
       m_StartSign(DirectionSignForAxis(m_MoveAxis, m_StartDirection)),
       m_Direction(m_StartSign) {
     SetSprite("block/platform/moving_platform.png", 2.0f);
+
+    // 初始相位偏移：沿行程方向先位移 startOffset 像素（夾在行程範圍內）。
+    // 讓同一組平台可以錯開相位，不會整排同進同退（JSON: startOffsetTiles）。
+    const float clampedOffset = std::clamp(startOffset, 0.0f, m_MoveDistance);
+    if (clampedOffset > 0.0f) {
+        glm::vec2 axis = (m_MoveAxis == "vertical") ? glm::vec2{0.0f, 1.0f}
+                                                    : glm::vec2{1.0f, 0.0f};
+        m_Position += axis * (clampedOffset * static_cast<float>(m_StartSign));
+    }
 }
 
 void MovingPlatformBlock::Update(float deltaTime) {
@@ -48,12 +58,19 @@ void MovingPlatformBlock::Update(float deltaTime) {
     const float offset = rawOffset * static_cast<float>(m_StartSign);
 
     if (m_MoveMode == "verticalWrap" && m_MoveAxis == "vertical") {
+        // 循環模式：行程盡頭直接瞬移回另一端。
+        // 注意：瞬移量不得計入 m_FrameDelta，否則站在平台上的玩家會被一起傳送；
+        // 乘客應該留在原地（平台從腳下消失，下一幀自然下落）。
+        m_FrameDelta = m_Position - previousPosition; // 只含平滑移動量
         if (offset > m_MoveDistance) {
             m_Position = m_StartPosition;
         } else if (offset < 0.0f) {
             m_Position = m_StartPosition + axis * (m_MoveDistance * static_cast<float>(m_StartSign));
         }
-    } else if (offset > m_MoveDistance) {
+        return;
+    }
+
+    if (offset > m_MoveDistance) {
         m_Position = m_StartPosition + axis * (m_MoveDistance * static_cast<float>(m_StartSign));
         m_Direction = -m_StartSign;
     } else if (offset < 0.0f) {

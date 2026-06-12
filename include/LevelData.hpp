@@ -37,6 +37,7 @@ struct ObjectData {
     float moveDistance = 0.0f;           // 舊格式相容；MovingPlatform 正式格式改用 moveTiles
     float moveSpeed = 0.0f;              // MovingPlatform: 速度 px/s
     int moveTiles = 0;                   // MovingPlatform: 最大移動距離（幾個 16px tile）
+    int startOffsetTiles = 0;            // MovingPlatform: 初始相位偏移（沿行程方向先走幾格），同組平台錯開用
     int segments = 3;                    // TreePlatform/EnterablePipe: 長度（幾個 16px tile）
     int coinCount = 10;                  // MultiCoinBlock: 可敲出的金幣數
 };
