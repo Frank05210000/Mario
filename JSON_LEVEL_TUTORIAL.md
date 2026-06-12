@@ -276,6 +276,16 @@ Koopa fields:
 - `variant`: `green` or `red`. Red Koopas turn around at platform edges.
 - `flightMode`: for `KoopaParatroopa`, `hop` or `verticalPatrol`.
 
+Runtime behavior follows SMB1 rules used by this project:
+
+- Green Koopas walk off platform edges; red Koopas turn around while walking.
+- `hop` Paratroopas repeatedly jump after landing.
+- `verticalPatrol` Paratroopas stay at their spawn X and move vertically.
+- The first stomp removes a Paratroopa's wings. A later stomp puts it in its
+  shell.
+- A sliding shell stops when stomped. A stationary shell can be kicked from
+  the side and warns visually shortly before reviving.
+
 ```json
 {
   "type": "EnemySpawn",

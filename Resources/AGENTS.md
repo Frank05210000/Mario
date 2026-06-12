@@ -6,6 +6,8 @@
 
 - `Resources/data/`：目前實際載入的 JSON 關卡。
 - `Resources/Asset/`：實際使用的圖像、字體、音效等資產。
+- `Resources/Asset/player/Effects/`：由既有 Mario 動作圖調色產生的受傷與星星無敵配色，目錄結構與原始 player sprite 相同。
+- `Resources/Asset/enemy/Koopa/<theme>/`：Koopa runtime 素材；`normal/reverse` 為綠/地下配色，`red/red_reverse` 含紅龜 walk、fly、shell 與 shell_revive。
 - CMake 的 `RESOURCE_DIR` 指向 `Resources/`；runtime 資料與資產都集中在這裡。
 - `ExportedSprites/` 是匯出的 sprite 素材/參考，不是目前程式直接使用的主要 asset root。
 
