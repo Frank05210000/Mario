@@ -34,6 +34,15 @@
 // runtime 關卡 JSON 統一放在 Resources/data/
 static const std::string kDefaultInitialLevelName = "1-1";
 
+// ─── 關卡鏈定義（Batch A）────────────────────────────────────────────────
+// 過關順序：1-1 → 1-2 → 1-3 → 回標題
+// 新增關卡只需在此陣列末尾追加元素
+const std::vector<GameManager::LevelEntry> GameManager::kLevelChain = {
+    {"1-1",          "1-1"},
+    {"1-2_ground_1", "1-2"},
+    {"1-3_ground_1", "1-3"},
+};
+
 // ─── Combo 分數序列（NES Mario 踩踏 / 殼連殺）────────────────────────────
 // 第 n 次連殺的分值：100, 200, 400, 500, 800, 1000, 2000, 4000, 5000, 1UP...
 static const std::array<int, 9> kComboScores = {
@@ -45,6 +54,16 @@ static const std::array<int, 9> kComboScores = {
 int GameManager::NextComboScore() {
     int idx = m_ComboCount;
     ++m_ComboCount;
+    if (idx < static_cast<int>(kComboScores.size())) {
+        return kComboScores[idx];
+    }
+    return -1; // 1UP
+}
+
+// 殼連殺計分：使用同一個 combo 分數表
+int GameManager::NextShellComboScore() {
+    int idx = m_ShellComboCount;
+    ++m_ShellComboCount;
     if (idx < static_cast<int>(kComboScores.size())) {
         return kComboScores[idx];
     }
@@ -154,8 +173,14 @@ void GameManager::Update() {
         case FlowState::TimeUp:
             UpdateTimeUp(dt);
             break;
+        case FlowState::GameOver:
+            UpdateGameOver(dt);
+            break;
         case FlowState::LevelClearTransition:
             UpdateLevelClearTransition(dt);
+            break;
+        case FlowState::LevelClearPause:
+            UpdateLevelClearPause(dt);
             break;
     }
 }
@@ -199,6 +224,39 @@ void GameManager::UpdateLevelIntro(float dt) {
 }
 
 void GameManager::UpdatePlaying(float dt) {
+    // ─── 暫停切換（Enter 鍵，單幀偵測防連發）──────────────────────────────
+    // Note：Title 畫面的 Enter 在 UpdateTitle 裡處理，不會到達這裡
+    if (Util::Input::IsKeyDown(Util::Keycode::RETURN)) {
+        m_Paused = !m_Paused;
+
+        if (m_Paused) {
+            // 建立 PAUSED overlay（加入 renderer）
+            if (!m_PauseOverlay) {
+                const std::string fontPath = MakeAssetPath("font/Super Mario Bros. NES.ttf");
+                auto context = Core::Context::GetInstance();
+                const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
+                auto text = std::make_shared<Util::Text>(
+                    fontPath, 24, "PAUSED", Util::Color(255, 255, 255));
+                m_PauseOverlay = std::make_shared<Util::GameObject>(text, 35.0f);
+                m_PauseOverlay->m_Transform.translation = {0.0f, halfH - 200.0f};
+                m_PauseOverlay->SetVisible(true);
+                m_Renderer.AddChild(m_PauseOverlay);
+            } else {
+                m_PauseOverlay->SetVisible(true);
+            }
+            LOG_INFO("Game paused.");
+        } else {
+            if (m_PauseOverlay) m_PauseOverlay->SetVisible(false);
+            LOG_INFO("Game resumed.");
+        }
+    }
+
+    // 暫停時只更新渲染，不更新任何物件或時間
+    if (m_Paused) {
+        m_Renderer.Update();
+        return;
+    }
+
     if (m_Player.GetState() == Player::State::EnteringPipe && m_Player.IsAnimationFinished()) {
         ChangeLevel(m_PendingLevel, m_PendingSpawn);
         return;
@@ -207,7 +265,44 @@ void GameManager::UpdatePlaying(float dt) {
     // 1. 更新所有角色邏輯
     m_Player.Update(dt);
 
+    // ── 跳躍音效：Player 在 Jump() 設旗，GameManager 消耗並播音 ──
+    if (m_Player.ConsumeJumpEvent()) {
+        const std::string jumpSfx = (m_Player.GetForm() == Player::Form::SMALL)
+                                        ? "jump_small" : "jump_super";
+        m_Audio.PlaySFX(jumpSfx);
+    }
+
+    // ── 星星效果結束：切回關卡 BGM ──
+    if (m_Player.ConsumeStarEndedEvent()) {
+        m_Audio.PlayBGM(m_LevelBGMName);
+        LOG_INFO("Star ended, restoring level BGM: {}", m_LevelBGMName);
+    }
+
+    // ── 死亡偵測：玩家剛進入 Dying 狀態時，停關卡 BGM 改播死亡 BGM ──
+    const bool playerIsDyingNow = m_Player.IsDying();
+    if (playerIsDyingNow && !m_PlayerWasDying) {
+        m_Audio.StopBGM();
+        m_Audio.PlayBGM("death", 0); // 死亡 BGM 播一次
+    }
+    m_PlayerWasDying = playerIsDyingNow;
+
+    // 變身動畫結束時套用待定的傷害無敵（縮小後才開始計時）
+    if (!m_Player.IsTransforming() && m_PendingDamageInvincibility > 0.0f) {
+        m_Player.StartDamageInvincibility(m_PendingDamageInvincibility);
+        m_PendingDamageInvincibility = 0.0f;
+        LOG_INFO("Post-transform damage invincibility started.");
+    }
+
     if (m_Player.GetState() == Player::State::EnteringPipe || m_Player.GetState() == Player::State::ExitingPipe) {
+        m_Camera.Update(m_Player.GetPosition().x,
+                        static_cast<float>(m_Level.levelWidth));
+        DrawScene(true);
+        return;
+    }
+
+    // 變身動畫中：全場凍結（不更新敵人/方塊/道具/時間），
+    // 只讓玩家自己更新（動畫已在 m_Player.Update(dt) 裡處理）
+    if (m_Player.IsTransforming()) {
         m_Camera.Update(m_Player.GetPosition().x,
                         static_cast<float>(m_Level.levelWidth));
         DrawScene(true);
@@ -276,10 +371,27 @@ void GameManager::UpdatePlaying(float dt) {
 
         // 4. 玩家左界夾制：確保玩家不會走到鏡頭左邊界之外（棘輪規則的配套）
         m_Player.ClampToCameraBounds(m_Camera.GetX());
+
+        // 5. 中繼點偵測：更新玩家已達成的最後中繼點
+        if (m_Player.IsAlive()) {
+            UpdateCheckpoints();
+        }
     }
 
     // ─── 虛空掉落判定 (Kill Z) ───
     const float killZ = m_Level.levelHeight + 50.0f;
+
+    // Time Up 等待死亡動畫時：玩家落出畫面後進 TIME UP overlay，不走一般生命扣除
+    if (m_WaitingForTimeUpDeath) {
+        if (m_Player.GetPosition().y > killZ) {
+            m_WaitingForTimeUpDeath = false;
+            EnterTimeUp();
+            return;
+        }
+        DrawScene(true);
+        return;
+    }
+
     if (m_Player.IsAlive() && m_Player.GetPosition().y > killZ) {
         m_Player.SetAlive(false);
         LOG_INFO("Player fell into the void! Life lost.");
@@ -301,11 +413,19 @@ void GameManager::UpdatePlaying(float dt) {
         return;
     }
 
+    // ─── 倒數計時 ─────────────────────────────────────────────────────────
     if (!m_LevelCleared && m_Player.IsAlive()) {
         m_TimeRemaining -= dt * 2.5f;
         if (m_TimeRemaining <= 0.0f) {
             m_TimeRemaining = 0.0f;
-            EnterTimeUp();
+            // Time Up：先觸發玩家死亡動畫，再進入 TIME UP overlay
+            // 原版 NES：TIME UP 時不降級，直接死亡彈跳
+            // 強制設為 SMALL 再 Downgrade → 進入 Dying state
+            m_WaitingForTimeUpDeath = true;
+            m_Player.SetForm(Player::Form::SMALL);
+            m_Player.Downgrade();  // SMALL -> Dying state（含死亡彈跳動畫）
+            LOG_INFO("Time Up! Player death animation started.");
+            DrawScene(true);
             return;
         }
     }
@@ -323,15 +443,56 @@ void GameManager::UpdateTimeUp(float dt) {
     m_Renderer.Update();
 }
 
-void GameManager::UpdateLevelClearTransition(float dt) {
-    m_LevelClearTransitionTimer += dt;
-    if (m_LevelClearTransitionTimer >= 3.0f) {
+void GameManager::UpdateGameOver(float dt) {
+    m_StateTimer += dt;
+    // GAME OVER 畫面顯示約 3 秒後回標題
+    if (m_StateTimer >= 3.0f) {
         EnterTitleScreen();
         DrawScene(false);
         return;
     }
 
     m_Renderer.Update();
+}
+
+// 時間結算倒數：每秒固定扣約 N 單位時間並同步加分
+// NES 原版：約每幀扣 2 單位（30fps * 2 = 60/s），這裡用 dt 換算
+void GameManager::UpdateLevelClearTransition(float dt) {
+    constexpr float TIME_DRAIN_PER_SECOND = 60.0f; // 每秒扣幾單位
+    constexpr float SCORE_PER_UNIT = 50.0f;        // 每單位加 50 分
+
+    if (m_TimeRemaining > 0.0f) {
+        m_CountdownAccum += dt * TIME_DRAIN_PER_SECOND;
+        const int unitsToDeduct = static_cast<int>(m_CountdownAccum);
+        if (unitsToDeduct > 0) {
+            m_CountdownAccum -= static_cast<float>(unitsToDeduct);
+
+            const int actualDeduct = std::min(unitsToDeduct, static_cast<int>(m_TimeRemaining));
+            m_TimeRemaining -= static_cast<float>(actualDeduct);
+            m_Session.AddScore(actualDeduct * static_cast<int>(SCORE_PER_UNIT));
+
+            if (m_TimeRemaining <= 0.0f) {
+                m_TimeRemaining = 0.0f;
+            }
+        }
+    } else {
+        // 時間已歸零，進入停頓狀態
+        EnterLevelClearPause();
+        return;
+    }
+
+    // 每幀更新畫面（含 HUD 時間與分數的即時動態顯示）
+    DrawScene(true);
+}
+
+// 結算結束後停頓 1 秒，再進下一關
+void GameManager::UpdateLevelClearPause(float dt) {
+    m_StateTimer += dt;
+    if (m_StateTimer >= 1.0f) {
+        AdvanceToNextLevel();
+        return;
+    }
+    DrawScene(true);
 }
 
 void GameManager::DrawScene(bool updateHud) {
@@ -384,8 +545,29 @@ void GameManager::StartNewGame() {
     m_Session.ResetNewGame(1);
     m_Player.ResetForNewGame();
 
+    // 新遊戲：清空中繼點與中繼點重生覆蓋
+    m_LastCheckpoint = std::nullopt;
+    m_CheckpointRespawnOverride = std::nullopt;
+
+    // 找到標題畫面選的關卡在關卡鏈中的位置
+    m_CurrentLevelIndex = 0; // 預設從頭
+    for (int i = 0; i < static_cast<int>(kLevelChain.size()); ++i) {
+        if (kLevelChain[i].levelName == m_SelectedInitialLevelName) {
+            m_CurrentLevelIndex = i;
+            break;
+        }
+    }
+
+    // 套用關卡鏈的關卡名稱到目前關卡欄位
+    m_SelectedWorldLabel = kLevelChain[m_CurrentLevelIndex].worldLabel;
+    // 同步進度
+    m_Session.CurrentPlayer().levelName = kLevelChain[m_CurrentLevelIndex].levelName;
+
     EnterLevelIntro();
-    LOG_INFO("New game started.");
+    LOG_INFO("New game started. Level index={} name='{}' world='{}'",
+             m_CurrentLevelIndex,
+             kLevelChain[m_CurrentLevelIndex].levelName,
+             m_SelectedWorldLabel);
 }
 
 void GameManager::EnterLevelIntro() {
@@ -393,9 +575,34 @@ void GameManager::EnterLevelIntro() {
     m_StateTimer = 0.0f;
     m_TimeRemaining = 400.0f;
     m_LevelCleared = false;
+    m_WaitingForTimeUpDeath = false;
+    m_Paused = false;          // 換關時清空暫停
+    m_PauseOverlay = nullptr;  // overlay 隨 renderer 重建
+    m_PendingDamageInvincibility = 0.0f; // 清空待定無敵
 
-    LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
+    // 決定要載入的關卡：若 m_CurrentLevelIndex 有效則用關卡鏈，否則退回標題選關
+    const std::string levelToLoad = (m_CurrentLevelIndex >= 0 &&
+                                     m_CurrentLevelIndex < static_cast<int>(kLevelChain.size()))
+                                    ? kLevelChain[m_CurrentLevelIndex].levelName
+                                    : m_SelectedInitialLevelName;
+
+    // 同步 world label（確保 HUD 顯示正確關卡名）
+    if (m_CurrentLevelIndex >= 0 && m_CurrentLevelIndex < static_cast<int>(kLevelChain.size())) {
+        m_SelectedWorldLabel = kLevelChain[m_CurrentLevelIndex].worldLabel;
+    }
+
+    LoadLevel(MakeLevelPath(levelToLoad));
     ApplyPlayerProgress();
+
+    // 若有中繼點重生覆蓋，套用後清除（只用一次）
+    if (m_CheckpointRespawnOverride.has_value()) {
+        m_Player.SetSpawnPosition(*m_CheckpointRespawnOverride);
+        LOG_INFO("Checkpoint respawn override applied: x={} y={}",
+                 m_CheckpointRespawnOverride->x,
+                 m_CheckpointRespawnOverride->y);
+        m_CheckpointRespawnOverride = std::nullopt;
+    }
+
     {
         const float lvW = static_cast<float>(m_Level.levelWidth);
         m_Camera.SetX(std::clamp(
@@ -415,31 +622,41 @@ void GameManager::EnterLevelIntro() {
 }
 
 void GameManager::EnterPlaying() {
-    ResetSceneObjects();
-    m_TimeRemaining = 400.0f;
-    m_LevelCleared = false;
+    // 注意：EnterPlaying 由 UpdateLevelIntro 呼叫，
+    // 此時關卡已在 EnterLevelIntro 完整載入（含中繼點重生座標）。
+    // 不重新 LoadLevel，避免覆蓋 EnterLevelIntro 中已套用的 checkpoint spawn。
+    // 只需重置遊戲邏輯狀態、重建場景並開始播 BGM 即可。
 
-    LoadLevel(MakeLevelPath(m_SelectedInitialLevelName));
-    ApplyPlayerProgress();
-    {
-        const float lvW = static_cast<float>(m_Level.levelWidth);
-        m_Camera.SetX(std::clamp(
-            m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
-            0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
-    }
+    // 重建 renderer（移除 intro overlay，重建可玩場景）
+    m_Renderer = Util::Renderer();
+    m_OverlayObjects.clear();
+    m_ScorePopups.clear();
+    // 重建敵人/方塊/道具的 renderer 子節點（物件本身不清空，保留關卡狀態）
     BuildScene();
     m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
 
+    m_LevelCleared = false;
+    m_WaitingForTimeUpDeath = false;
+    m_Paused = false;          // 確保進入遊玩狀態時不殘留暫停
+    m_PauseOverlay = nullptr;  // overlay 隨 renderer 重建
+    m_PendingDamageInvincibility = 0.0f; // 清空待定無敵
+
     m_FlowState = FlowState::Playing;
+    m_PlayerWasDying = false; // 重置死亡偵測狀態
+    // 開始播放關卡 BGM（依 LoadLevel 時決定的主題）
+    m_Audio.PlayBGM(m_LevelBGMName);
     LOG_INFO("Entered playing state.");
 }
 
 void GameManager::EnterTitleScreen() {
     ResetSceneObjects();
     m_LevelCleared = false;
+    m_WaitingForTimeUpDeath = false;
     m_StateTimer = 0.0f;
     m_LevelClearTransitionTimer = 0.0f;
     m_Player.ResetForNewGame();
+    // 回標題畫面時停止所有音樂
+    m_Audio.StopBGM();
 
     LoadLevel(MakeLevelPath(m_SelectedInitialLevelName.empty() ? kDefaultInitialLevelName : m_SelectedInitialLevelName));
     {
@@ -494,13 +711,69 @@ void GameManager::EnterTimeUp() {
     LOG_INFO("Entered time up state.");
 }
 
+void GameManager::EnterGameOver() {
+    ResetSceneObjects();
+    m_StateTimer = 0.0f;
+    m_LevelCleared = false;
+    m_WaitingForTimeUpDeath = false;
+
+    // 建立黑底 + GAME OVER 文字 overlay
+    BuildGameOverOverlay();
+
+    m_FlowState = FlowState::GameOver;
+    // 播放 Game Over 音效 BGM（播一次，不循環）
+    m_Audio.PlayBGM("game_over", 0);
+    LOG_INFO("Entered GAME OVER state.");
+}
+
 void GameManager::EnterLevelClearTransition() {
     SavePlayerProgress();
-    ResetSceneObjects();
+    // 不在此清空場景——保留畫面背景，等時間結算結束後再切關
+    // （ResetSceneObjects 會在進下一關 EnterLevelIntro 時呼叫）
     m_LevelClearTransitionTimer = 0.0f;
+    m_CountdownAccum = 0.0f;
     BuildLevelClearOverlay();
     m_FlowState = FlowState::LevelClearTransition;
-    LOG_INFO("Entered level clear transition.");
+    // 播放過關 BGM（播一次，不循環）
+    m_Audio.PlayBGM("level_clear", 0);
+    LOG_INFO("Entered level clear transition (time countdown). timeRemaining={}",
+             m_TimeRemaining);
+}
+
+void GameManager::EnterLevelClearPause() {
+    m_StateTimer = 0.0f;
+    m_FlowState = FlowState::LevelClearPause;
+    LOG_INFO("Entered level clear pause. Proceeding to next level in 1s.");
+}
+
+// 推進到下一關，或若已是最後一關則回標題
+void GameManager::AdvanceToNextLevel() {
+    const int nextIndex = m_CurrentLevelIndex + 1;
+
+    if (nextIndex >= static_cast<int>(kLevelChain.size())) {
+        // 已是最後一關，回標題
+        LOG_INFO("All levels cleared! Returning to title.");
+        // 重置進度 index，讓下次開始新遊戲從第一關開始
+        m_CurrentLevelIndex = -1;
+        EnterTitleScreen();
+        return;
+    }
+
+    // 推進到下一關
+    m_CurrentLevelIndex = nextIndex;
+    m_SelectedWorldLabel = kLevelChain[m_CurrentLevelIndex].worldLabel;
+    m_Session.CurrentPlayer().levelName = kLevelChain[m_CurrentLevelIndex].levelName;
+
+    // 換關時清空中繼點（新關卡從頭開始）
+    m_LastCheckpoint = std::nullopt;
+    m_CheckpointRespawnOverride = std::nullopt;
+
+    LOG_INFO("Advancing to level index={} name='{}' world='{}'",
+             m_CurrentLevelIndex,
+             kLevelChain[m_CurrentLevelIndex].levelName,
+             m_SelectedWorldLabel);
+
+    EnterLevelIntro();
 }
 
 void GameManager::BuildTitleOverlay() {
@@ -541,17 +814,21 @@ void GameManager::BuildTimeUpOverlay() {
     AddOverlayText("TIME UP", 24, {0.0f, halfH - 430.0f});
 }
 
+void GameManager::BuildGameOverOverlay() {
+    const auto context = Core::Context::GetInstance();
+    const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
+
+    // 仿 NES 原版：黑底居中顯示 GAME OVER
+    AddOverlayText("GAME OVER", 28, {0.0f, halfH - 400.0f});
+}
+
 void GameManager::BuildLevelClearOverlay() {
     const auto context = Core::Context::GetInstance();
     const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5f;
 
-    std::ostringstream scoreText;
-    scoreText << "SCORE " << std::setw(6) << std::setfill('0')
-              << m_Session.CurrentPlayer().score;
-
-    AddOverlayText("WORLD CLEAR", 24, {0.0f, halfH - 190.0f});
-    AddOverlayText(scoreText.str(), 16, {0.0f, halfH - 260.0f});
-    AddOverlayText("RETURNING TO TITLE", 14, {0.0f, halfH - 320.0f});
+    // 顯示過關訊息與時間結算提示（NES 風格）
+    AddOverlayText("WORLD CLEAR!", 24, {0.0f, halfH - 160.0f});
+    AddOverlayText("TIME BONUS", 18, {0.0f, halfH - 240.0f});
 }
 
 void GameManager::AddOverlayText(const std::string& text, int fontSize, glm::vec2 position, float zIndex) {
@@ -596,12 +873,25 @@ void GameManager::HandleLifeLost() {
     m_Session.CurrentPlayer().form = Player::Form::SMALL;
 
     if (m_Session.IsGameOver()) {
-        LOG_INFO("Game over. Returning to title.");
-        EnterTitleScreen();
+        LOG_INFO("Game over. Showing GAME OVER screen.");
+        // 清空中繼點（Game Over 後回到標題，不保留進度）
+        m_LastCheckpoint = std::nullopt;
+        EnterGameOver();
         return;
     }
 
     m_Session.SwitchToNextAlivePlayer();
+
+    // 若有達成的中繼點，重生位置改為中繼點（保持存活期間不清空）
+    if (m_LastCheckpoint.has_value()) {
+        LOG_INFO("Respawning at checkpoint: x={} y={}",
+                 m_LastCheckpoint->x, m_LastCheckpoint->y);
+        // 暫存中繼點座標，EnterLevelIntro 呼叫 LoadLevel 後覆蓋 playerSpawn
+        m_CheckpointRespawnOverride = m_LastCheckpoint;
+    } else {
+        m_CheckpointRespawnOverride = std::nullopt;
+    }
+
     EnterLevelIntro();
 }
 
@@ -619,6 +909,9 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
         m_Level.levelHeight,
         m_Level.playerSpawn
     );
+
+    // ── 依關卡主題決定背景音樂（載入時決定，EnterPlaying 時才真正播放）──
+    m_LevelBGMName = (m_Level.theme == Theme::Underground) ? "underground" : "overworld";
 
     // ── 背景圖 ──────────────────────────────────────────────────────
     if (!m_Level.backgroundImagePath.empty()) {
@@ -725,6 +1018,10 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
     ResetSceneObjects();
     m_LevelCleared = false;
 
+    // 換關（水管切換關卡）：清空中繼點，新關卡從頭開始
+    m_LastCheckpoint = std::nullopt;
+    m_CheckpointRespawnOverride = std::nullopt;
+
     LoadLevel(levelPath);
     if (spawnOverride.has_value()) {
         m_Player.SetSpawnPosition(*spawnOverride);
@@ -790,6 +1087,7 @@ bool GameManager::CheckPipeTransition() {
         m_PendingLevel = targetLevel;
         m_PendingSpawn = pipe->GetDestinationSpawn();
         m_Player.StartPipeEntry(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), 1.0f);
+        m_Audio.PlaySFX("pipe"); // 進水管音效
         return true;
     }
 
@@ -922,6 +1220,7 @@ void GameManager::CheckStompCollision() {
                 koopa->Kick(kickLeft);
                 m_Session.AddScore(400);
                 SpawnScorePopup(400, ePos);
+                m_Audio.PlaySFX("kick"); // 踢殼音效
                 LOG_INFO("Koopa shell kicked {} from top!", kickLeft ? "left" : "right");
             } else {
                 // 一般踩踏（包含首次踩到正常行走的龜）— combo 計分
@@ -930,10 +1229,12 @@ void GameManager::CheckStompCollision() {
                 if (pts < 0) {
                     m_Session.AddLife();
                     SpawnScorePopup(-1, ePos);
+                    m_Audio.PlaySFX("1up"); // 踩踏 1UP 音效
                 } else {
                     m_Session.AddScore(pts);
                     SpawnScorePopup(pts, ePos);
                 }
+                m_Audio.PlaySFX("stomp"); // 踩踏音效
                 LOG_INFO("Stomp! combo={} score={}", m_ComboCount, pts);
             }
 
@@ -951,13 +1252,18 @@ void GameManager::CheckStompCollision() {
                 koopa->Kick(kickLeft);
                 m_Session.AddScore(400);
                 SpawnScorePopup(400, ePos);
+                m_Audio.PlaySFX("kick"); // 踢殼音效
                 LOG_INFO("Koopa shell kicked {} from side!", kickLeft ? "left" : "right");
             } else {
                 // 碰到有殺傷力的敵人：玩家受傷降級
-                if (!m_Player.IsDamageInvincible()) {
+                // 變身動畫中視為無敵，不可被重複傷害
+                if (!m_Player.IsDamageInvincible() && !m_Player.IsTransforming()) {
                     m_Player.Downgrade();
-                    if (!m_Player.IsDying()) {
-                        m_Player.StartDamageInvincibility(2.0f);
+                    if (m_Player.IsDying()) {
+                        // SMALL 直接死亡，無無敵倒數需求
+                    } else if (m_Player.IsTransforming()) {
+                        // 觸發縮小動畫：無敵倒數等動畫結束後才開始
+                        m_PendingDamageInvincibility = 2.0f;
                     }
                     LOG_INFO("Player hit by enemy! Downgrade triggered.");
                 }
@@ -969,8 +1275,10 @@ void GameManager::CheckStompCollision() {
 
 // ─── CheckShellEnemyCollision ─────────────────────────────────────────────
 // 掃描所有正在滑行的 Koopa 殼，判斷是否與其他存活的敵人重疊。
-// 重疊則直接消滅被撞到的敵人，並使用連殺 combo 計分。
+// 重疊則直接消滅被撞到的敵人，並使用獨立的殼連殺 combo 計分。
 void GameManager::CheckShellEnemyCollision() {
+    bool shellKilledAny = false;  // 追蹤本幀是否有殼殺敵
+
     for (auto& shellEnemy : m_Enemies) {
         if (!shellEnemy->IsAlive()) continue;
 
@@ -997,8 +1305,8 @@ void GameManager::CheckShellEnemyCollision() {
                     target->SetAlive(false);
                     target->SetVisible(false);
                 }
-                // 殼連殺使用 combo 計分
-                const int pts = NextComboScore();
+                // 殼連殺使用獨立的殼 combo 計分
+                const int pts = NextShellComboScore();
                 if (pts < 0) {
                     m_Session.AddLife();
                     SpawnScorePopup(-1, tPos);
@@ -1007,9 +1315,15 @@ void GameManager::CheckShellEnemyCollision() {
                     SpawnScorePopup(pts, tPos);
                 }
                 LOG_INFO("Shell killed enemy: combo={} score={} shellPos={} targetPos={}",
-                         m_ComboCount, pts, sPos, tPos);
+                         m_ShellComboCount, pts, sPos, tPos);
+                shellKilledAny = true;
             }
         }
+    }
+
+    // 如果本幀沒有殼殺到任何敵人，重置殼 combo
+    if (!shellKilledAny) {
+        m_ShellComboCount = 0;
     }
 }
 
@@ -1104,10 +1418,14 @@ void GameManager::CheckBlockCollision() {
             // 磚塊打破得 50 分
             m_Session.AddScore(50);
             SpawnScorePopup(50, bPos);
+            m_Audio.PlaySFX("brick_break"); // 磚塊破碎音效
         }
 
         if (hitRes.spawnItem != "None") {
             SpawnItem(hitRes.spawnItem, bPos);
+        } else if (!hitRes.isDestroyed) {
+            // 頂到方塊但沒有打破也沒有道具：播 bump 音效（頂空磚或不可破磚）
+            m_Audio.PlaySFX("bump");
         }
 
         // ── 頂磚效果：消滅方塊正上方的敵人，踢飛正上方的道具 ──────────
@@ -1345,6 +1663,7 @@ void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
         m_Session.AddCoin();
         m_Session.AddScore(200);
         SpawnScorePopup(200, position);
+        m_Audio.PlaySFX("coin"); // 金幣音效
     } else if (itemType == "PowerUp" || itemType == "Mushroom") {
         if (m_Player.GetForm() == Player::Form::SMALL) {
             newItem = std::make_shared<MushroomItem>(position, m_ThemeAssets);
@@ -1353,15 +1672,19 @@ void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
             newItem = std::make_shared<FireFlowerItem>(position, m_ThemeAssets);
             spawnedType = "FireFlower";
         }
+        m_Audio.PlaySFX("powerup_appears"); // 道具冒出音效
     } else if (itemType == "FireFlower") {
         newItem = std::make_shared<FireFlowerItem>(position, m_ThemeAssets);
         spawnedType = "FireFlower";
+        m_Audio.PlaySFX("powerup_appears"); // 道具冒出音效
     } else if (itemType == "OneUp" || itemType == "1Up") {
         newItem = std::make_shared<OneUpMushroomItem>(position, m_ThemeAssets);
         spawnedType = "OneUp";
+        m_Audio.PlaySFX("powerup_appears"); // 道具冒出音效
     } else if (itemType == "Star" || itemType == "Starman") {
         newItem = std::make_shared<StarmanItem>(position, m_ThemeAssets);
         spawnedType = "Star";
+        m_Audio.PlaySFX("powerup_appears"); // 道具冒出音效
     }
 
     if (newItem) {
@@ -1400,12 +1723,21 @@ void GameManager::CheckItemCollision() {
                         m_Session.AddCoin();
                         m_Session.AddScore(200);
                         SpawnScorePopup(200, iPos);
+                        m_Audio.PlaySFX("coin"); // 場上金幣音效
                     } else if (itemType == "OneUp") {
                         m_Session.AddLife();
                         SpawnScorePopup(-1, iPos); // -1 = "1UP"
-                    } else if (itemType == "Mushroom" || itemType == "FireFlower" || itemType == "Star") {
+                        m_Audio.PlaySFX("1up");   // 1UP 音效
+                    } else if (itemType == "Mushroom" || itemType == "FireFlower") {
                         m_Session.AddScore(1000);
                         SpawnScorePopup(1000, iPos);
+                        m_Audio.PlaySFX("powerup"); // 吃到升級道具音效
+                    } else if (itemType == "Star") {
+                        m_Session.AddScore(1000);
+                        SpawnScorePopup(1000, iPos);
+                        m_Audio.PlaySFX("powerup");  // 吃到道具音效
+                        // 吃星後切換為 Starman BGM（星星時間結束後恢復，在 UpdatePlaying 偵測）
+                        m_Audio.PlayBGM("starman");
                     }
                 }
             }
@@ -1486,6 +1818,7 @@ void GameManager::SpawnFireball(glm::vec2 position, bool movingLeft) {
     auto fireball = std::make_shared<Fireball>(position, movingLeft);
     m_Fireballs.push_back(fireball);
     m_Renderer.AddChild(fireball);
+    m_Audio.PlaySFX("fireball"); // 火球發射音效
     LOG_INFO("GameManager spawned Fireball at {}", position);
 }
 
@@ -1605,6 +1938,26 @@ void GameManager::CheckFireballCollision() {
     }
 }
 
+// ─── UpdateCheckpoints ────────────────────────────────────────────────────
+// 每幀呼叫：掃描關卡中繼點清單，若玩家 X 越過某中繼點 X，
+// 且比目前已記錄的中繼點更靠右，就更新 m_LastCheckpoint。
+void GameManager::UpdateCheckpoints() {
+    if (m_Level.checkpoints.empty()) return;
+
+    const float playerX = m_Player.GetPosition().x;
+
+    for (const auto& cp : m_Level.checkpoints) {
+        // 玩家中心 X 越過中繼點 X 才算達成
+        if (playerX >= cp.x) {
+            if (!m_LastCheckpoint.has_value() ||
+                cp.x > m_LastCheckpoint->x) {
+                m_LastCheckpoint = cp;
+                LOG_INFO("Checkpoint reached: x={} y={}", cp.x, cp.y);
+            }
+        }
+    }
+}
+
 // ─── CheckFlagCollision ───────────────────────────────────────────────────
 
 /*
@@ -1643,14 +1996,19 @@ void GameManager::CheckFlagCollision() {
         const int score = flagBlock->GetContactScore(playerBottom);
         m_Session.AddScore(score);
         m_LevelCleared = true;
-        
+
+        // 觸發旗球下降動畫（與玩家下滑同時進行）
+        flagBlock->StartDescent();
+
         // 觸發玩家的過關下降演出
         m_Player.StartLevelClearSequence(fPos.x, fPos.y + fSize.y);
 
+        // 碰到旗杆：播放旗杆 SFX，同時停掉關卡 BGM
+        m_Audio.StopBGM();
+        m_Audio.PlaySFX("flagpole");
         LOG_INFO("=== LEVEL CLEAR! Flag score: {}  Total score: {} ===",
                  score,
                  m_Session.CurrentPlayer().score);
-        // TODO: 播放過關音樂、觸發旗子下降動畫、延遲幾秒後進下一關
         break;
     }
 }

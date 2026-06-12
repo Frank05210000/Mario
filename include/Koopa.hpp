@@ -25,6 +25,8 @@ public:
 
     /* 建構子
      * startX / startY：出生的世界座標位置。
+     * variant：顏色變體（Green 或 Red），預設 Green。
+     * assets：主題資產解析器，用來載入對應主題的精靈。
      */
     Koopa(float startX,
           float startY,

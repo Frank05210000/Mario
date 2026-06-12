@@ -29,7 +29,8 @@ public:
         Dying,
         LevelClear,
         EnteringPipe,
-        ExitingPipe
+        ExitingPipe,
+        Transforming  // 變身動畫中（吃道具升級或受傷縮小），凍結玩家物理與輸入
     };
 
     Player();
@@ -64,6 +65,13 @@ public:
     // 取得死亡狀態
     bool IsDying() const { return m_State == State::Dying; }
 
+    // ─── 變身動畫 ──────────────────────────────────────────────────────
+    // 啟動升級變身動畫：從 fromForm 升到 toForm，全場凍結約 1 秒
+    void StartTransformAnimation(Form fromForm, Form toForm);
+    bool IsTransforming() const { return m_State == State::Transforming; }
+    // 變身動畫完成後回傳最終形態
+    Form GetTransformTargetForm() const { return m_TransformToForm; }
+
     bool IsFacingLeft() const { return m_FacingLeft; }
     bool IsOnGround() const { return m_OnGround; }
     glm::vec2 GetPreviousPosition() const { return m_PreviousPosition; }
@@ -73,6 +81,25 @@ public:
         if (m_ShootRequested) {
             m_ShootRequested = false;
             m_ShootingTimer = 0.1f; // 約 3 幀的時間 (0.1秒)
+            return true;
+        }
+        return false;
+    }
+
+    // 給 AudioManager 詢問這幀是否剛跳躍（消耗式查詢）
+    bool ConsumeJumpEvent() {
+        if (m_JumpEventPending) {
+            m_JumpEventPending = false;
+            return true;
+        }
+        return false;
+    }
+
+    // 給 AudioManager 詢問星星無敵是否剛結束（消耗式查詢）
+    // 結束後需切回關卡 BGM
+    bool ConsumeStarEndedEvent() {
+        if (m_StarEndedEventPending) {
+            m_StarEndedEventPending = false;
             return true;
         }
         return false;
@@ -131,6 +158,7 @@ private:
 
     void UpdateDamageInvincibility(float deltaTime);
     void UpdateStarInvincibility(float deltaTime);
+    void UpdateTransformAnimation(float deltaTime); // 變身閃爍動畫更新
     void ResetTransientState();
 
 
@@ -144,6 +172,8 @@ private:
 
     bool  m_ShootRequested = false; // 是否要求發射火球
     float m_ShootingTimer  = 0.0f;  // 發射姿勢維持時間
+    bool  m_JumpEventPending = false;   // 這幀是否剛跳躍（供 AudioManager 查詢）
+    bool  m_StarEndedEventPending = false; // 星星效果剛結束（供 AudioManager 切回 BGM）
 
     bool  m_IsMoving   = false;    // 這幀有沒有按左右鍵（動畫用）
     bool  m_IsSkidding = false;    // 是否正在打滑
@@ -196,6 +226,15 @@ private:
     bool  m_IsDying = false;
     float m_DeathTimer = 0.0f;
     bool  m_DeathBounced = false;
+
+    // ── 變身動畫狀態 ──
+    Form  m_TransformFromForm = Form::SMALL; // 變身前形態
+    Form  m_TransformToForm   = Form::SUPER; // 變身後形態
+    float m_TransformTimer    = 0.0f;        // 變身動畫累積時間
+    float m_TransformBlinkTimer = 0.0f;      // 閃爍間隔計時器
+    bool  m_TransformBlinkState = false;     // 目前顯示哪個形態（false=from, true=to）
+    static constexpr float TRANSFORM_TOTAL_DURATION = 1.0f;   // 整體變身動畫時長（秒）
+    static constexpr float TRANSFORM_BLINK_INTERVAL = 0.07f;  // 每次切換的間隔（秒）
 
     // ── 水管動畫狀態變數 ──
     State m_State = State::Normal;

@@ -42,6 +42,8 @@ void PiranhaPlant::Update(float deltaTime) {
     switch (m_State) {
         case State::HiddenPause:
             m_Position.y = m_HiddenY;
+            // 完全縮回時隱藏（避免在水管中微露）
+            SetVisible(false);
             m_StateTimer += deltaTime;
             if (m_StateTimer >= HIDDEN_PAUSE) {
                 // 玩家在附近時不升出（重置計時，繼續等待）
@@ -56,6 +58,7 @@ void PiranhaPlant::Update(float deltaTime) {
 
         case State::Rising:
             // 升出途中若玩家靠近，立即縮回
+            SetVisible(true);  // 開始升出時顯示
             if (playerNear) {
                 m_StateTimer = 0.0f;
                 m_State      = State::Lowering;
@@ -71,6 +74,7 @@ void PiranhaPlant::Update(float deltaTime) {
 
         case State::ExtendedPause:
             m_Position.y = m_ExtendedY;
+            SetVisible(true);  // 升出後持續顯示
             m_StateTimer += deltaTime;
             if (m_StateTimer >= EXTENDED_PAUSE) {
                 m_StateTimer = 0.0f;
@@ -79,6 +83,8 @@ void PiranhaPlant::Update(float deltaTime) {
             break;
 
         case State::Lowering:
+            // 縮回途中仍顯示（直到完全縮回）
+            SetVisible(true);
             m_Position.y = std::min(m_HiddenY, m_Position.y + MOVE_SPEED * deltaTime);
             if (m_Position.y >= m_HiddenY) {
                 m_Position.y = m_HiddenY;
