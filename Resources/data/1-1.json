@@ -614,7 +614,7 @@
       "y": 144.0,
       "segments": 4,
       "opening": "up",
-      "targetLevel": "1-1_underground"
+      "targetLevel": "1-1_underground_1"
     },
     {
       "type": "PipeCollision",
