@@ -118,13 +118,25 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
         }
     }
 
-    LOG_INFO("LevelLoader loaded: file='{}' background='{}' theme='{}' size=({}, {}) objects={}",
+    // 解析中繼點清單（可選，缺省為空陣列）
+    // 格式：{ "checkpoints": [{"x": 2000, "y": 192}] }
+    if (j.contains("checkpoints") && j["checkpoints"].is_array()) {
+        for (const auto& cp : j["checkpoints"]) {
+            glm::vec2 point;
+            point.x = cp.value("x", 0.0f);
+            point.y = cp.value("y", 0.0f);
+            data.checkpoints.push_back(point);
+        }
+    }
+
+    LOG_INFO("LevelLoader loaded: file='{}' background='{}' theme='{}' size=({}, {}) objects={} checkpoints={}",
              jsonPath,
              data.backgroundImagePath,
              data.theme == Theme::Underground ? "underground" : "ground",
              data.levelWidth,
              data.levelHeight,
-             data.objects.size());
+             data.objects.size(),
+             data.checkpoints.size());
 
     return data;
 }

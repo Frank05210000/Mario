@@ -36,6 +36,12 @@ This means the object's top-left corner is 128 pixels from the left edge and
     "x": 32.0,
     "y": 176.0
   },
+  "checkpoints": [
+    {
+      "x": 2000.0,
+      "y": 176.0
+    }
+  ],
   "objects": []
 }
 ```
@@ -45,6 +51,13 @@ This means the object's top-left corner is 128 pixels from the left edge and
 - `levelWidth`: total level width in world pixels.
 - `levelHeight`: total level height in world pixels.
 - `playerSpawn`: Mario's starting top-left position.
+- `checkpoints`: optional array of midpoint positions. When Mario's `x` position
+  passes a checkpoint's `x`, that checkpoint is stored as the respawn location.
+  On death the game uses the latest reached checkpoint instead of `playerSpawn`.
+  Checkpoints are cleared when changing levels or starting a new game. The `y`
+  value should match the normal ground spawn height so Mario appears on solid
+  ground after respawning. If `checkpoints` is omitted the level behaves as
+  before (always respawn at `playerSpawn`).
 - `objects`: list of all gameplay objects in the level.
 
 ## Theme

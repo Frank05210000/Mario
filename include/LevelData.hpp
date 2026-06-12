@@ -56,6 +56,10 @@ struct LevelData {
     glm::vec2 playerSpawn = {64.0f, 300.0f}; // 玩家出生點 (預設值)
 
     std::vector<ObjectData> objects;  // 所有物件（方塊、出生點、觸發器...）
+
+    // 中繼點清單（可選，缺省為空陣列）
+    // 玩家 X 超過 checkpoint.x 後死亡，會從最後一個達成的中繼點重生
+    std::vector<glm::vec2> checkpoints;
 };
 
 #endif

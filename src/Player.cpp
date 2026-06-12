@@ -164,6 +164,12 @@ void Player::Update(float deltaTime) {
             m_Position = glm::mix(m_AnimStartPos, m_AnimEndPos, ratio);
             break;
         }
+
+        case State::Transforming: {
+            // 變身動畫：全場凍結（不更新物理），只跑閃爍
+            UpdateTransformAnimation(deltaTime);
+            break;
+        }
     }
 
     // 更新動畫
@@ -209,6 +215,7 @@ void Player::UpdateStarInvincibility(float deltaTime) {
             SetVisible(true);
         }
         m_StarBlinkTimer = 0.0f;
+        m_StarEndedEventPending = true; // 通知 AudioManager 切回關卡 BGM
         return;
     }
 
@@ -222,6 +229,62 @@ void Player::UpdateStarInvincibility(float deltaTime) {
         m_StarBlinkTimer = 0.0f;
         m_StarBlinkVisible = !m_StarBlinkVisible;
         SetVisible(m_StarBlinkVisible);
+    }
+}
+
+// ─── 變身動畫 ─────────────────────────────────────────────────────────
+
+void Player::StartTransformAnimation(Form fromForm, Form toForm) {
+    m_State = State::Transforming;
+    m_TransformFromForm = fromForm;
+    m_TransformToForm   = toForm;
+    m_TransformTimer    = 0.0f;
+    m_TransformBlinkTimer = 0.0f;
+    m_TransformBlinkState = false; // 從「舊形態」開始
+    // 先切換到舊形態以便閃爍
+    m_Form = fromForm;
+    // 確保尺寸與舊形態一致（變身期間物理用舊尺寸）
+    if (fromForm == Form::SMALL) {
+        m_Size = {TILE_SIZE, TILE_SIZE};
+    } else {
+        m_Size = {TILE_SIZE, TILE_SIZE * 2.0f};
+    }
+    SetVisible(true);
+    LOG_INFO("Player transform animation started: {} -> {}",
+             static_cast<int>(fromForm), static_cast<int>(toForm));
+}
+
+void Player::UpdateTransformAnimation(float deltaTime) {
+    m_TransformTimer     += deltaTime;
+    m_TransformBlinkTimer += deltaTime;
+
+    // 每 TRANSFORM_BLINK_INTERVAL 秒切換一次顯示形態
+    if (m_TransformBlinkTimer >= TRANSFORM_BLINK_INTERVAL) {
+        m_TransformBlinkTimer = 0.0f;
+        m_TransformBlinkState = !m_TransformBlinkState;
+        // 切換 form（只切圖，尺寸動畫期間維持 fromForm）
+        m_Form = m_TransformBlinkState ? m_TransformToForm : m_TransformFromForm;
+        UpdateAnimation(); // 立即同步圖片
+    }
+
+    // 動畫結束：定格到新形態
+    if (m_TransformTimer >= TRANSFORM_TOTAL_DURATION) {
+        m_Form = m_TransformToForm;
+        // 同步尺寸到新形態
+        if (m_TransformToForm == Form::SMALL) {
+            const float oldH = m_Size.y;
+            m_Size = {TILE_SIZE, TILE_SIZE};
+            m_Position.y += (oldH - m_Size.y);
+        } else {
+            const float oldH = m_Size.y;
+            m_Size = {TILE_SIZE, TILE_SIZE * 2.0f};
+            m_Position.y += (oldH - m_Size.y);
+        }
+        SetVisible(true);
+        m_State = State::Normal;
+        // 注意：升級的受傷無敵由 GameManager 在本幀偵測 IsTransforming() 結束後呼叫
+        LOG_INFO("Player transform animation finished. Final form={}", static_cast<int>(m_Form));
+        UpdateAnimation();
     }
 }
 
@@ -287,6 +350,12 @@ void Player::UpdateAnimation() {
         } else {
             SetDrawable(walkAnim);
         }
+        return;
+    }
+
+    // 變身動畫中：顯示當前 m_Form 的待機圖（m_Form 由閃爍邏輯交替切換）
+    if (m_State == State::Transforming) {
+        SetDrawable(idleImg);
         return;
     }
 
@@ -429,6 +498,7 @@ void Player::Jump() {
     m_Velocity.y = -launch;
     m_JumpCut = false;
     m_OnGround = false;
+    m_JumpEventPending = true; // 通知 AudioManager 播跳躍音效
 }
 
 // ─── 其他方法 ────────────────────────────────────────────────────────
@@ -450,6 +520,8 @@ void Player::ResetTransientState() {
     m_FacingLeft = false;
     m_ShootRequested = false;
     m_ShootingTimer = 0.0f;
+    m_JumpEventPending = false;
+    m_StarEndedEventPending = false;
     m_IsAlive = true;
     m_IsDying = false;
     m_DeathTimer = 0.0f;
@@ -462,6 +534,10 @@ void Player::ResetTransientState() {
     m_DamageBlinkTimer = 0.0f;
     m_DamageBlinkVisible = true;
     m_StarTimer = 0.0f;
+    // 變身動畫狀態重置
+    m_TransformTimer     = 0.0f;
+    m_TransformBlinkTimer = 0.0f;
+    m_TransformBlinkState = false;
     m_State = State::Normal; // 重置狀態為正常
 }
 
@@ -540,12 +616,14 @@ void Player::SetForm(Form form) {
 void Player::Downgrade() {
     switch (m_Form) {
         case Form::FIRE:
-            SetForm(Form::SMALL);
-            LOG_INFO("Player downgraded: FIRE -> SMALL");
+            // 觸發縮小變身動畫：FIRE -> SUPER（全場凍結 ~1 秒）
+            StartTransformAnimation(Form::FIRE, Form::SUPER);
+            LOG_INFO("Player downgraded: FIRE -> SUPER (transform animation)");
             break;
         case Form::SUPER:
-            SetForm(Form::SMALL);
-            LOG_INFO("Player downgraded: SUPER -> SMALL");
+            // 觸發縮小變身動畫：SUPER -> SMALL（全場凍結 ~1 秒）
+            StartTransformAnimation(Form::SUPER, Form::SMALL);
+            LOG_INFO("Player downgraded: SUPER -> SMALL (transform animation)");
             break;
         case Form::SMALL:
             m_State = State::Dying;

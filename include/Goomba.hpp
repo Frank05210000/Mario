@@ -21,6 +21,7 @@ class Goomba : public Enemy {
 public:
     /* 建構子
      * startX / startY：出生的世界座標位置。
+     * assets：主題資產解析器，用來載入對應主題的精靈。
      */
     Goomba(float startX, float startY, const ThemeAssets& assets = ThemeAssets(Theme::Ground));
 
