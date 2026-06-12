@@ -3,6 +3,7 @@
 
 #include "Item.hpp"
 #include <memory>
+#include "ThemeAssets.hpp"
 
 namespace Util {
     class Animation;
@@ -10,7 +11,7 @@ namespace Util {
 
 class CoinItem : public Item {
 public:
-    CoinItem(glm::vec2 pos);
+    CoinItem(glm::vec2 pos, const ThemeAssets& assets = ThemeAssets(Theme::Ground));
 
     void Update(float deltaTime) override;
     void OnCollect(Player* player) override;

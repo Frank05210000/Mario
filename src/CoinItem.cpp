@@ -4,13 +4,13 @@
 #include "Util/Logger.hpp"
 #include <vector>
 
-CoinItem::CoinItem(glm::vec2 pos) : Item(pos) {
+CoinItem::CoinItem(glm::vec2 pos, const ThemeAssets& assets) : Item(pos) {
     m_Size = {TILE_SIZE, TILE_SIZE};
 
     std::vector<std::string> paths = {
-        MakeAssetPath("item/coin/coin-1.png"),
-        MakeAssetPath("item/coin/coin-2.png"),
-        MakeAssetPath("item/coin/coin-3.png")
+        assets.Sprite("item/coin/{theme}/coin-1.png"),
+        assets.Sprite("item/coin/{theme}/coin-2.png"),
+        assets.Sprite("item/coin/{theme}/coin-3.png")
     };
 
     m_CoinAnim = std::make_shared<Util::Animation>(paths, true, 100, true);

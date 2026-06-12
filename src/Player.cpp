@@ -108,9 +108,10 @@ void Player::Update(float deltaTime) {
             if (m_DeathTimer < 0.5f) {
                 m_Velocity.y = 0.0f;
             }
-            // 階段 2：0.5 秒瞬間，給一個往上的死亡彈跳
-            else if (m_DeathTimer >= 0.5f && m_DeathTimer < 0.55f && m_Velocity.y == 0.0f) {
-                m_Velocity.y = -PLAYER_DEATH_BOUNCE;
+            // 階段 2：0.5 秒時，給一個往上的死亡彈跳（只執行一次）
+            else if (m_DeathTimer >= 0.5f && !m_DeathBounced) {
+                m_Velocity.y = -500.0f;
+                m_DeathBounced = true;
             }
             // 階段 3：之後套用重力，讓瑪利歐掉出畫面外
             else {
@@ -524,6 +525,7 @@ void Player::ResetTransientState() {
     m_IsAlive = true;
     m_IsDying = false;
     m_DeathTimer = 0.0f;
+    m_DeathBounced = false;
     m_IsLevelCleared = false;
     m_IsSlidingDown = false;
     m_IsWalkingToCastle = false;

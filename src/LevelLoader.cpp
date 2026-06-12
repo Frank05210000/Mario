@@ -44,7 +44,9 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
 
     data.levelWidth  = j.value("levelWidth",  0);
     data.levelHeight = j.value("levelHeight", 0);
-    data.theme       = j.value("theme", "ground");
+    // 主題從檔名推導，保持「檔名即真相」：含 _underground → Underground，其餘 → Ground。
+    data.theme = (jsonPath.find("_underground") != std::string::npos)
+                     ? Theme::Underground : Theme::Ground;
 
     // 解析玩家出生點
     if (j.contains("playerSpawn")) {
@@ -130,7 +132,7 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
     LOG_INFO("LevelLoader loaded: file='{}' background='{}' theme='{}' size=({}, {}) objects={} checkpoints={}",
              jsonPath,
              data.backgroundImagePath,
-             data.theme,
+             data.theme == Theme::Underground ? "underground" : "ground",
              data.levelWidth,
              data.levelHeight,
              data.objects.size(),
