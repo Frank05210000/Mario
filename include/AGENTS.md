@@ -29,13 +29,19 @@
   - forms：`SMALL`、`SUPER`、`FIRE`。
   - controls：左右方向鍵或 A/D 移動，Space/W/Up 跳，Z 跑步，FIRE 形態按 Z 也會請求射火球。
   - debug shortcuts：1/2/3 切換 SMALL/SUPER/FIRE。
-  - `Update()` 儲存 previous position，處理輸入、重力、死亡動畫、受傷無敵閃爍、過關自動走位與動畫切換。
+  - `Update()` 儲存 previous position，處理輸入、重力、死亡動畫、無敵配色顯示、過關自動走位與動畫切換。
   - `ConsumeShootRequest()` 由 `GameManager` 消耗，限制畫面最多 2 顆火球。
 - `Enemy`
   - 共用走路、重力、轉向。
-  - `Stomp()` 是純虛擬。
+  - `Stomp()` 是純虛擬並回傳 `StompOutcome`，呼叫端依結果處理得分與互動。
+  - 提供 `CanCollide()` 分離「仍需更新/繪製」與「仍可碰撞」，並記錄 grounded 狀態。
 - `Goomba`：16x16，被踩直接死亡。
-- `Koopa`：初始 16x32，建構時 y 會往上修正一格；被踩縮殼成 16x16；靜止龜殼可被踢。
+- `Koopa`
+  - 狀態為 `Walking`、`ShellIdle`、`ShellReviving`、`ShellSliding`、`Defeated`。
+  - 初始 16x32；縮殼後 16x16 並保持腳底位置。滑殼被踩會停止，靜止殼側碰會被踢。
+  - 靜止殼約 5 秒後復活，最後 1.5 秒顯示復活警告圖。
+  - `Defeated` 狀態仍更新翻面拋物線，但 `CanCollide()` 為 false。
+- `KoopaParatroopa`：第一次踩踏只掉翅膀並變回同色 Koopa，第二次才縮殼。
 - `PiranhaPlant`：不使用 block collision；在 hidden/rising/extended/lowering 四態之間循環；`Stomp()` 目前不做事，視為 hazard。
 
 ## Blocks
