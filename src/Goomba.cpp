@@ -40,8 +40,8 @@ void Goomba::Update(float deltaTime) {
     Enemy::Update(deltaTime);
 }
 
-void Goomba::Stomp() {
-    if (m_IsSquashed) return; // 避免重複觸發
+Enemy::StompOutcome Goomba::Stomp() {
+    if (m_IsSquashed) return StompOutcome::NoEffect;
 
     // 進入壓扁狀態：顯示壓扁圖、停止移動、啟動計時
     m_IsSquashed  = true;
@@ -49,4 +49,5 @@ void Goomba::Stomp() {
     m_Velocity.x  = 0.0f;
     m_Velocity.y  = 0.0f;
     SetDrawable(m_StompImage);
+    return StompOutcome::Defeated;
 }

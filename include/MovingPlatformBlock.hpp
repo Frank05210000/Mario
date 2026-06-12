@@ -13,10 +13,12 @@ public:
                         float moveDistance,
                         float moveSpeed,
                         const std::string& moveMode = "oscillate",
-                        const std::string& startDirection = "");
+                        const std::string& startDirection = "",
+                        float startOffset = 0.0f);
 
     Type GetType() const override { return Type::MovingPlatform; }
     bool IsSolid() const override { return true; }
+    bool IsOneWay() const override { return true; }  // 原版升降梯可從下方穿過
     void Update(float deltaTime) override;
     glm::vec2 GetFrameDelta() const { return m_FrameDelta; }
 

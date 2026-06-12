@@ -33,7 +33,7 @@ public:
     /* 被踩：進入壓扁狀態
      * 顯示壓扁圖片，啟動倒數計時後才真正死亡。
      */
-    void Stomp() override;
+    StompOutcome Stomp() override;
 
     /* 壓扁中不具傷害性 */
     bool IsSquashed() const { return m_IsSquashed; }

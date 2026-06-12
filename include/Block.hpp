@@ -44,6 +44,13 @@ public:
 
     // 與物理與互動有關的方法
     virtual bool IsSolid() const = 0;
+
+    /* 單向平台（semisolid）：只有「從上方落下」才站得住；
+     * 從下方跳穿、側面接觸一律穿過（不觸發 OnHit、不側推）。
+     * 原版 NES 的樹平台與升降梯都是這種行為。
+     */
+    virtual bool IsOneWay() const { return false; }
+
     virtual BlockHitResult OnHit(Player*) { return BlockHitResult(); }
 
     // 道具夾帶相關

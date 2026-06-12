@@ -12,6 +12,7 @@ public:
 
     Type GetType() const override { return Type::TreePlatform; }
     bool IsSolid() const override { return true; }
+    bool IsOneWay() const override { return true; }  // 原版樹平台可從下方穿過
     void Draw(const Camera& camera) override;
 
 private:

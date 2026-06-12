@@ -11,7 +11,7 @@ public:
     PiranhaPlant(float extendedX, float extendedY);
 
     void Update(float deltaTime) override;
-    void Stomp() override;
+    StompOutcome Stomp() override;
     bool UsesBlockCollision() const override { return false; }
 
     /* 設定玩家的 X 座標（每幀由 GameManager 呼叫）
