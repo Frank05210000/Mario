@@ -60,7 +60,7 @@ void HUD::Init(Util::Renderer& renderer, const std::string& worldLabel) {
 
     // 金幣區塊：先加金幣圖示，再是文字「x03」
     // 原版 HUD 金幣圖示約 8 NES 像素高（= 24 螢幕像素），對齊數值列（NES y=24..32）
-    auto coinImage = std::make_shared<Util::Image>(MakeAssetPath("item/coin/coin-1.png"));
+    auto coinImage = std::make_shared<Util::Image>(MakeAssetPath("ui/hud_coin/misc_3__hud_coin1_1.png"));
     m_CoinImageObj = std::make_shared<Util::GameObject>(coinImage, 20.0f);
     m_CoinImageObj->m_Transform.translation = {kCoinIconX, kTopY - kFontSize * 0.5f};
     {
