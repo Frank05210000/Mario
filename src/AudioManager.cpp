@@ -12,7 +12,24 @@ std::string AudioManager::MakeBGMPath(const std::string& name) {
 }
 
 std::string AudioManager::MakeSFXPath(const std::string& name) {
-    return MakeAssetPath("audio/sfx/" + name + ".wav");
+    return MakeAssetPath("audio/sfx/" + name + ".mp3");
+}
+
+int AudioManager::EventPriority(const std::string& name) {
+    if (name == "death" || name == "game_over" || name == "level_clear") {
+        return 3;
+    }
+    if (name == "starman") {
+        return 2;
+    }
+    return 1;
+}
+
+std::string AudioManager::HurryBGMName(const std::string& areaName) {
+    if (areaName == "overworld" || areaName == "underground") {
+        return areaName + "_hurry";
+    }
+    return areaName;
 }
 
 // ─── 建構子 ──────────────────────────────────────────────────────────────────
@@ -78,6 +95,61 @@ void AudioManager::ResumeBGM() {
     if (m_CurrentBGM) {
         m_CurrentBGM->Resume();
     }
+}
+
+void AudioManager::SetAreaBGM(const std::string& name) {
+    m_AreaBGMName = name;
+    RefreshAreaBGM();
+}
+
+void AudioManager::SetHurryUp(bool enabled) {
+    if (m_HurryUp == enabled) {
+        return;
+    }
+    m_HurryUp = enabled;
+    RefreshAreaBGM();
+}
+
+void AudioManager::PlayEventBGM(const std::string& name, int loop) {
+    const int priority = EventPriority(name);
+    if (!m_ActiveEventBGMName.empty() && priority < m_ActiveEventPriority) {
+        LOG_INFO("AudioManager: ignored lower-priority event BGM '{}' while '{}' is active.",
+                 name, m_ActiveEventBGMName);
+        return;
+    }
+
+    m_ActiveEventBGMName = name;
+    m_ActiveEventPriority = priority;
+    PlayBGM(name, loop);
+}
+
+void AudioManager::EndEventBGM(const std::string& name) {
+    if (m_ActiveEventBGMName != name) {
+        return;
+    }
+    m_ActiveEventBGMName.clear();
+    m_ActiveEventPriority = 0;
+    RefreshAreaBGM();
+}
+
+void AudioManager::ResetBGMState() {
+    m_AreaBGMName.clear();
+    m_ActiveEventBGMName.clear();
+    m_ActiveEventPriority = 0;
+    m_HurryUp = false;
+    StopBGM();
+}
+
+void AudioManager::RefreshAreaBGM() {
+    if (!m_ActiveEventBGMName.empty()) {
+        return;
+    }
+    if (m_AreaBGMName.empty()) {
+        StopBGM();
+        return;
+    }
+
+    PlayBGM(m_HurryUp ? HurryBGMName(m_AreaBGMName) : m_AreaBGMName);
 }
 
 // ─── SFX 控制 ────────────────────────────────────────────────────────────────

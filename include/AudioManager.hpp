@@ -19,12 +19,14 @@
  *
  * BGM 檔名約定（放在 Resources/Asset/audio/bgm/）：
  *   overworld.mp3、underground.mp3、starman.mp3、
+ *   overworld_hurry.mp3、underground_hurry.mp3、
  *   level_clear.mp3、death.mp3、game_over.mp3
  *
  * SFX 檔名約定（放在 Resources/Asset/audio/sfx/）：
- *   jump_small.wav、jump_super.wav、stomp.wav、coin.wav、
- *   powerup.wav、powerup_appears.wav、brick_break.wav、bump.wav、
- *   kick.wav、fireball.wav、pipe.wav、1up.wav、flagpole.wav
+ *   jump_small.mp3、jump_super.mp3、stomp.mp3、coin.mp3、
+ *   powerup.mp3、powerdown.mp3、powerup_appears.mp3、brick_break.mp3、bump.mp3、
+ *   kick.mp3、fireball.mp3、pipe.mp3、1up.mp3、flagpole.mp3、
+ *   countdown_tick.mp3
  */
 class AudioManager {
 public:
@@ -38,6 +40,14 @@ public:
     // 暫停 / 恢復（暫停時不切換 BGM）
     void PauseBGM();
     void ResumeBGM();
+
+    // ─── 狀態式 BGM 控制 ─────────────────────────────────────────
+    // Area BGM 是關卡底層音樂；event BGM 會依優先序暫時覆蓋它。
+    void SetAreaBGM(const std::string& name);
+    void SetHurryUp(bool enabled);
+    void PlayEventBGM(const std::string& name, int loop = -1);
+    void EndEventBGM(const std::string& name);
+    void ResetBGMState();
 
     // ─── SFX 控制 ─────────────────────────────────────────────────
     // name：不含副檔名與路徑，例如 "jump_small"
@@ -53,10 +63,17 @@ private:
     static std::string MakeBGMPath(const std::string& name);
     // 根據 name 組出 SFX 的完整路徑
     static std::string MakeSFXPath(const std::string& name);
+    static int EventPriority(const std::string& name);
+    static std::string HurryBGMName(const std::string& areaName);
+    void RefreshAreaBGM();
 
     // 目前正在播放的 BGM 物件（nullptr = 沒有或音檔不存在）
     std::unique_ptr<Util::BGM> m_CurrentBGM;
     std::string                m_CurrentBGMName;   // 當前 BGM name，用來偵測重複呼叫
+    std::string                m_AreaBGMName;      // 關卡底層 BGM
+    std::string                m_ActiveEventBGMName;
+    int                        m_ActiveEventPriority = 0;
+    bool                       m_HurryUp = false;
 
     // SFX 快取：避免每次呼叫 PlaySFX 都重新建構 Util::SFX
     std::unordered_map<std::string, std::shared_ptr<Util::SFX>> m_SfxCache;
