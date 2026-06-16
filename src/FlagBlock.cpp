@@ -55,11 +55,13 @@ void FlagBlock::Update(float dt) {
 }
 
 void FlagBlock::Draw(const Camera& camera) {
-    // 覆寫 Draw，讓球的位置隨 m_BallOffsetY 動態更新。
-    // m_Position.y 是碰撞範圍頂點（杆頂），加上偏移後得到球的世界 Y。
+    // 覆寫 Draw，讓旗子的位置隨 m_BallOffsetY 動態更新。
+    // m_Position.y 是碰撞範圍頂點（杆頂），加上偏移後得到旗子的世界 Y。
+    // FLAG_SPRITE_DROP：整體再往下微調，讓旗子貼齊杆底（實機校正值）。
+    constexpr float FLAG_SPRITE_DROP = 8.0f;
     glm::vec2 centerPos = {
         m_Position.x,
-        m_Position.y + m_BallOffsetY
+        m_Position.y + m_BallOffsetY + FLAG_SPRITE_DROP
     };
     m_Transform.translation = camera.WorldToScreen(centerPos);
 }

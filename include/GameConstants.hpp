@@ -26,6 +26,25 @@ constexpr float TILE_SIZE = 16.0f;
 constexpr int FLAG_POLE_TILES = 10;
 
 /*
+ * 過關旗杆 → 城堡 的演出參數
+ *
+ * 背景圖把「旗杆 + 杆頂球 + 城堡」都畫死了，程式只負責會動的東西：
+ * 旗子下滑、馬力歐滑杆、走進城門、城堡升小旗。
+ *
+ * POLE_SLIDE_SPEED：馬力歐與旗子沿杆下滑的速度（兩者共用，確保同步）。
+ * CASTLE_DOOR_DX  ：旗杆底座 x → 城堡門中心 x 的水平距離。
+ *                   量測 1-1/1-2 皆為 ~105px（原版城堡離旗杆固定距離），
+ *                   = 6.5 格，與舊版「走 0.5+6 格」落點一致。
+ * CASTLE_FLAG_*   ：城堡頂小旗升起動畫（無現成素材，另用程式生成的小旗）。
+ */
+constexpr float POLE_SLIDE_SPEED    = 150.0f;            // 滑杆速度（世界像素/秒）
+constexpr float CASTLE_DOOR_DX      = 6.5f * TILE_SIZE;  // 旗杆→城堡門中心
+constexpr float CASTLE_FLAG_RISE    = 2.0f * TILE_SIZE;  // 小旗升起高度
+constexpr float CASTLE_FLAG_TOP_DY  = 4.0f * TILE_SIZE;  // 地面→小旗升到頂時的高度
+                                                         // （城堡頂中央 battlement 實測在地面上方約 4 格）
+constexpr float CASTLE_FLAG_SPEED   = 32.0f;             // 小旗升起速度（世界像素/秒）
+
+/*
  * GAME_SCALE：全域畫面縮放比例
  *
  * NES 原始高度是 240px。

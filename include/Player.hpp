@@ -6,8 +6,10 @@
 #include <string>
 
 #include "Character.hpp"
+#include "ClipDrawable.hpp"
 #include "Util/Animation.hpp"
 #include "Util/Image.hpp"
+#include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
 
 /*
@@ -30,13 +32,36 @@ public:
         Normal,
         Dying,
         LevelClear,
+        IntroAutoWalk,
         EnteringPipe,
         ExitingPipe,
         Transforming  // 變身動畫中（吃道具升級或受傷縮小），凍結玩家物理與輸入
     };
 
+    enum class VisualProfile {
+        Mario,
+        Luigi,
+    };
+
+    struct Controls {
+        std::array<Util::Keycode, 3> left  = {Util::Keycode::LEFT,  Util::Keycode::A, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> right = {Util::Keycode::RIGHT, Util::Keycode::D, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> up    = {Util::Keycode::UP,    Util::Keycode::W, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> down  = {Util::Keycode::DOWN,  Util::Keycode::S, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> jump  = {Util::Keycode::SPACE, Util::Keycode::UP, Util::Keycode::W};
+        std::array<Util::Keycode, 3> run   = {Util::Keycode::Z, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> fire  = {Util::Keycode::Z, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> debugSmall = {Util::Keycode::NUM_1, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> debugSuper = {Util::Keycode::NUM_2, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> debugFire  = {Util::Keycode::NUM_3, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+    };
+
     Player();
     void ResetForNewGame();
+    void SetControls(const Controls& controls) { m_Controls = controls; }
+    static Controls DefaultControls();
+    static Controls PlayerTwoControls();
+    void SetVisualProfile(VisualProfile profile);
 
     // ─── 覆寫 Character 的純虛擬方法 ──────────────────────────────
 
@@ -126,14 +151,25 @@ public:
      */
     void StartLevelClearSequence(float poleX, float bottomY);
     bool IsLevelClearSequenceFinished() const {
-        return m_IsLevelCleared && !m_IsSlidingDown && !m_IsWalkingToCastle;
+        return m_IsLevelCleared && !m_IsSlidingDown && !m_IsWalkingToCastle
+               && !m_IsEnteringDoor;
     }
+    // 過關走位的城堡門中心 X（GameManager 用來定位城堡小旗）
+    float GetCastleDoorX() const { return m_WalkTargetX; }
+
+    void StartIntroAutoWalk(float targetX, float walkSpeed);
+    bool IsIntroAutoWalkFinished() const { return m_IntroAutoWalkFinished; }
 
     // ─── 水管進出動畫方法 ───────────────────────────────────────────
     State GetState() const { return m_State; }
     void StartPipeEntry(glm::vec2 pipePosition, glm::vec2 pipeSize, const std::string& opening, float duration = 1.0f);
     void StartPipeExit(glm::vec2 pipePosition, glm::vec2 pipeSize, const std::string& opening, float duration = 1.0f);
     bool IsAnimationFinished() const { return m_AnimTimer >= m_AnimDuration; }
+
+    bool IsPressingUp() const;
+    bool IsPressingDown() const;
+    bool IsPressingLeft() const;
+    bool IsPressingRight() const;
 
     /* 鑽出水管動畫播完後恢復正常操作
      * 由 GameManager 在 ExitingPipe && IsAnimationFinished() 時呼叫，
@@ -170,6 +206,7 @@ private:
     void InitAnimations();
 
     void UpdateDamageInvincibility(float deltaTime);
+    void UpdateDamageFlicker(float deltaTime);
     void UpdateStarInvincibility(float deltaTime);
     void UpdateTransformAnimation(float deltaTime); // 變身閃爍動畫更新
     void ResetTransientState();
@@ -185,8 +222,11 @@ private:
     };
 
     VisualAssets CreateVisualAssets(const std::string& dir, bool includeShoot);
+    VisualAssets CreateLuigiVisualAssets(Form form);
     static std::size_t FormIndex(Form form);
     const VisualAssets& CurrentVisualAssets() const;
+    static bool AnyPressed(const std::array<Util::Keycode, 3>& keys);
+    static bool AnyDown(const std::array<Util::Keycode, 3>& keys);
 
     // ─── Player 專屬屬性 ───────────────────────────────────────────
 
@@ -207,19 +247,32 @@ private:
     float m_DamageInvincibleTimer = 0.0f;
     float m_StarTimer = 0.0f;
 
+    // ── 受傷閃爍（模擬 NES 逐幀顯示/隱藏 sprite，視覺上呈半透明）──
+    float m_DamageFlickerTimer   = 0.0f;
+    bool  m_DamageFlickerVisible = true;
+    static constexpr float DAMAGE_FLICKER_INTERVAL = 1.0f / 30.0f; // 60fps 下每 2 幀切換
+
     Form m_Form = Form::SMALL;     // 預設小馬力歐
     static constexpr std::size_t FORM_COUNT = 3;
     std::array<VisualAssets, FORM_COUNT> m_NormalVisuals;
-    std::array<VisualAssets, FORM_COUNT> m_DamageVisuals;
     std::array<VisualAssets, FORM_COUNT> m_StarVisuals;
     std::shared_ptr<Util::Image> m_DeadImage;
+    Controls m_Controls;
+    VisualProfile m_VisualProfile = VisualProfile::Mario;
 
     // ── 過關動畫狀態 ──
     bool  m_IsLevelCleared    = false;
     bool  m_IsSlidingDown     = false;
     bool  m_IsWalkingToCastle = false;
+    bool  m_IsEnteringDoor    = false; // 走到城堡門口後沒入門內（最後階段）
     float m_PoleBottomY       = 0.0f;
-    float m_WalkTargetX       = 0.0f; // 過關後自動行走的目標位置
+    float m_WalkTargetX       = 0.0f; // 過關後自動行走的目標位置（城堡門中心）
+    float m_DoorEnterX        = 0.0f; // 沒入門內的最終 X（門中心再往內一些）
+
+    // ── 開場自動走路過場狀態 ──
+    float m_IntroAutoWalkTargetX = 0.0f;
+    float m_IntroAutoWalkSpeed = 0.0f;
+    bool  m_IntroAutoWalkFinished = false;
 
     // ── 死亡動畫狀態 ──
     bool  m_IsDying = false;
@@ -229,6 +282,7 @@ private:
     // ── 變身動畫狀態 ──
     Form  m_TransformFromForm = Form::SMALL; // 變身前形態
     Form  m_TransformToForm   = Form::SUPER; // 變身後形態
+    bool  m_TransformIsDowngrade = false;    // 受傷縮小才閃爍可見性，吃道具升級不閃
     float m_TransformTimer    = 0.0f;        // 變身動畫累積時間
     float m_TransformBlinkTimer = 0.0f;      // 閃爍間隔計時器
     bool  m_TransformBlinkState = false;     // 目前顯示哪個形態（false=from, true=to）
@@ -242,6 +296,13 @@ private:
     glm::vec2 m_AnimStartPos = {0.0f, 0.0f};
     glm::vec2 m_AnimEndPos = {0.0f, 0.0f};
     std::string m_PipeOpening = "up";
+    glm::vec2 m_PipePos  = {0.0f, 0.0f}; // 進/出水管時的水管位置（左上角，世界座標）
+    glm::vec2 m_PipeSize = {0.0f, 0.0f}; // 水管尺寸（世界座標）
+
+    // 進/出水管時沿管口裁切馬力歐，做出「沒入管中」效果（水管只是背景圖、無法遮擋）。
+    // 永久作為 GameObject 的 drawable；切換動畫時只更新其內層。
+    std::shared_ptr<ClipDrawable> m_ClipWrapper;
+    void SetVisual(const std::shared_ptr<Core::Drawable>& drawable);
 };
 
 #endif

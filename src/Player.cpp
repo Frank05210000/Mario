@@ -11,6 +11,14 @@
 #include "Util/Time.hpp"
 #include "Util/ImagePath.hpp"
 
+#include <algorithm>
+
+namespace {
+constexpr const char* kLuigiSmallDir = "player/LuigiSprites/native/small_luigi/";
+constexpr const char* kLuigiBigDir = "player/LuigiSprites/native/big_luigi/";
+constexpr const char* kLuigiFireDir = "player/LuigiSprites/native/fire_luigi/";
+}
+
 Player::Player() {
     m_Size = {TILE_SIZE, TILE_SIZE * 2.0f};
     m_Position = {200.0f, 100.0f};
@@ -35,27 +43,33 @@ void Player::ResetForNewGame() {
 // ─── 初始化所有動畫資源 ───────────────────────────────────────────────
 
 void Player::InitAnimations() {
-    const std::array<std::string, FORM_COUNT> formNames = {
-        "Mario", "Super Mario", "Fiery Mario"
-    };
-    const std::array<std::string, FORM_COUNT> normalDirs = {
-        kSmallDir, kSuperDir, kFireDir
-    };
+    if (m_VisualProfile == VisualProfile::Luigi) {
+        for (std::size_t form = 0; form < FORM_COUNT; ++form) {
+            m_NormalVisuals[form] = CreateLuigiVisualAssets(static_cast<Form>(form));
+            m_StarVisuals[form] = m_NormalVisuals[form];
+        }
+        m_DeadImage = std::make_shared<Util::Image>(
+            MakeAssetPath(std::string(kLuigiSmallDir) + "frame_14_8x8.png"));
+    } else {
+        const std::array<std::string, FORM_COUNT> formNames = {
+            "Mario", "Super Mario", "Fiery Mario"
+        };
+        const std::array<std::string, FORM_COUNT> normalDirs = {
+            kSmallDir, kSuperDir, kFireDir
+        };
 
-    for (std::size_t form = 0; form < FORM_COUNT; ++form) {
-        const bool includeShoot = form == FormIndex(Form::FIRE);
-        m_NormalVisuals[form] = CreateVisualAssets(normalDirs[form], includeShoot);
-        m_DamageVisuals[form] = CreateVisualAssets(
-            MakeAssetPath("player/Effects/Damage/" + formNames[form] + "/right/"),
-            includeShoot);
-        m_StarVisuals[form] = CreateVisualAssets(
-            MakeAssetPath("player/Effects/Star1/" + formNames[form] + "/right/"),
-            includeShoot);
+        for (std::size_t form = 0; form < FORM_COUNT; ++form) {
+            const bool includeShoot = form == FormIndex(Form::FIRE);
+            m_NormalVisuals[form] = CreateVisualAssets(normalDirs[form], includeShoot);
+            m_StarVisuals[form] = CreateVisualAssets(
+                MakeAssetPath("player/Effects/Star1/" + formNames[form] + "/right/"),
+                includeShoot);
+        }
+
+        m_DeadImage = std::make_shared<Util::Image>(kSmallDir + "Dead/Dead.png");
     }
 
-    m_DeadImage = std::make_shared<Util::Image>(kSmallDir + "Dead/Dead.png");
-
-    LOG_INFO("Player::InitAnimations done (normal / damage / star palettes)");
+    LOG_INFO("Player::InitAnimations done (normal / star palettes)");
 }
 
 Player::VisualAssets Player::CreateVisualAssets(const std::string& dir,
@@ -88,6 +102,119 @@ Player::VisualAssets Player::CreateVisualAssets(const std::string& dir,
     return assets;
 }
 
+Player::VisualAssets Player::CreateLuigiVisualAssets(Form form) {
+    VisualAssets assets;
+
+    if (form == Form::SMALL) {
+        const std::string dir = MakeAssetPath(kLuigiSmallDir);
+        assets.idle = std::make_shared<Util::Image>(dir + "frame_00_16x16.png");
+        assets.walk = std::make_shared<Util::Animation>(
+            std::vector<std::string>{
+                dir + "frame_01_16x16.png",
+                dir + "frame_02_16x16.png",
+                dir + "frame_03_16x16.png",
+            },
+            true,
+            120,
+            true);
+        assets.jump = std::make_shared<Util::Image>(dir + "frame_05_16x16.png");
+        assets.climb = std::make_shared<Util::Animation>(
+            std::vector<std::string>{
+                dir + "frame_10_16x16.png",
+                dir + "frame_11_16x16.png",
+            },
+            true,
+            150,
+            true);
+        assets.skid = std::make_shared<Util::Image>(dir + "frame_06_16x16.png");
+        assets.duck = std::make_shared<Util::Image>(dir + "frame_07_16x16.png");
+        return assets;
+    }
+
+    const std::string dir = MakeAssetPath(
+        form == Form::FIRE ? kLuigiFireDir : kLuigiBigDir);
+    const std::string idle = form == Form::FIRE ? "frame_15_16x32.png" : "frame_23_16x32.png";
+    const std::array<std::string, 3> walk = form == Form::FIRE
+        ? std::array<std::string, 3>{"frame_16_16x32.png", "frame_17_16x32.png", "frame_18_16x32.png"}
+        : std::array<std::string, 3>{"frame_24_16x32.png", "frame_25_16x32.png", "frame_26_16x32.png"};
+    const std::string jump = form == Form::FIRE ? "frame_21_16x32.png" : "frame_27_16x32.png";
+    const std::string skid = form == Form::FIRE ? "frame_22_16x32.png" : "frame_28_16x32.png";
+    const std::string duck = form == Form::FIRE ? "frame_33_16x32.png" : "frame_29_16x24.png";
+
+    assets.idle = std::make_shared<Util::Image>(dir + idle);
+    assets.walk = std::make_shared<Util::Animation>(
+        std::vector<std::string>{
+            dir + walk[0],
+            dir + walk[1],
+            dir + walk[2],
+        },
+        true,
+        120,
+        true);
+    assets.jump = std::make_shared<Util::Image>(dir + jump);
+    assets.climb = assets.walk;
+    assets.skid = std::make_shared<Util::Image>(dir + skid);
+    assets.duck = std::make_shared<Util::Image>(dir + duck);
+    if (form == Form::FIRE) {
+        assets.shoot = std::make_shared<Util::Image>(dir + "frame_34_16x32.png");
+    }
+    return assets;
+}
+
+Player::Controls Player::DefaultControls() {
+    return Controls{};
+}
+
+Player::Controls Player::PlayerTwoControls() {
+    Controls controls;
+    controls.left = {Util::Keycode::J, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+    controls.right = {Util::Keycode::L, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+    controls.up = {Util::Keycode::I, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+    controls.down = {Util::Keycode::K, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+    controls.jump = {Util::Keycode::U, Util::Keycode::I, Util::Keycode::UNKNOWN};
+    controls.run = {Util::Keycode::O, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+    controls.fire = {Util::Keycode::O, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+    controls.debugSmall = {Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+    controls.debugSuper = {Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+    controls.debugFire = {Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+    return controls;
+}
+
+void Player::SetVisualProfile(VisualProfile profile) {
+    if (m_VisualProfile == profile) return;
+    m_VisualProfile = profile;
+    InitAnimations();
+    UpdateAnimation();
+}
+
+bool Player::AnyPressed(const std::array<Util::Keycode, 3>& keys) {
+    return std::any_of(keys.begin(), keys.end(), [](Util::Keycode key) {
+        return key != Util::Keycode::UNKNOWN && Util::Input::IsKeyPressed(key);
+    });
+}
+
+bool Player::AnyDown(const std::array<Util::Keycode, 3>& keys) {
+    return std::any_of(keys.begin(), keys.end(), [](Util::Keycode key) {
+        return key != Util::Keycode::UNKNOWN && Util::Input::IsKeyDown(key);
+    });
+}
+
+bool Player::IsPressingUp() const {
+    return AnyPressed(m_Controls.up);
+}
+
+bool Player::IsPressingDown() const {
+    return AnyPressed(m_Controls.down);
+}
+
+bool Player::IsPressingLeft() const {
+    return AnyPressed(m_Controls.left);
+}
+
+bool Player::IsPressingRight() const {
+    return AnyPressed(m_Controls.right);
+}
+
 std::size_t Player::FormIndex(Form form) {
     return static_cast<std::size_t>(form);
 }
@@ -95,9 +222,7 @@ std::size_t Player::FormIndex(Form form) {
 const Player::VisualAssets& Player::CurrentVisualAssets() const {
     const std::size_t form = FormIndex(m_Form);
 
-    if (m_DamageInvincibleTimer > 0.0f) {
-        return m_DamageVisuals[form];
-    }
+    // 受傷無敵期間沿用一般圖，外觀由可見性閃爍呈現（見 UpdateDamageInvincibility）
 
     if (m_StarTimer > 0.0f) {
         return m_StarVisuals[form];
@@ -129,9 +254,7 @@ void Player::Update(float deltaTime) {
 
             // 3. 雙段重力：上升按住跳鍵用弱重力，放開或下降用強重力（防穿地終端速度 400）
             if (!m_OnGround) {
-                bool jumpHeld = Util::Input::IsKeyPressed(Util::Keycode::SPACE)
-                             || Util::Input::IsKeyPressed(Util::Keycode::UP)
-                             || Util::Input::IsKeyPressed(Util::Keycode::W);
+                bool jumpHeld = AnyPressed(m_Controls.jump);
                 if (!jumpHeld && m_Velocity.y < 0.0f) m_JumpCut = true;  // 放開即鎖定強重力
                 float g = (m_Velocity.y < 0.0f && jumpHeld && !m_JumpCut)
                               ? GRAVITY_RISE
@@ -177,24 +300,64 @@ void Player::Update(float deltaTime) {
                     m_Velocity.y = 0.0f;
                     m_IsSlidingDown = false;
                     m_IsWalkingToCastle = true;
-                    
-                    // 設定目標：往前走 6 格
+
+                    // 走到城堡門中心：此刻 m_Position.x = poleX + 0.5格，
+                    // 再走 6 格 = poleX + 6.5格 = poleX + CASTLE_DOOR_DX（門中心）。
                     m_WalkTargetX = m_Position.x + 6.0f * TILE_SIZE;
-                    
+                    // 沒入門內的最終位置：門中心再往內 0.5 格，讓 sprite 沒進門洞。
+                    m_DoorEnterX  = m_WalkTargetX + 0.5f * TILE_SIZE;
+
                     m_FacingLeft = false;
                     m_Velocity.x = PLAYER_MAX_WALK_SPEED;
                 }
             } else if (m_IsWalkingToCastle) {
-                // 自動向右走
+                // 自動向右走到城堡門中心
                 m_Position.x += m_Velocity.x * deltaTime;
                 ApplyGravity(deltaTime);
-                
+
                 if (m_Position.x >= m_WalkTargetX) {
                     m_Position.x = m_WalkTargetX;
-                    m_Velocity.x = 0.0f;
+                    // 還沒到門口就消失會像「半空中蒸發」；改成繼續往門內走一小段，
+                    // 沒入深色城門後再隱藏（引擎無 alpha，靠門洞暗色遮掩）。
                     m_IsWalkingToCastle = false;
-                    SetVisible(false); // 消失
+                    m_IsEnteringDoor = true;
                 }
+            } else if (m_IsEnteringDoor) {
+                // 沒入城門：繼續向門內走，到門內位置才隱藏
+                m_Position.x += m_Velocity.x * deltaTime;
+                ApplyGravity(deltaTime);
+
+                if (m_Position.x >= m_DoorEnterX) {
+                    m_Position.x = m_DoorEnterX;
+                    m_Velocity.x = 0.0f;
+                    m_IsEnteringDoor = false;
+                    SetVisible(false); // 進門後消失
+                }
+            }
+            break;
+        }
+
+        case State::IntroAutoWalk: {
+            UpdateDamageInvincibility(deltaTime);
+            UpdateStarInvincibility(deltaTime);
+
+            m_FacingLeft = false;
+            m_IsSkidding = false;
+
+            if (!m_IntroAutoWalkFinished) {
+                m_IsMoving = true;
+                m_Velocity.x = m_IntroAutoWalkSpeed;
+                m_Position.x += m_Velocity.x * deltaTime;
+                if (m_Position.x >= m_IntroAutoWalkTargetX) {
+                    m_Position.x = m_IntroAutoWalkTargetX;
+                    m_Velocity.x = 0.0f;
+                    m_IsMoving = false;
+                    m_IntroAutoWalkFinished = true;
+                }
+            }
+
+            if (!m_OnGround) {
+                ApplyGravity(deltaTime);
             }
             break;
         }
@@ -230,6 +393,21 @@ void Player::UpdateDamageInvincibility(float deltaTime) {
     m_DamageInvincibleTimer -= deltaTime;
     if (m_DamageInvincibleTimer <= 0.0f) {
         m_DamageInvincibleTimer = 0.0f;
+        m_DamageFlickerTimer = 0.0f;
+        m_DamageFlickerVisible = true;
+        SetVisible(true);
+        return;
+    }
+
+    UpdateDamageFlicker(deltaTime);
+}
+
+void Player::UpdateDamageFlicker(float deltaTime) {
+    m_DamageFlickerTimer += deltaTime;
+    if (m_DamageFlickerTimer >= DAMAGE_FLICKER_INTERVAL) {
+        m_DamageFlickerTimer = 0.0f;
+        m_DamageFlickerVisible = !m_DamageFlickerVisible;
+        SetVisible(m_DamageFlickerVisible);
     }
 }
 
@@ -252,6 +430,9 @@ void Player::StartTransformAnimation(Form fromForm, Form toForm) {
     m_TransformTimer    = 0.0f;
     m_TransformBlinkTimer = 0.0f;
     m_TransformBlinkState = false; // 從「舊形態」開始
+    m_TransformIsDowngrade = FormIndex(toForm) < FormIndex(fromForm);
+    m_DamageFlickerTimer   = 0.0f;
+    m_DamageFlickerVisible = true;
     // 先切換到舊形態以便閃爍
     m_Form = fromForm;
     // 確保尺寸與舊形態一致（變身期間物理用舊尺寸）
@@ -273,9 +454,19 @@ void Player::UpdateTransformAnimation(float deltaTime) {
     if (m_TransformBlinkTimer >= TRANSFORM_BLINK_INTERVAL) {
         m_TransformBlinkTimer = 0.0f;
         m_TransformBlinkState = !m_TransformBlinkState;
-        // 切換 form（只切圖，尺寸動畫期間維持 fromForm）
+        // 切換 form
         m_Form = m_TransformBlinkState ? m_TransformToForm : m_TransformFromForm;
+        // 同步碰撞箱尺寸到「當前顯示的形態」，並保持底部（腳）位置不變。
+        // 否則大馬力歐的圖會以小箱子中心置中繪製，下半身插進腳下方塊造成破圖。
+        const float oldH = m_Size.y;
+        m_Size.y = (m_Form == Form::SMALL) ? TILE_SIZE : TILE_SIZE * 2.0f;
+        m_Position.y += (oldH - m_Size.y);
         UpdateAnimation(); // 立即同步圖片
+    }
+
+    // 受傷縮小：大小交替同時做可見性閃爍（升級變身不閃）
+    if (m_TransformIsDowngrade) {
+        UpdateDamageFlicker(deltaTime);
     }
 
     // 動畫結束：定格到新形態
@@ -291,6 +482,8 @@ void Player::UpdateTransformAnimation(float deltaTime) {
             m_Size = {TILE_SIZE, TILE_SIZE * 2.0f};
             m_Position.y += (oldH - m_Size.y);
         }
+        m_DamageFlickerTimer   = 0.0f;
+        m_DamageFlickerVisible = true;
         SetVisible(true);
         m_State = State::Normal;
         // 注意：升級的受傷無敵由 GameManager 在本幀偵測 IsTransforming() 結束後呼叫
@@ -332,6 +525,16 @@ void Player::UpdateAnimation() {
         return;
     }
 
+    if (m_State == State::IntroAutoWalk) {
+        SetDrawable(visuals.walk);
+        return;
+    }
+
+    if (m_State == State::Dying) {
+        SetDrawable(m_DeadImage);
+        return;
+    }
+
     // 變身動畫中：顯示當前 m_Form 的待機圖（m_Form 由閃爍邏輯交替切換）
     if (m_State == State::Transforming) {
         SetDrawable(visuals.idle);
@@ -341,7 +544,7 @@ void Player::UpdateAnimation() {
     if (m_State == State::LevelClear) {
         if (m_IsSlidingDown) {
             SetDrawable(visuals.climb);
-        } else if (m_IsWalkingToCastle) {
+        } else if (m_IsWalkingToCastle || m_IsEnteringDoor) {
             SetDrawable(visuals.walk);
         } else {
             SetDrawable(visuals.idle);
@@ -368,17 +571,17 @@ void Player::UpdateAnimation() {
 // ─── 鍵盤輸入 ────────────────────────────────────────────────────────
 
 void Player::HandleInput(float deltaTime) {
-    if (Util::Input::IsKeyDown(Util::Keycode::NUM_1)) {
+    if (AnyDown(m_Controls.debugSmall)) {
         SetForm(Form::SMALL);
-    } else if (Util::Input::IsKeyDown(Util::Keycode::NUM_2)) {
+    } else if (AnyDown(m_Controls.debugSuper)) {
         SetForm(Form::SUPER);
-    } else if (Util::Input::IsKeyDown(Util::Keycode::NUM_3)) {
+    } else if (AnyDown(m_Controls.debugFire)) {
         SetForm(Form::FIRE);
     }
 
-    bool pressingLeft = Util::Input::IsKeyPressed(Util::Keycode::LEFT) || Util::Input::IsKeyPressed(Util::Keycode::A);
-    bool pressingRight = Util::Input::IsKeyPressed(Util::Keycode::RIGHT) || Util::Input::IsKeyPressed(Util::Keycode::D);
-    bool holdingRun = Util::Input::IsKeyPressed(Util::Keycode::Z);
+    bool pressingLeft = AnyPressed(m_Controls.left);
+    bool pressingRight = AnyPressed(m_Controls.right);
+    bool holdingRun = AnyPressed(m_Controls.run);
 
     // 空中保留慣性（取現有絕對速度與走速中較大者）；地面依跑鍵切換上限
     float maxSpeed;
@@ -453,19 +656,31 @@ void Player::HandleInput(float deltaTime) {
         }
     }
 
-    // 根據目前的絕對速度判斷是否真的有在移動 (給動畫播放判斷用)
-    m_IsMoving = std::abs(m_Velocity.x) > 5.0f;
+    // 是否在「移動」供動畫播放判斷：
+    //  - 有按單一方向鍵即視為移動意圖：即使貼牆被擋下、vx 被碰撞歸零，
+    //    走路動畫仍持續（符合「走路動畫照方向鍵跑」）。
+    //  - 或仍有殘餘速度：放開方向鍵後的滑行階段也維持走路動畫。
+    const bool directionalIntent = (pressingLeft != pressingRight);
+    m_IsMoving = directionalIntent || std::abs(m_Velocity.x) > 5.0f;
 
     // 跳躍（只有站在地上才能跳）
-    if (m_OnGround &&
-        (Util::Input::IsKeyDown(Util::Keycode::SPACE) ||
-         Util::Input::IsKeyDown(Util::Keycode::UP) ||
-         Util::Input::IsKeyDown(Util::Keycode::W))) {
+    const bool jumpDown = AnyDown(m_Controls.jump);
+    const bool jumpHeld = AnyPressed(m_Controls.jump);
+    // ── 診斷用 log（找到跳躍問題後可移除）──
+    // 只要偵測到跳鍵（剛按下或持續按住）就印出當下狀態，看是哪個條件擋掉跳躍。
+    if (jumpDown || jumpHeld) {
+        LOG_INFO("[JUMP DBG] down={} held={} onGround={} vel=({:.1f},{:.1f}) pos=({:.1f},{:.1f}) L={} R={}",
+                 jumpDown, jumpHeld, m_OnGround,
+                 m_Velocity.x, m_Velocity.y, m_Position.x, m_Position.y,
+                 pressingLeft, pressingRight);
+    }
+    if (m_OnGround && jumpDown) {
         Jump();
+        LOG_INFO("[JUMP DBG] >>> Jump() fired, vel.y={:.1f}", m_Velocity.y);
     }
 
     // 射擊火球（只有 FIRE 形態可以，預設 Z 鍵）
-    if (m_Form == Form::FIRE && Util::Input::IsKeyDown(Util::Keycode::Z)) {
+    if (m_Form == Form::FIRE && AnyDown(m_Controls.fire)) {
         m_ShootRequested = true;
     }
 }
@@ -517,13 +732,21 @@ void Player::ResetTransientState() {
     m_IsLevelCleared = false;
     m_IsSlidingDown = false;
     m_IsWalkingToCastle = false;
+    m_IsEnteringDoor = false;
     m_WalkTargetX = 0.0f;
+    m_DoorEnterX = 0.0f;
+    m_IntroAutoWalkTargetX = 0.0f;
+    m_IntroAutoWalkSpeed = 0.0f;
+    m_IntroAutoWalkFinished = false;
     m_DamageInvincibleTimer = 0.0f;
     m_StarTimer = 0.0f;
+    m_DamageFlickerTimer   = 0.0f;
+    m_DamageFlickerVisible = true;
     // 變身動畫狀態重置
     m_TransformTimer     = 0.0f;
     m_TransformBlinkTimer = 0.0f;
     m_TransformBlinkState = false;
+    m_TransformIsDowngrade = false;
     m_State = State::Normal; // 重置狀態為正常
 }
 
@@ -542,24 +765,43 @@ void Player::StartLevelClearSequence(float poleX, float bottomY) {
     m_IsLevelCleared = true;
     m_IsSlidingDown = true;
     m_IsWalkingToCastle = false;
+    m_IsEnteringDoor = false;
     m_DamageInvincibleTimer = 0.0f;
+    m_DamageFlickerTimer   = 0.0f;
+    m_DamageFlickerVisible = true;
     SetVisible(true);
-    
-    m_Position.x = poleX + TILE_SIZE * 0.5f; 
-    
+
+    m_Position.x = poleX + TILE_SIZE * 0.5f;
+
     m_PoleBottomY = bottomY;
 
-    m_Velocity = {0.0f, 150.0f};
+    // 與旗子同速下滑（FlagBlock::DESCENT_SPEED 也用 POLE_SLIDE_SPEED）
+    m_Velocity = {0.0f, POLE_SLIDE_SPEED};
     
     m_FacingLeft = true;
 
     LOG_INFO("Player level clear sequence started. Target bottomY={}", bottomY);
 }
 
+void Player::StartIntroAutoWalk(float targetX, float walkSpeed) {
+    m_State = State::IntroAutoWalk;
+    m_IntroAutoWalkTargetX = targetX;
+    m_IntroAutoWalkSpeed = std::max(0.0f, walkSpeed);
+    m_IntroAutoWalkFinished = false;
+    m_FacingLeft = false;
+    m_IsSkidding = false;
+    m_IsMoving = true;
+    m_Velocity.x = m_IntroAutoWalkSpeed;
+    SetVisible(true);
+    LOG_INFO("Player intro auto-walk started: targetX={} speed={}", targetX, m_IntroAutoWalkSpeed);
+}
+
 void Player::StartDamageInvincibility(float duration) {
     if (duration <= 0.0f || m_State == State::Dying || m_State == State::LevelClear) return;
 
     m_DamageInvincibleTimer = duration;
+    m_DamageFlickerTimer   = 0.0f;
+    m_DamageFlickerVisible = true;
     SetVisible(true);
 }
 
@@ -628,6 +870,11 @@ void Player::StartPipeEntry(glm::vec2 pipePosition, glm::vec2 pipeSize, const st
     m_AnimDuration = duration;
     m_Velocity = {0.0f, 0.0f};
 
+    // 水管動畫期間無敵計時暫停，閃爍若停在隱形幀會整段消失，強制恢復可見
+    m_DamageFlickerTimer   = 0.0f;
+    m_DamageFlickerVisible = true;
+    SetVisible(true);
+
     m_AnimStartPos = m_Position;
     m_AnimEndPos = m_Position;
 
@@ -640,11 +887,11 @@ void Player::StartPipeEntry(glm::vec2 pipePosition, glm::vec2 pipeSize, const st
         m_AnimStartPos = {targetX, pipePosition.y + pipeSize.y};
         m_AnimEndPos = {targetX, pipePosition.y + pipeSize.y - m_Size.y};
     } else if (opening == "left") {
-        float targetY = pipePosition.y + pipeSize.y * 0.5f - m_Size.y * 0.5f;
+        float targetY = pipePosition.y + pipeSize.y - m_Size.y;
         m_AnimStartPos = {pipePosition.x - m_Size.x, targetY};
         m_AnimEndPos = {pipePosition.x, targetY};
     } else if (opening == "right") {
-        float targetY = pipePosition.y + pipeSize.y * 0.5f - m_Size.y * 0.5f;
+        float targetY = pipePosition.y + pipeSize.y - m_Size.y;
         m_AnimStartPos = {pipePosition.x + pipeSize.x, targetY};
         m_AnimEndPos = {pipePosition.x + pipeSize.x - m_Size.x, targetY};
     }
@@ -660,6 +907,10 @@ void Player::StartPipeExit(glm::vec2 pipePosition, glm::vec2 pipeSize, const std
     m_AnimDuration = duration;
     m_Velocity = {0.0f, 0.0f};
 
+    m_DamageFlickerTimer   = 0.0f;
+    m_DamageFlickerVisible = true;
+    SetVisible(true);
+
     if (opening == "up") {
         float targetX = pipePosition.x + pipeSize.x * 0.5f - m_Size.x * 0.5f;
         m_AnimStartPos = {targetX, pipePosition.y};
@@ -669,11 +920,11 @@ void Player::StartPipeExit(glm::vec2 pipePosition, glm::vec2 pipeSize, const std
         m_AnimStartPos = {targetX, pipePosition.y + pipeSize.y - m_Size.y};
         m_AnimEndPos = {targetX, pipePosition.y + pipeSize.y};
     } else if (opening == "left") {
-        float targetY = pipePosition.y + pipeSize.y * 0.5f - m_Size.y * 0.5f;
+        float targetY = pipePosition.y + pipeSize.y - m_Size.y;
         m_AnimStartPos = {pipePosition.x, targetY};
         m_AnimEndPos = {pipePosition.x - m_Size.x, targetY};
     } else if (opening == "right") {
-        float targetY = pipePosition.y + pipeSize.y * 0.5f - m_Size.y * 0.5f;
+        float targetY = pipePosition.y + pipeSize.y - m_Size.y;
         m_AnimStartPos = {pipePosition.x + pipeSize.x - m_Size.x, targetY};
         m_AnimEndPos = {pipePosition.x + pipeSize.x, targetY};
     }

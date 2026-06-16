@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <array>
 #include <vector>
 
 #include "Block.hpp"
@@ -71,6 +72,7 @@ private:
     enum class FlowState {
         Title,
         LevelIntro,
+        IntroCutscene,
         Playing,
         TimeUp,
         LevelClearTransition,  // 時間結算倒數（每幀扣時間、加分）
@@ -100,25 +102,41 @@ private:
     void BuildGameOverOverlay();
     void AddOverlayText(const std::string& text, int fontSize, glm::vec2 position, float zIndex = 30.0f);
     void AddOverlayImage(const std::string& assetPath, glm::vec2 position, glm::vec2 scale, float zIndex = 30.0f);
+    std::array<Player*, 2> Players();
+    std::array<const Player*, 2> Players() const;
+    void ConfigurePlayers();
+    void ResetPlayersForNewGame();
+    void SetPlayersSpawnPosition(glm::vec2 position);
+    void UpdateCameraForPlayers();
+    bool AnyPlayerAlive() const;
+    bool AnyPlayerDying() const;
+    bool AnyPlayerTransforming() const;
+    bool AnyPlayerLevelClearFinished() const;
+    Player& LeadPlayer();
+    const Player& LeadPlayer() const;
+    float GetClosestAlivePlayerX(glm::vec2 position) const;
     void UpdateTitle(float dt);
     void UpdateLevelIntro(float dt);
+    void UpdateIntroCutscene(float dt);
     void UpdatePlaying(float dt);
     void UpdateTimeUp(float dt);
     void UpdateGameOver(float dt);
     void UpdateLevelClearTransition(float dt);  // 時間結算倒數
     void UpdateLevelClearPause(float dt);        // 結算後停頓
     void DrawScene(bool updateHud);
-    bool CheckPipeTransition();
+    bool CheckPipeTransition(Player& player);
+    bool TryEnterIntroCutscene();
+    PipeBlock* FindIntroCutscenePipe() const;
     static std::string MakeLevelPath(const std::string& levelName);
 
     // 處理玩家與方塊、地形的物理碰撞
-    void CheckBlockCollision();
+    void CheckBlockCollision(Player& player);
 
     // 處理敵人與方塊、地形的物理碰撞
     void CheckEnemyBlockCollision();
 
     // 負責統籌與產生物件
-    void SpawnItem(const std::string& itemType, glm::vec2 position);
+    void SpawnItem(const std::string& itemType, glm::vec2 position, Player* sourcePlayer = nullptr);
     void CheckItemCollision();
     void CheckItemBlockCollision();
 
@@ -140,7 +158,7 @@ private:
      * 檢查 Player 是否從上方踩到任何 Enemy，並依 StompOutcome
      * 處理縮殼、停殼、掉翅膀、得分與反彈。
      */
-    void CheckStompCollision();
+    void CheckStompCollision(Player& player, float& pendingDamageInvincibility);
 
     /* 殼對敵人碰撞判斷
      * 檢查正在滑行中的 Koopa 殼是否撞到其他存活的敵人。
@@ -151,7 +169,7 @@ private:
     /* 終點旗子碰撞
      * 偵測玩家是否碰到旗杆，若是計算得分並觸發過關。
      */
-    void CheckFlagCollision();
+    void CheckFlagCollision(Player& player);
 
     /* 建立渲染場景
      * 把所有要顯示的物件加入 m_Renderer。
@@ -160,7 +178,8 @@ private:
 
     // ─── 持有的物件 ────────────────────────────────────────────────
 
-    Player                               m_Player;     
+    Player                              m_Player;
+    Player                              m_Player2;
     std::vector<std::shared_ptr<Enemy>> m_Enemies;           // 已生成、存活中的敵人
     std::vector<ObjectData>             m_EnemySpawnQueue;   // 還沒生成的敵人（等鏡頭到達）
     // 道具
@@ -186,10 +205,13 @@ private:
     bool  m_LevelCleared = false;          // 是否已觸碰旗杆（防止重複計分）
     bool  m_WaitingForTimeUpDeath = false; // 時間到後等待玩家死亡動畫播完再進 TimeUp
     bool  m_PlayerWasDying = false;        // 上幀是否已在死亡狀態（偵測死亡事件用）
+    float m_DeathSequenceTimer = 0.0f;     // 死亡 BGM / 死亡動畫流程同步計時
+    bool  m_HurryUpTriggered = false;       // 剩餘時間低於 100 後只切換一次 hurry-up BGM
     bool  m_Paused = false;                // 暫停狀態（只在 Playing 下有效）
     std::shared_ptr<Util::GameObject> m_PauseOverlay; // 「PAUSED」文字 overlay
     // 受傷縮小變身動畫結束後需要啟動的傷害無敵計時（秒）；0 = 無待定
     float m_PendingDamageInvincibility = 0.0f;
+    float m_PendingDamageInvincibility2 = 0.0f;
     std::string m_SelectedInitialLevelName = "1-1"; // 標題選關用（不影響遊戲中推進）
     std::string m_SelectedWorldLabel = "1-1";
 
@@ -218,7 +240,7 @@ private:
     // 暫存「本次重生要用的中繼點座標」，由 HandleLifeLost 設定，
     // EnterLevelIntro/EnterPlaying 在 LoadLevel 後讀取並覆蓋 playerSpawn
     std::optional<glm::vec2> m_CheckpointRespawnOverride;
-    void UpdateCheckpoints();   // 每幀在 UpdatePlaying 中呼叫，偵測玩家是否越過新中繼點
+    void UpdateCheckpoints(const Player& player);   // 每幀在 UpdatePlaying 中呼叫，偵測玩家是否越過新中繼點
 
     // ─── 音效管理器 ────────────────────────────────────────────────
     AudioManager m_Audio;           // BGM / SFX 統一管理
@@ -252,6 +274,16 @@ private:
     std::vector<ScorePopup> m_ScorePopups;
     void SpawnScorePopup(int score, glm::vec2 worldPos);
     void UpdateScorePopups(float dt);
+
+    // ─── 過關城堡升旗演出 ─────────────────────────────────────────
+    // 馬力歐進城門後，城堡頂升起小旗（與時間結算同時進行）。
+    // 比照 ScorePopup：以世界座標追蹤，每幀換算螢幕座標。
+    std::shared_ptr<Util::GameObject> m_CastleFlag;
+    glm::vec2 m_CastleFlagWorldPos = {0.0f, 0.0f};
+    float     m_CastleFlagTargetY  = 0.0f;   // 升到頂時的世界 Y
+    float     m_FlagBottomY        = 0.0f;   // 碰旗時記下的旗杆底 Y（=地面，城堡基準）
+    void SpawnCastleFlag(float doorCenterX, float groundY); // 生成並開始升旗
+    void UpdateCastleFlagRaise(float dt);                   // 每幀讓小旗往上升
 };
 
 #endif

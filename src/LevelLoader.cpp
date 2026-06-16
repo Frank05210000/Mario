@@ -54,6 +54,16 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
         data.playerSpawn.y = j["playerSpawn"].value("y", 300.0f);
     }
 
+    if (j.contains("introCutscene") && j["introCutscene"].is_object()) {
+        const auto& cutscene = j["introCutscene"];
+        IntroCutsceneData intro;
+        intro.type = cutscene.value("type", "");
+        intro.pipeTargetLevel = cutscene.value("pipeTargetLevel", "");
+        intro.walkSpeed = cutscene.value("walkSpeed", 60.0f);
+        intro.pipeEntryDuration = cutscene.value("pipeEntryDuration", 1.0f);
+        data.introCutscene = intro;
+    }
+
     // 3. 讀物件清單
     if (j.contains("objects") && j["objects"].is_array()) {
         for (const auto& obj : j["objects"]) {
@@ -130,14 +140,15 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
         }
     }
 
-    LOG_INFO("LevelLoader loaded: file='{}' background='{}' theme='{}' size=({}, {}) objects={} checkpoints={}",
+    LOG_INFO("LevelLoader loaded: file='{}' background='{}' theme='{}' size=({}, {}) objects={} checkpoints={} introCutscene={}",
              jsonPath,
              data.backgroundImagePath,
              data.theme == Theme::Underground ? "underground" : "ground",
              data.levelWidth,
              data.levelHeight,
              data.objects.size(),
-             data.checkpoints.size());
+             data.checkpoints.size(),
+             data.introCutscene.has_value() ? data.introCutscene->type : "none");
 
     return data;
 }

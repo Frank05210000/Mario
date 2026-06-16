@@ -6,10 +6,10 @@
 #include "Block.hpp"
 
 /*
- * WallBlock：堅硬的石塊 / 階梯方塊
+ * WallBlock：隱形的堅硬牆 / 階梯碰撞
  *
- * 永遠不會碎、不會被頂開，也沒有道具。
- * 通常用來做過關前的大階梯。
+ * 永遠不會碎、不會被頂開，也沒有道具；只保留碰撞。
+ * 背景圖已經畫出牆磚時，用它補上實體地形。
  */
 class WallBlock : public Block {
 public:

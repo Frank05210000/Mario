@@ -1,6 +1,7 @@
 #ifndef LEVEL_DATA_HPP
 #define LEVEL_DATA_HPP
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -42,6 +43,13 @@ struct ObjectData {
     int coinCount = 10;                  // MultiCoinBlock: 可敲出的金幣數
 };
 
+struct IntroCutsceneData {
+    std::string type;
+    std::string pipeTargetLevel;
+    float walkSpeed = 60.0f;
+    float pipeEntryDuration = 1.0f;
+};
+
 /*
  * LevelData：整個關卡的資料容器
  *
@@ -57,6 +65,8 @@ struct LevelData {
     glm::vec2 playerSpawn = {64.0f, 300.0f}; // 玩家出生點 (預設值)
 
     std::vector<ObjectData> objects;  // 所有物件（方塊、出生點、觸發器...）
+
+    std::optional<IntroCutsceneData> introCutscene;
 
     // 中繼點清單（可選，缺省為空陣列）
     // 玩家 X 超過 checkpoint.x 後死亡，會從最後一個達成的中繼點重生

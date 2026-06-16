@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <iomanip>
 #include <limits>
 #include <sstream>
@@ -111,8 +112,51 @@ void GameManager::UpdateScorePopups(float dt) {
         m_ScorePopups.end());
 }
 
+// ─── 過關城堡升旗 ───────────────────────────────────────────────────────
+//
+// 背景圖已畫死城堡本體（含城垛），這裡只負責「會動的小旗」：
+// 馬力歐沒入城門後，小旗從城垛後（起點較低）升到城堡頂（終點較高）。
+//
+// doorCenterX：城堡門中心 X（= 旗杆 x + CASTLE_DOOR_DX，由 Player 回傳）
+// groundY    ：地面 Y（= 碰旗時的旗杆底 Y）
+void GameManager::SpawnCastleFlag(float doorCenterX, float groundY) {
+    // tutorial 之類：城堡會超出關卡右界 → 沒有城堡可升旗，直接略過
+    if (doorCenterX + TILE_SIZE > static_cast<float>(m_Level.levelWidth)) {
+        LOG_INFO("Castle flag skipped (no castle within level bounds). doorX={}", doorCenterX);
+        return;
+    }
+
+    auto image = std::make_shared<Util::Image>(MakeAssetPath("item/flag/castle_flag.png"));
+    m_CastleFlag = std::make_shared<Util::GameObject>(image, 9.0f); // 背景之上、HUD 之下
+    m_CastleFlag->m_Transform.scale = {GAME_SCALE, GAME_SCALE};
+
+    // 升到頂的位置：城堡頂中央
+    m_CastleFlagTargetY = groundY - CASTLE_FLAG_TOP_DY;
+    // 起點：比終點低 CASTLE_FLAG_RISE（藏在城垛後），往上升起
+    m_CastleFlagWorldPos = {doorCenterX, m_CastleFlagTargetY + CASTLE_FLAG_RISE};
+
+    m_CastleFlag->m_Transform.translation = m_Camera.WorldToScreen(m_CastleFlagWorldPos);
+    m_CastleFlag->SetVisible(true);
+    m_Renderer.AddChild(m_CastleFlag);
+
+    LOG_INFO("Castle flag raised. doorX={} fromY={} toY={}",
+             doorCenterX, m_CastleFlagWorldPos.y, m_CastleFlagTargetY);
+}
+
+void GameManager::UpdateCastleFlagRaise(float dt) {
+    if (!m_CastleFlag) return;
+    if (m_CastleFlagWorldPos.y > m_CastleFlagTargetY) {
+        m_CastleFlagWorldPos.y -= CASTLE_FLAG_SPEED * dt;
+        if (m_CastleFlagWorldPos.y < m_CastleFlagTargetY) {
+            m_CastleFlagWorldPos.y = m_CastleFlagTargetY;
+        }
+    }
+    m_CastleFlag->m_Transform.translation = m_Camera.WorldToScreen(m_CastleFlagWorldPos);
+}
+
 namespace {
 constexpr float kTitleTextZ = 30.0f;
+constexpr float kDeathSequenceMinDuration = 3.9f; // death.mp3 is about 3.87s
 
 glm::vec2 GetPipeSize(const std::string& opening, int segments) {
     const float clampedSegments = static_cast<float>(std::max(1, segments));
@@ -134,11 +178,173 @@ glm::vec2 GetPipePositionFromAnchor(glm::vec2 anchorPosition,
     }
     return anchorPosition;
 }
+
+bool ShouldStartPipeExitForSpawn(const PipeBlock& pipe,
+                                 glm::vec2 playerPos,
+                                 glm::vec2 playerSize) {
+    constexpr float kPipeExitSpawnTolerance = TILE_SIZE * 0.5f;
+
+    const glm::vec2 pipePos = pipe.GetPosition();
+    const glm::vec2 pipeSize = pipe.GetSize();
+    const float playerLeft = playerPos.x;
+    const float playerRight = playerPos.x + playerSize.x;
+    const float playerTop = playerPos.y;
+    const float playerBottom = playerPos.y + playerSize.y;
+    const float playerCenterX = playerPos.x + playerSize.x * 0.5f;
+    const float playerCenterY = playerPos.y + playerSize.y * 0.5f;
+
+    const bool centerInsidePipeX =
+        playerCenterX >= pipePos.x &&
+        playerCenterX <= pipePos.x + pipeSize.x;
+    const bool centerInsidePipeY =
+        playerCenterY >= pipePos.y &&
+        playerCenterY <= pipePos.y + pipeSize.y;
+
+    if (centerInsidePipeX && centerInsidePipeY) {
+        return true;
+    }
+
+    const std::string opening = pipe.GetOpening();
+    if (opening == "up") {
+        return centerInsidePipeX &&
+               std::abs(playerBottom - pipePos.y) <= kPipeExitSpawnTolerance;
+    }
+    if (opening == "down") {
+        return centerInsidePipeX &&
+               std::abs(playerTop - (pipePos.y + pipeSize.y)) <= kPipeExitSpawnTolerance;
+    }
+    if (opening == "left") {
+        return centerInsidePipeY &&
+               std::abs(playerRight - pipePos.x) <= kPipeExitSpawnTolerance;
+    }
+    if (opening == "right") {
+        return centerInsidePipeY &&
+               std::abs(playerLeft - (pipePos.x + pipeSize.x)) <= kPipeExitSpawnTolerance;
+    }
+
+    return false;
+}
+}
+
+std::array<Player*, 2> GameManager::Players() {
+    return {&m_Player, &m_Player2};
+}
+
+std::array<const Player*, 2> GameManager::Players() const {
+    return {&m_Player, &m_Player2};
+}
+
+void GameManager::ConfigurePlayers() {
+    m_Player.SetControls(Player::DefaultControls());
+    m_Player.SetVisualProfile(Player::VisualProfile::Mario);
+    m_Player2.SetControls(Player::PlayerTwoControls());
+    m_Player2.SetVisualProfile(Player::VisualProfile::Luigi);
+}
+
+void GameManager::ResetPlayersForNewGame() {
+    ConfigurePlayers();
+    for (auto* player : Players()) {
+        player->ResetForNewGame();
+    }
+}
+
+void GameManager::SetPlayersSpawnPosition(glm::vec2 position) {
+    m_Player.SetSpawnPosition(position);
+    m_Player2.SetSpawnPosition(position + glm::vec2{TILE_SIZE * 1.25f, 0.0f});
+}
+
+bool GameManager::AnyPlayerAlive() const {
+    for (const auto* player : Players()) {
+        if (player->IsAlive()) return true;
+    }
+    return false;
+}
+
+bool GameManager::AnyPlayerDying() const {
+    for (const auto* player : Players()) {
+        if (player->IsDying()) return true;
+    }
+    return false;
+}
+
+bool GameManager::AnyPlayerTransforming() const {
+    for (const auto* player : Players()) {
+        if (player->IsTransforming()) return true;
+    }
+    return false;
+}
+
+bool GameManager::AnyPlayerLevelClearFinished() const {
+    for (const auto* player : Players()) {
+        if (player->IsLevelClearSequenceFinished()) return true;
+    }
+    return false;
+}
+
+Player& GameManager::LeadPlayer() {
+    Player* lead = &m_Player;
+    for (auto* player : Players()) {
+        if (player->IsAlive() && player->GetPosition().x > lead->GetPosition().x) {
+            lead = player;
+        }
+    }
+    return *lead;
+}
+
+const Player& GameManager::LeadPlayer() const {
+    const Player* lead = &m_Player;
+    for (const auto* player : Players()) {
+        if (player->IsAlive() && player->GetPosition().x > lead->GetPosition().x) {
+            lead = player;
+        }
+    }
+    return *lead;
+}
+
+void GameManager::UpdateCameraForPlayers() {
+    const float viewW = m_Camera.GetViewWorldWidth();
+    float minX = std::numeric_limits<float>::max();
+    float maxX = -std::numeric_limits<float>::max();
+
+    for (const auto* player : Players()) {
+        if (!player->IsAlive()) continue;
+        const float centerX = player->GetPosition().x + player->GetSize().x * 0.5f;
+        minX = std::min(minX, centerX);
+        maxX = std::max(maxX, centerX);
+    }
+
+    if (minX == std::numeric_limits<float>::max()) {
+        m_Camera.Update(m_Player.GetPosition().x, static_cast<float>(m_Level.levelWidth));
+        return;
+    }
+
+    const float targetX = (maxX - minX > viewW * 0.7f)
+        ? maxX - viewW * 0.2f
+        : (minX + maxX) * 0.5f;
+    m_Camera.Update(targetX, static_cast<float>(m_Level.levelWidth));
+}
+
+float GameManager::GetClosestAlivePlayerX(glm::vec2 position) const {
+    float bestX = m_Player.GetPosition().x + m_Player.GetSize().x * 0.5f;
+    float bestDistance = std::numeric_limits<float>::max();
+
+    for (const auto* player : Players()) {
+        if (!player->IsAlive()) continue;
+        const float centerX = player->GetPosition().x + player->GetSize().x * 0.5f;
+        const float distance = std::abs(centerX - position.x);
+        if (distance < bestDistance) {
+            bestDistance = distance;
+            bestX = centerX;
+        }
+    }
+
+    return bestX;
 }
 
 // ─── Start ────────────────────────────────────────────────────────────────
 
 void GameManager::Start() {
+    ConfigurePlayers();
     EnterTitleScreen();
 }
 
@@ -162,6 +368,9 @@ void GameManager::Update() {
             break;
         case FlowState::LevelIntro:
             UpdateLevelIntro(dt);
+            break;
+        case FlowState::IntroCutscene:
+            UpdateIntroCutscene(dt);
             break;
         case FlowState::Playing:
             UpdatePlaying(dt);
@@ -203,6 +412,54 @@ void GameManager::UpdateLevelIntro(float dt) {
     DrawScene(true);
 }
 
+void GameManager::UpdateIntroCutscene(float dt) {
+    if (m_Player.GetState() == Player::State::EnteringPipe) {
+        if (m_Player.IsAnimationFinished()) {
+            ChangeLevel(m_PendingLevel, m_PendingSpawn);
+            m_FlowState = FlowState::Playing;
+            return;
+        }
+
+        m_Player.Update(dt);
+        UpdateCameraForPlayers();
+        DrawScene(true);
+        return;
+    }
+
+    if (m_Player.GetState() == Player::State::IntroAutoWalk) {
+        m_Player.Update(dt);
+        UpdateCameraForPlayers();
+        CheckBlockCollision(m_Player);
+        m_Player.ClampToCameraBounds(m_Camera.GetX());
+
+        if (m_Player.IsIntroAutoWalkFinished()) {
+            PipeBlock* pipe = FindIntroCutscenePipe();
+            if (!pipe) {
+                LOG_WARN("Intro auto-enter-pipe cutscene has no matching target pipe. Falling back to Playing.");
+                m_FlowState = FlowState::Playing;
+                DrawScene(true);
+                return;
+            }
+
+            m_PendingLevel = pipe->GetDestinationLevel();
+            m_PendingSpawn = pipe->GetDestinationSpawn();
+            const float duration = std::max(
+                0.01f,
+                m_Level.introCutscene ? m_Level.introCutscene->pipeEntryDuration : 1.0f);
+            m_Player.StartPipeEntry(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), duration);
+            m_Audio.PauseBGM();
+            m_Audio.PlaySFX("pipe");
+        }
+
+        DrawScene(true);
+        return;
+    }
+
+    LOG_WARN("Intro cutscene entered with unsupported player state. Falling back to Playing.");
+    m_FlowState = FlowState::Playing;
+    DrawScene(true);
+}
+
 void GameManager::UpdatePlaying(float dt) {
     // ─── 暫停切換（Enter 鍵，單幀偵測防連發）──────────────────────────────
     // Note：Title 畫面的 Enter 在 UpdateTitle 裡處理，不會到達這裡
@@ -237,39 +494,45 @@ void GameManager::UpdatePlaying(float dt) {
         return;
     }
 
-    if (m_Player.GetState() == Player::State::EnteringPipe && m_Player.IsAnimationFinished()) {
-        ChangeLevel(m_PendingLevel, m_PendingSpawn);
-        return;
+    for (auto* player : Players()) {
+        if (player->GetState() == Player::State::EnteringPipe && player->IsAnimationFinished()) {
+            ChangeLevel(m_PendingLevel, m_PendingSpawn);
+            return;
+        }
+
+        // 鑽出水管動畫播完：恢復正常操作狀態。
+        if (player->GetState() == Player::State::ExitingPipe && player->IsAnimationFinished()) {
+            player->FinishPipeExit();
+        }
     }
 
-    // 鑽出水管動畫播完：恢復正常操作狀態。
-    // 沒有這個檢查的話，ExitingPipe 永遠不會結束，
-    // 玩家會凍結在管口（出口 spawn 落在水管內時觸發的鑽出動畫）。
-    if (m_Player.GetState() == Player::State::ExitingPipe && m_Player.IsAnimationFinished()) {
-        m_Player.FinishPipeExit();
+    // 1. 更新所有玩家邏輯
+    for (auto* player : Players()) {
+        player->Update(dt);
+
+        if (player->ConsumeJumpEvent()) {
+            const std::string jumpSfx = (player->GetForm() == Player::Form::SMALL)
+                                            ? "jump_small" : "jump_super";
+            m_Audio.PlaySFX(jumpSfx);
+        }
+
+        if (player->ConsumeStarEndedEvent()) {
+            if (!m_LevelCleared) {
+                m_Audio.EndEventBGM("starman");
+            }
+            LOG_INFO("Star ended, restoring managed BGM.");
+        }
     }
 
-    // 1. 更新所有角色邏輯
-    m_Player.Update(dt);
-
-    // ── 跳躍音效：Player 在 Jump() 設旗，GameManager 消耗並播音 ──
-    if (m_Player.ConsumeJumpEvent()) {
-        const std::string jumpSfx = (m_Player.GetForm() == Player::Form::SMALL)
-                                        ? "jump_small" : "jump_super";
-        m_Audio.PlaySFX(jumpSfx);
-    }
-
-    // ── 星星效果結束：切回關卡 BGM ──
-    if (m_Player.ConsumeStarEndedEvent()) {
-        m_Audio.PlayBGM(m_LevelBGMName);
-        LOG_INFO("Star ended, restoring level BGM: {}", m_LevelBGMName);
-    }
-
-    // ── 死亡偵測：玩家剛進入 Dying 狀態時，停關卡 BGM 改播死亡 BGM ──
-    const bool playerIsDyingNow = m_Player.IsDying();
+    // ── 死亡偵測：任一玩家剛進入 Dying 狀態時，以最高優先序播放死亡 BGM ──
+    const bool playerIsDyingNow = AnyPlayerDying();
     if (playerIsDyingNow && !m_PlayerWasDying) {
-        m_Audio.StopBGM();
-        m_Audio.PlayBGM("death", 0); // 死亡 BGM 播一次
+        m_DeathSequenceTimer = 0.0f;
+        m_Audio.PlayEventBGM("death", 0); // 死亡 BGM 播一次
+    } else if (playerIsDyingNow) {
+        m_DeathSequenceTimer += dt;
+    } else {
+        m_DeathSequenceTimer = 0.0f;
     }
     m_PlayerWasDying = playerIsDyingNow;
 
@@ -280,25 +543,29 @@ void GameManager::UpdatePlaying(float dt) {
         LOG_INFO("Post-transform damage invincibility started.");
     }
 
-    if (m_Player.GetState() == Player::State::EnteringPipe || m_Player.GetState() == Player::State::ExitingPipe) {
-        m_Camera.Update(m_Player.GetPosition().x,
-                        static_cast<float>(m_Level.levelWidth));
+    if (!m_Player2.IsTransforming() && m_PendingDamageInvincibility2 > 0.0f) {
+        m_Player2.StartDamageInvincibility(m_PendingDamageInvincibility2);
+        m_PendingDamageInvincibility2 = 0.0f;
+        LOG_INFO("Post-transform damage invincibility started for player 2.");
+    }
+
+    for (const auto* player : Players()) {
+        if (player->GetState() == Player::State::EnteringPipe ||
+            player->GetState() == Player::State::ExitingPipe) {
+            UpdateCameraForPlayers();
+            DrawScene(true);
+            return;
+        }
+    }
+
+    if (AnyPlayerTransforming()) {
+        UpdateCameraForPlayers();
         DrawScene(true);
         return;
     }
 
-    // 變身動畫中：全場凍結（不更新敵人/方塊/道具/時間），
-    // 只讓玩家自己更新（動畫已在 m_Player.Update(dt) 裡處理）
-    if (m_Player.IsTransforming()) {
-        m_Camera.Update(m_Player.GetPosition().x,
-                        static_cast<float>(m_Level.levelWidth));
-        DrawScene(true);
-        return;
-    }
-
-    // 如果瑪利歐正在播放死亡動畫，停止更新世界其他物件（凍結畫面）
-    if (!m_Player.IsDying()) {
-        const float playerX = m_Player.GetPosition().x + m_Player.GetSize().x * 0.5f;
+    // 如果任一玩家正在播放死亡動畫，停止更新世界其他物件（凍結畫面）
+    if (!AnyPlayerDying()) {
         for (auto& enemy : m_Enemies) {
             // 翻轉死亡中的 Koopa 仍需要更新物理（飛出畫面）
             auto* koopa = dynamic_cast<Koopa*>(enemy.get());
@@ -309,7 +576,7 @@ void GameManager::UpdatePlaying(float dt) {
             // 食人花：每幀同步玩家 X 座標
             auto* piranha = dynamic_cast<PiranhaPlant*>(enemy.get());
             if (piranha) {
-                piranha->SetPlayerX(playerX);
+                piranha->SetPlayerX(GetClosestAlivePlayerX(piranha->GetPosition()));
             }
             enemy->Update(dt);
         }
@@ -324,44 +591,61 @@ void GameManager::UpdatePlaying(float dt) {
                            [](const auto& debris) { return debris->IsDead(); }),
             m_BrickDebris.end());
 
-        if (m_Player.ConsumeShootRequest()) {
-            // 限制畫面上最多只能同時有 2 顆火球
-            if (m_Fireballs.size() < 2) {
-                // 火球生成在瑪利歐前方一點點
-                glm::vec2 spawnPos = m_Player.GetPosition();
-                spawnPos.x += m_Player.IsFacingLeft() ? -8.0f : 8.0f;
-                SpawnFireball(spawnPos, m_Player.IsFacingLeft());
+        for (auto* player : Players()) {
+            if (player->ConsumeShootRequest()) {
+                // 雙人時放寬為最多 4 顆，避免一人完全吃掉另一人的射擊名額。
+                if (m_Fireballs.size() < 4) {
+                    glm::vec2 spawnPos = player->GetPosition();
+                    spawnPos.x += player->IsFacingLeft() ? -8.0f : 8.0f;
+                    SpawnFireball(spawnPos, player->IsFacingLeft());
+                }
             }
         }
 
-        // 2. 更新鏡頭（跟隨玩家，夾制在地圖邊界內）
-        m_Camera.Update(m_Player.GetPosition().x,
-                        static_cast<float>(m_Level.levelWidth));
+        UpdateCameraForPlayers();
 
         // 2.5 鏡頭觸發：檢查是否有新敵人進入鏡頭範圍
         CheckEnemySpawnQueue();
 
         // 3. 執行碰撞偵測 (包含方塊與敵人)
-        CheckBlockCollision();
-        if (CheckPipeTransition()) {
-            m_Camera.Update(m_Player.GetPosition().x,
-                            static_cast<float>(m_Level.levelWidth));
+        for (auto* player : Players()) {
+            if (player->IsAlive()) {
+                CheckBlockCollision(*player);
+            }
+        }
+
+        bool pipeTransitionStarted = false;
+        for (auto* player : Players()) {
+            if (player->IsAlive() && CheckPipeTransition(*player)) {
+                pipeTransitionStarted = true;
+                break;
+            }
+        }
+
+        if (pipeTransitionStarted) {
+            UpdateCameraForPlayers();
         } else {
             CheckEnemyBlockCollision();
             CheckItemBlockCollision();
             CheckItemCollision();
-            CheckStompCollision();
+            CheckStompCollision(m_Player, m_PendingDamageInvincibility);
+            CheckStompCollision(m_Player2, m_PendingDamageInvincibility2);
             CheckShellEnemyCollision();
             CheckFireballCollision();
-            CheckFlagCollision();
+            CheckFlagCollision(m_Player);
+            CheckFlagCollision(m_Player2);
         }
 
         // 4. 玩家左界夾制：確保玩家不會走到鏡頭左邊界之外（棘輪規則的配套）
-        m_Player.ClampToCameraBounds(m_Camera.GetX());
+        for (auto* player : Players()) {
+            player->ClampToCameraBounds(m_Camera.GetX());
+        }
 
         // 5. 中繼點偵測：更新玩家已達成的最後中繼點
-        if (m_Player.IsAlive()) {
-            UpdateCheckpoints();
+        for (auto* player : Players()) {
+            if (player->IsAlive()) {
+                UpdateCheckpoints(*player);
+            }
         }
     }
 
@@ -370,7 +654,11 @@ void GameManager::UpdatePlaying(float dt) {
 
     // Time Up 等待死亡動畫時：玩家落出畫面後進 TIME UP overlay，不走一般生命扣除
     if (m_WaitingForTimeUpDeath) {
-        if (m_Player.GetPosition().y > killZ) {
+        const auto players = Players();
+        const bool allPlayersPastKillZ = std::all_of(
+            players.begin(), players.end(),
+            [&](const Player* player) { return player->GetPosition().y > killZ; });
+        if (allPlayersPastKillZ && m_DeathSequenceTimer >= kDeathSequenceMinDuration) {
             m_WaitingForTimeUpDeath = false;
             EnterTimeUp();
             return;
@@ -379,11 +667,18 @@ void GameManager::UpdatePlaying(float dt) {
         return;
     }
 
-    if (m_Player.IsAlive() && m_Player.GetPosition().y > killZ) {
-        m_Player.SetAlive(false);
-        LOG_INFO("Player fell into the void! Life lost.");
-        HandleLifeLost();
-        return;
+    for (auto* player : Players()) {
+        if (player->IsAlive() && player->GetPosition().y > killZ) {
+            if (player->IsDying() && m_DeathSequenceTimer < kDeathSequenceMinDuration) {
+                DrawScene(true);
+                return;
+            }
+            player->SetAlive(false);
+            LOG_INFO("Player fell into the void! Life lost. pos=({:.2f},{:.2f}) killZ={:.2f}",
+                     player->GetPosition().x, player->GetPosition().y, killZ);
+            HandleLifeLost();
+            return;
+        }
     }
 
     // 順便把掉出畫面的敵人也清除
@@ -394,23 +689,30 @@ void GameManager::UpdatePlaying(float dt) {
         }
     }
 
-    if (m_LevelCleared && m_Player.IsLevelClearSequenceFinished()) {
+    if (m_LevelCleared && AnyPlayerLevelClearFinished()) {
         EnterLevelClearTransition();
         UpdateLevelClearTransition(0.0f);
         return;
     }
 
     // ─── 倒數計時 ─────────────────────────────────────────────────────────
-    if (!m_LevelCleared && m_Player.IsAlive()) {
+    if (!m_LevelCleared && AnyPlayerAlive()) {
         m_TimeRemaining -= dt * 2.5f;
+        if (!m_HurryUpTriggered && m_TimeRemaining > 0.0f && m_TimeRemaining < 100.0f) {
+            m_HurryUpTriggered = true;
+            m_Audio.SetHurryUp(true);
+            LOG_INFO("Hurry-up BGM triggered. timeRemaining={}", m_TimeRemaining);
+        }
         if (m_TimeRemaining <= 0.0f) {
             m_TimeRemaining = 0.0f;
             // Time Up：先觸發玩家死亡動畫，再進入 TIME UP overlay
             // 原版 NES：TIME UP 時不降級，直接死亡彈跳
             // 強制設為 SMALL 再 Downgrade → 進入 Dying state
             m_WaitingForTimeUpDeath = true;
-            m_Player.SetForm(Player::Form::SMALL);
-            m_Player.Downgrade();  // SMALL -> Dying state（含死亡彈跳動畫）
+            for (auto* player : Players()) {
+                player->SetForm(Player::Form::SMALL);
+                player->Downgrade();  // SMALL -> Dying state（含死亡彈跳動畫）
+            }
             LOG_INFO("Time Up! Player death animation started.");
             DrawScene(true);
             return;
@@ -461,8 +763,8 @@ void GameManager::UpdateLevelClearTransition(float dt) {
             m_TimeRemaining -= static_cast<float>(actualDeduct);
             m_Session.AddScore(actualDeduct * static_cast<int>(SCORE_PER_UNIT));
 
-            // 結算 tick 音效（原版每扣一單位嗶一聲；暫用 coin，之後可換專用 tick wav）
-            m_Audio.PlaySFX("coin");
+            // 結算 tick 音效（原版每扣一單位嗶一聲）
+            m_Audio.PlaySFX("countdown_tick");
 
             // 扣完整數單位後若只剩小數，直接歸零，下一幀進入停頓
             if (m_TimeRemaining < 1.0f) {
@@ -475,6 +777,9 @@ void GameManager::UpdateLevelClearTransition(float dt) {
         EnterLevelClearPause();
         return;
     }
+
+    // 城堡小旗持續升起（與倒數同時進行）
+    UpdateCastleFlagRaise(dt);
 
     // 每幀更新畫面（含 HUD 時間與分數的即時動態顯示）
     DrawScene(true);
@@ -493,6 +798,7 @@ void GameManager::UpdateLevelClearPause(float dt) {
 void GameManager::DrawScene(bool updateHud) {
     // 4. 同步畫面位置（把世界座標換算成螢幕座標）
     m_Player.Draw(m_Camera);
+    m_Player2.Draw(m_Camera);
     for (auto& enemy : m_Enemies) enemy->Draw(m_Camera);
     for (auto& block : m_Blocks)  block->Draw(m_Camera);
     for (auto& item : m_Items)    item->Draw(m_Camera);
@@ -526,6 +832,7 @@ void GameManager::ResetSceneObjects() {
     m_BrickDebris.clear();
     m_OverlayObjects.clear();
     m_ScorePopups.clear();
+    m_CastleFlag.reset();
     // 效能優化：清空複用的暫存容器（不釋放已分配的 capacity）
     m_TmpBlocksToRemove.clear();
     m_TmpItemsToRemove.clear();
@@ -565,8 +872,8 @@ bool GameManager::HandleLevelCheatShortcut() {
 
 void GameManager::StartNewGame() {
     ResetSceneObjects();
-    m_Session.ResetNewGame(1);
-    m_Player.ResetForNewGame();
+    m_Session.ResetNewGame(2);
+    ResetPlayersForNewGame();
 
     // 新遊戲：清空中繼點與中繼點重生覆蓋
     m_LastCheckpoint = std::nullopt;
@@ -599,9 +906,14 @@ void GameManager::EnterLevelIntro() {
     m_TimeRemaining = 400.0f;
     m_LevelCleared = false;
     m_WaitingForTimeUpDeath = false;
+    m_PlayerWasDying = false;
+    m_DeathSequenceTimer = 0.0f;
+    m_HurryUpTriggered = false;
     m_Paused = false;          // 換關時清空暫停
     m_PauseOverlay = nullptr;  // overlay 隨 renderer 重建
     m_PendingDamageInvincibility = 0.0f; // 清空待定無敵
+    m_PendingDamageInvincibility2 = 0.0f;
+    m_Audio.ResetBGMState();
 
     // 決定要載入的關卡：若 m_CurrentLevelIndex 有效則用關卡鏈，否則退回標題選關
     const std::string levelToLoad = (m_CurrentLevelIndex >= 0 &&
@@ -620,7 +932,7 @@ void GameManager::EnterLevelIntro() {
     // 若有中繼點重生覆蓋，套用後清除（只用一次）
     const bool isCheckpointRespawn = m_CheckpointRespawnOverride.has_value();
     if (isCheckpointRespawn) {
-        m_Player.SetSpawnPosition(*m_CheckpointRespawnOverride);
+        SetPlayersSpawnPosition(*m_CheckpointRespawnOverride);
         LOG_INFO("Checkpoint respawn override applied: x={} y={}",
                  m_CheckpointRespawnOverride->x,
                  m_CheckpointRespawnOverride->y);
@@ -630,7 +942,7 @@ void GameManager::EnterLevelIntro() {
     {
         const float lvW = static_cast<float>(m_Level.levelWidth);
         m_Camera.SetX(std::clamp(
-            m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
+            LeadPlayer().GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
             0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
     }
 
@@ -680,23 +992,77 @@ void GameManager::EnterPlaying() {
     m_Paused = false;          // 確保進入遊玩狀態時不殘留暫停
     m_PauseOverlay = nullptr;  // overlay 隨 renderer 重建
     m_PendingDamageInvincibility = 0.0f; // 清空待定無敵
+    m_PendingDamageInvincibility2 = 0.0f;
 
     m_FlowState = FlowState::Playing;
     m_PlayerWasDying = false; // 重置死亡偵測狀態
+    m_DeathSequenceTimer = 0.0f;
     // 開始播放關卡 BGM（依 LoadLevel 時決定的主題）
-    m_Audio.PlayBGM(m_LevelBGMName);
+    m_Audio.SetAreaBGM(m_LevelBGMName);
+    if (TryEnterIntroCutscene()) {
+        return;
+    }
     LOG_INFO("Entered playing state.");
+}
+
+bool GameManager::TryEnterIntroCutscene() {
+    if (!m_Level.introCutscene.has_value()) {
+        return false;
+    }
+
+    const IntroCutsceneData& intro = *m_Level.introCutscene;
+    if (intro.type != "autoEnterPipe") {
+        LOG_WARN("Unsupported introCutscene type='{}'. Falling back to normal play.", intro.type);
+        return false;
+    }
+
+    PipeBlock* pipe = FindIntroCutscenePipe();
+    if (!pipe) {
+        LOG_WARN("autoEnterPipe introCutscene targetLevel='{}' not found. Falling back to normal play.",
+                 intro.pipeTargetLevel);
+        return false;
+    }
+
+    const float targetX = pipe->GetPosition().x - m_Player.GetSize().x;
+    const float walkSpeed = intro.walkSpeed > 0.0f ? intro.walkSpeed : PLAYER_MAX_WALK_SPEED;
+    m_Player.StartIntroAutoWalk(targetX, walkSpeed);
+    m_FlowState = FlowState::IntroCutscene;
+    LOG_INFO("Entered intro cutscene: type='{}' targetLevel='{}'",
+             intro.type,
+             intro.pipeTargetLevel);
+    return true;
+}
+
+PipeBlock* GameManager::FindIntroCutscenePipe() const {
+    if (!m_Level.introCutscene.has_value()) {
+        return nullptr;
+    }
+
+    const std::string& targetLevel = m_Level.introCutscene->pipeTargetLevel;
+    for (const auto& block : m_Blocks) {
+        if (block->GetType() != Block::Type::Pipe) continue;
+
+        auto* pipe = dynamic_cast<PipeBlock*>(block.get());
+        if (!pipe || !pipe->IsEnterable()) continue;
+        if (pipe->GetDestinationLevel() == targetLevel) {
+            return pipe;
+        }
+    }
+
+    return nullptr;
 }
 
 void GameManager::EnterTitleScreen() {
     ResetSceneObjects();
     m_LevelCleared = false;
     m_WaitingForTimeUpDeath = false;
+    m_PlayerWasDying = false;
+    m_DeathSequenceTimer = 0.0f;
     m_StateTimer = 0.0f;
     m_LevelClearTransitionTimer = 0.0f;
-    m_Player.ResetForNewGame();
-    // 回標題畫面時停止所有音樂
-    m_Audio.StopBGM();
+    ResetPlayersForNewGame();
+    // 回標題畫面時停止所有音樂並清空 BGM 狀態
+    m_Audio.ResetBGMState();
 
     // 仿原版 NES：標題畫面以 1-1 開頭實景當背景（藍天、地面、馬力歐站在出生點），
     // logo 與選單疊在場景上。標題狀態不更新世界邏輯（UpdateTitle 只 DrawScene），
@@ -704,6 +1070,7 @@ void GameManager::EnterTitleScreen() {
     m_Camera.Reset();
     LoadLevel(MakeLevelPath("1-1"));
     m_Player.SetOnGround(true);
+    m_Player2.SetOnGround(true);
     BuildScene();
     m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
     BuildTitleOverlay();
@@ -717,6 +1084,8 @@ void GameManager::EnterTimeUp() {
     m_StateTimer = 0.0f;
     m_TimeRemaining = 0.0f;
     m_LevelCleared = false;
+    m_PlayerWasDying = false;
+    m_DeathSequenceTimer = 0.0f;
 
     m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
     const auto& progress = m_Session.CurrentPlayer();
@@ -732,13 +1101,16 @@ void GameManager::EnterGameOver() {
     m_StateTimer = 0.0f;
     m_LevelCleared = false;
     m_WaitingForTimeUpDeath = false;
+    m_PlayerWasDying = false;
+    m_DeathSequenceTimer = 0.0f;
+    m_HurryUpTriggered = false;
 
     // 建立黑底 + GAME OVER 文字 overlay
     BuildGameOverOverlay();
 
     m_FlowState = FlowState::GameOver;
     // 播放 Game Over 音效 BGM（播一次，不循環）
-    m_Audio.PlayBGM("game_over", 0);
+    m_Audio.PlayEventBGM("game_over", 0);
     LOG_INFO("Entered GAME OVER state.");
 }
 
@@ -751,8 +1123,10 @@ void GameManager::EnterLevelClearTransition() {
     // 原版 NES 的時間結算沒有任何提示文字，直接在遊戲畫面上
     // TIME 遞減、SCORE 遞增（見 UpdateLevelClearTransition）
     m_FlowState = FlowState::LevelClearTransition;
+    // 馬力歐已進城門，城堡升起小旗（與時間結算同時進行）
+    SpawnCastleFlag(m_Player.GetCastleDoorX(), m_FlagBottomY);
     // 播放過關 BGM（播一次，不循環）
-    m_Audio.PlayBGM("level_clear", 0);
+    m_Audio.PlayEventBGM("level_clear", 0);
     LOG_INFO("Entered level clear transition (time countdown). timeRemaining={}",
              m_TimeRemaining);
 }
@@ -812,8 +1186,8 @@ void GameManager::BuildTitleOverlay() {
     //   TOP- 000000 左緣 x=88，y=184
     constexpr int kTitleFontSize = 24; // NES 8px 字 × GAME_SCALE(3)
 
-    AddOverlayImage("ui/title/logo.png", NesToScreen(128.0f, 68.0f), {GAME_SCALE, GAME_SCALE}, kTitleTextZ);
-    AddOverlayText("(C)1985 NINTENDO", kTitleFontSize, NesToScreen(152.0f, 120.0f), kTitleTextZ);
+    AddOverlayImage("ui/title/logo.png", NesToScreen(128.0f, 80.0f), {GAME_SCALE, GAME_SCALE}, kTitleTextZ);
+    AddOverlayText("(C)1985 NINTENDO", kTitleFontSize, NesToScreen(152.0f, 132.0f), kTitleTextZ);
 
     // 原版 8x8 選單游標（固定指向 1 PLAYER GAME；2P 尚未開放，見 B-2）
     AddOverlayImage("ui/title/cursor.png",
@@ -900,6 +1274,7 @@ void GameManager::SavePlayerProgress() {
 
 void GameManager::ApplyPlayerProgress() {
     m_Player.SetForm(m_Session.CurrentPlayer().form);
+    m_Player2.SetForm(m_Session.CurrentPlayer().form);
 }
 
 void GameManager::HandleLifeLost() {
@@ -1057,7 +1432,10 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
     m_LastCheckpoint = std::nullopt;
     m_CheckpointRespawnOverride = std::nullopt;
 
+    m_Audio.ResetBGMState();
     LoadLevel(levelPath);
+    m_Audio.SetAreaBGM(m_LevelBGMName);
+
     if (spawnOverride.has_value()) {
         m_Player.SetSpawnPosition(*spawnOverride);
         LOG_INFO("Player spawn override applied: {}", m_Player.GetPosition());
@@ -1072,21 +1450,16 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
     BuildScene();
     m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
 
-    // ─── 檢查是否起點是個水管，如果是則觸發鑽出動畫 ───
+    // ─── 檢查是否起點對應水管，如果是則觸發鑽出動畫 ───
     glm::vec2 pPos = m_Player.GetPosition();
     glm::vec2 pSize = m_Player.GetSize();
     for (const auto& block : m_Blocks) {
         if (block->GetType() != Block::Type::Pipe) continue;
         auto* pipe = dynamic_cast<PipeBlock*>(block.get());
-        if (!pipe || !pipe->IsEnterable()) continue;
+        if (!pipe) continue;
 
-        glm::vec2 bPos = pipe->GetPosition();
-        glm::vec2 bSize = pipe->GetSize();
-        
-        bool insideX = (pPos.x + pSize.x * 0.5f) >= bPos.x && (pPos.x + pSize.x * 0.5f) <= (bPos.x + bSize.x);
-        bool insideY = (pPos.y + pSize.y * 0.5f) >= bPos.y && (pPos.y + pSize.y * 0.5f) <= (bPos.y + bSize.y);
-        if (insideX && insideY) {
-            m_Player.StartPipeExit(bPos, bSize, pipe->GetOpening(), 1.0f);
+        if (ShouldStartPipeExitForSpawn(*pipe, pPos, pSize)) {
+            m_Player.StartPipeExit(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), 1.0f);
             break;
         }
     }
@@ -1122,6 +1495,7 @@ bool GameManager::CheckPipeTransition() {
         m_PendingLevel = targetLevel;
         m_PendingSpawn = pipe->GetDestinationSpawn();
         m_Player.StartPipeEntry(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), 1.0f);
+        m_Audio.PauseBGM();
         m_Audio.PlaySFX("pipe"); // 進水管音效
         return true;
     }
@@ -1205,11 +1579,12 @@ void GameManager::CheckStompCollision() {
 
         if (m_Player.IsStarInvincible()) {
             // 星星無敵：觸發翻轉死亡（使用 combo 計分）
-            auto* koopa = dynamic_cast<Koopa*>(enemy.get());
-            if (koopa) {
-                const bool flipLeft = (enemy->GetPosition().x + enemy->GetSize().x * 0.5f) >=
-                                      (m_Player.GetPosition().x + m_Player.GetSize().x * 0.5f);
+            const bool flipLeft = (enemy->GetPosition().x + enemy->GetSize().x * 0.5f) >=
+                                  (m_Player.GetPosition().x + m_Player.GetSize().x * 0.5f);
+            if (auto* koopa = dynamic_cast<Koopa*>(enemy.get())) {
                 koopa->Die(flipLeft);
+            } else if (auto* goomba = dynamic_cast<Goomba*>(enemy.get())) {
+                goomba->Die(flipLeft);
             } else {
                 enemy->SetAlive(false);
                 enemy->SetVisible(false);
@@ -1299,6 +1674,7 @@ void GameManager::CheckStompCollision() {
                     } else if (m_Player.IsTransforming()) {
                         // 觸發縮小動畫：無敵倒數等動畫結束後才開始
                         m_PendingDamageInvincibility = 2.0f;
+                        m_Audio.PlaySFX("pipe"); // 受傷縮小音效
                     }
                     LOG_INFO("Player hit by enemy! Downgrade triggered.");
                 }
@@ -1330,10 +1706,11 @@ void GameManager::CheckShellEnemyCollision() {
 
             if (CollisionUtils::CheckAABB(sPos, sSize, tPos, tSize)) {
                 // 殼命中 Koopa 系列：觸發翻轉死亡
-                auto* targetKoopa = dynamic_cast<Koopa*>(target.get());
-                if (targetKoopa) {
-                    const bool flipLeft = koopa->GetVelocity().x < 0.0f;
+                const bool flipLeft = koopa->GetVelocity().x < 0.0f;
+                if (auto* targetKoopa = dynamic_cast<Koopa*>(target.get())) {
                     targetKoopa->Die(flipLeft);
+                } else if (auto* targetGoomba = dynamic_cast<Goomba*>(target.get())) {
+                    targetGoomba->Die(flipLeft);
                 } else {
                     target->SetAlive(false);
                     target->SetVisible(false);
@@ -1378,13 +1755,20 @@ void GameManager::CheckBlockCollision() {
     m_TmpBlocksToRemove.clear();
 
     constexpr float SURFACE_TOLERANCE = 2.0f;
+    // 頂磚所需的最小水平重疊：與落地的 MIN_SUPPORT_OVERLAP 同理。
+    // 若不設門檻，貼著「兩格高的牆」往右戳進次像素（例如 0.1px），
+    // 起跳上升時牆上半格的底邊會被誤判成頭頂天花板，把跳躍壓回原地
+    // ——表現為「貼牆跳不起來」。要求真正鑽到磚下方才算頂到。
+    constexpr float MIN_BONK_OVERLAP = 4.0f;
 
     // ── Pass 1：找到唯一的 hitFromBelow 候選 ─────────────────────────────
     // 選擇標準：水平重疊量最大的方塊 = 馬力歐「最正對」的那格。
     // 不能用 blockBottom 最大：同一排 ABCD 的 blockBottom 完全相同，
     // 用 blockBottom 只會選到迴圈最後通過的那個，導致打到旁邊的方塊。
     std::shared_ptr<Block> hitBelowBlock = nullptr;
-    float bestOverlapX = -1.0f;
+    // 初值設為門檻：只有水平重疊「超過」MIN_BONK_OVERLAP 的方塊才會被選為頂磚，
+    // 純貼牆的次像素邊緣接觸（overlap≈0）因此被濾掉，不再誤觸頭頂判定。
+    float bestOverlapX = MIN_BONK_OVERLAP;
 
     if (pVel.y < 0.0f) { // 只有往上飛時才可能從下方碰
         const float previousTop = pPrev.y;
@@ -1479,9 +1863,11 @@ void GameManager::CheckBlockCollision() {
             // 底部接近方塊頂面，且水平有重疊
             if (std::abs(enemyBottom - blockTopY) <= BUMP_ABOVE_TOL &&
                 enemyCenterX >= blockLeft && enemyCenterX <= blockRight) {
+                const bool flipLeft = enemyCenterX < (bPos.x + bSize.x * 0.5f);
                 if (auto* koopa = dynamic_cast<Koopa*>(enemy.get())) {
-                    const bool flipLeft = enemyCenterX < (bPos.x + bSize.x * 0.5f);
                     koopa->Die(flipLeft);
+                } else if (auto* goomba = dynamic_cast<Goomba*>(enemy.get())) {
+                    goomba->Die(flipLeft);  // 仿原版：翻倒飛出，而非踩扁
                 } else {
                     enemy->Stomp();
                 }
@@ -1532,13 +1918,36 @@ void GameManager::CheckBlockCollision() {
         const float overlapX = overlapRight - overlapLeft;
         if (overlapX < MIN_SUPPORT_OVERLAP) continue;
 
+        // 移動平台：它在本幀已先移動（見更新順序），其頂面每幀最多位移
+        // |frameDelta.y|。若沿用固定 0.5px 容差，當平台上升速度 > 容差時，
+        // 頂面會從玩家腳底溜走、判不到支撐 → 乘客被丟包墜落。
+        // 因此對移動平台把容差加上本幀垂直位移量，維持站立接觸。
+        float supportTolerance = SUPPORT_TOLERANCE;
+        auto* movingPlatform = dynamic_cast<MovingPlatformBlock*>(block.get());
+        if (movingPlatform) {
+            supportTolerance += std::abs(movingPlatform->GetFrameDelta().y);
+        }
+
         const bool restingOnSurface =
             pVel.y >= 0.0f &&
-            std::abs(currentBottom - bPos.y) <= SUPPORT_TOLERANCE;
+            std::abs(currentBottom - bPos.y) <= supportTolerance;
         const bool crossedSurface =
             pVel.y >= 0.0f &&
             previousBottom <= bPos.y &&
             currentBottom >= bPos.y;
+
+        // 診斷：玩家在移動平台頂面附近（24px 內）時記錄支撐判定數據，
+        // 只在靠近時印出避免洗版，用來抓玩家從平台脫離的那一幀。
+        if (movingPlatform && std::abs(currentBottom - bPos.y) < 24.0f) {
+            const glm::vec2 fd = movingPlatform->GetFrameDelta();
+            LOG_DEBUG(
+                "[MovPlat] plat=({:.2f},{:.2f}) frameDelta=({:.3f},{:.3f}) "
+                "pBottom={:.2f} prevBottom={:.2f} gap={:.3f} tol={:.3f} "
+                "overlapX={:.2f} pVelY={:.2f} resting={} crossed={}",
+                bPos.x, bPos.y, fd.x, fd.y,
+                currentBottom, previousBottom, currentBottom - bPos.y,
+                supportTolerance, overlapX, pVel.y, restingOnSurface, crossedSurface);
+        }
 
         // 當一幀跨過多個頂面時，選下降路徑中最先碰到的最高表面。
         if ((restingOnSurface || crossedSurface) && bPos.y < landingTop) {
@@ -1553,12 +1962,22 @@ void GameManager::CheckBlockCollision() {
         onGround = true;
 
         if (auto* platform = dynamic_cast<MovingPlatformBlock*>(landingBlock.get())) {
-            pPos += platform->GetFrameDelta();
+            const glm::vec2 fd = platform->GetFrameDelta();
+            // 只跟隨水平位移；垂直方向已由上面「貼齊頂面」自動完成。
+            // 不可再 += fd.y，否則會把玩家額外往下推一幀份（領先平台），
+            // 在平台到行程端點減速/反折時造成 ~frameDelta 的間隙而脫離墜落。
+            pPos.x += fd.x;
+            LOG_DEBUG("[MovPlat] CARRY: carried by platform=({:.2f},{:.2f}) "
+                      "frameDelta=({:.3f},{:.3f}) -> playerPos=({:.2f},{:.2f})",
+                      landingBlock->GetPosition().x, landingBlock->GetPosition().y,
+                      fd.x, fd.y, pPos.x, pPos.y);
         }
     }
 
     // ── Pass 2B：剩餘重疊一律視為水平側碰 ───────────────────────────────
     // 側碰只修正 X，不得停止下落或把玩家設為 grounded。
+    bool touchingWallLeft  = false; // 牆在玩家左邊（玩家被往右推）
+    bool touchingWallRight = false; // 牆在玩家右邊（玩家被往左推）
     for (const auto& block : m_Blocks) {
         if (!block->IsSolid()) continue;
         if (block == hitBelowBlock) continue;
@@ -1575,9 +1994,15 @@ void GameManager::CheckBlockCollision() {
         const float penX =
             (pSize.x * 0.5f + bSize.x * 0.5f) - std::abs(dx);
 
-        if (dx > 0.0f) pPos.x += penX;
-        else           pPos.x -= penX;
+        if (dx > 0.0f) { pPos.x += penX; touchingWallLeft  = true; }
+        else           { pPos.x -= penX; touchingWallRight = true; }
     }
+
+    // 貼牆後把「撞進牆裡」的水平速度歸零：座標已被夾在牆面（座標＝貼牆），
+    // 速度不再每幀累積，消除「位移→反彈」的抖動，也讓貼牆時起跳/物理乾淨。
+    // 只歸零指向牆的分量——反方向（離牆）仍可正常加速，符合「除非反方向」。
+    if (touchingWallLeft  && pVel.x < 0.0f) pVel.x = 0.0f;
+    if (touchingWallRight && pVel.x > 0.0f) pVel.x = 0.0f;
 
     m_Player.SetPosition(pPos);
     m_Player.SetVelocity(pVel);
@@ -1783,7 +2208,7 @@ void GameManager::CheckItemCollision() {
                         SpawnScorePopup(1000, iPos);
                         m_Audio.PlaySFX("powerup");  // 吃到道具音效
                         // 吃星後切換為 Starman BGM（星星時間結束後恢復，在 UpdatePlaying 偵測）
-                        m_Audio.PlayBGM("starman");
+                        m_Audio.PlayEventBGM("starman");
                     }
                 }
             }
@@ -1957,9 +2382,11 @@ void GameManager::CheckFireballCollision() {
                 // Koopa 系列：觸發翻轉死亡，得 200 分；其他敵人（Goomba 等）得 100 分
                 auto* koopa = dynamic_cast<Koopa*>(enemy.get());
                 const bool isKoopa = (koopa != nullptr);
+                const bool flipLeft = fVel.x < 0.0f; // 火球飛行方向決定翻轉朝向
                 if (koopa) {
-                    const bool flipLeft = fVel.x < 0.0f; // 火球飛行方向決定翻轉朝向
                     koopa->Die(flipLeft);
+                } else if (auto* goomba = dynamic_cast<Goomba*>(enemy.get())) {
+                    goomba->Die(flipLeft);
                 } else {
                     enemy->SetAlive(false);
                     enemy->SetVisible(false);
@@ -2043,7 +2470,10 @@ void GameManager::CheckFlagCollision() {
         m_Session.AddScore(score);
         m_LevelCleared = true;
 
-        // 觸發旗球下降動畫（與玩家下滑同時進行）
+        // 記下旗杆底 Y（= 地面），稍後城堡升旗用作基準高度
+        m_FlagBottomY = fPos.y + fSize.y;
+
+        // 觸發旗子下降動畫（與玩家下滑同速、同時進行）
         flagBlock->StartDescent();
 
         // 觸發玩家的過關下降演出

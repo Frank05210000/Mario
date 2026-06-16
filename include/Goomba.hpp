@@ -15,6 +15,9 @@
  * 被踩到後進入 ~0.4s 的壓扁動畫，再設置 SetAlive(false)。
  * 壓扁狀態中不具傷害性。
  *
+ * 被頂磚塊、星星、龜殼或火球擊中時改走 Die()：上下翻轉、向上彈起再墜落消失
+ * （仿原版 NES，與 Koopa::Die 相同的翻倒死法，而非踩扁）。
+ *
  * 行走邏輯：改用 2 幀 Util::Animation 動畫 (walk-1, walk-2)。
  */
 class Goomba : public Enemy {
@@ -35,16 +38,27 @@ public:
      */
     StompOutcome Stomp() override;
 
+    /* 翻倒死亡：上下翻轉、向上彈起後墜落消失（頂磚塊／星星／龜殼／火球用）
+     * flipLeft 決定向左或向右拋飛。
+     */
+    void Die(bool flipLeft);
+
     /* 壓扁中不具傷害性 */
     bool IsSquashed() const { return m_IsSquashed; }
+    bool IsDying() const { return m_IsDead; }
+
+    /* 壓扁或翻倒中都不再與玩家／其他物件碰撞 */
+    bool CanCollide() const override { return m_IsAlive && !m_IsSquashed && !m_IsDead; }
 
 private:
     bool   m_IsSquashed   = false;   // 是否正在壓扁狀態
     float  m_SquashTimer  = 0.0f;    // 壓扁倒數（秒）
+    bool   m_IsDead       = false;   // 是否正在翻倒死亡（向上彈起墜落）
     static constexpr float SQUASH_DURATION = 0.4f;
 
     std::shared_ptr<Util::Animation> m_WalkAnim;   // 2 幀行走動畫
     std::shared_ptr<Util::Image>     m_StompImage; // 壓扁圖片
+    std::shared_ptr<Util::Image>     m_DeadImage;  // 翻倒死亡圖（正常圖上下翻轉）
 };
 
 #endif

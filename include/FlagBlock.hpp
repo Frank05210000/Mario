@@ -2,6 +2,7 @@
 #define FLAG_BLOCK_HPP
 
 #include "Block.hpp"
+#include "GameConstants.hpp"
 
 /*
  * FlagBlock：終點旗杆
@@ -47,9 +48,10 @@ public:
 private:
     // ─── 旗球下降動畫狀態 ──────────────────────────────────────────
     bool  m_IsDescending = false;  // 是否正在下降中
-    float m_BallOffsetY  = 0.0f;   // 球相對杆頂的 Y 偏移（世界像素，往下增加）
+    float m_BallOffsetY  = 0.0f;   // 旗子相對杆頂的 Y 偏移（世界像素，往下增加）
     float m_BallTargetY  = 0.0f;   // 下降目標 Y（杆底）
-    static constexpr float DESCENT_SPEED = 80.0f; // 下降速度（世界像素/秒）
+    // 旗子與馬力歐用同一下滑速度（POLE_SLIDE_SPEED），確保兩者同步到底
+    static constexpr float DESCENT_SPEED = POLE_SLIDE_SPEED; // 下降速度（世界像素/秒）
 };
 
 #endif
