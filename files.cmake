@@ -6,6 +6,7 @@ set(SRC_FILES
     BrickDebris.cpp
     Camera.cpp
     Character.cpp
+    ClipDrawable.cpp
     Enemy.cpp
     FlagBlock.cpp
     GameManager.cpp
@@ -46,6 +47,7 @@ set(INCLUDE_FILES
     BrickDebris.hpp
     Camera.hpp
     Character.hpp
+    ClipDrawable.hpp
     Enemy.hpp
     FlagBlock.hpp
     Item.hpp

@@ -5,7 +5,10 @@
 #include <vector>
 
 #include "AssetPath.hpp"
+#include "Camera.hpp"
+#include "ClipDrawable.hpp"
 #include "GameConstants.hpp"
+#include "Core/Context.hpp"
 #include "Util/Animation.hpp"
 
 PiranhaPlant::PiranhaPlant(float extendedX, float extendedY) {
@@ -17,8 +20,6 @@ PiranhaPlant::PiranhaPlant(float extendedX, float extendedY) {
     m_Velocity  = {0.0f, 0.0f};
     m_Transform.scale = {GAME_SCALE, GAME_SCALE};
 
-    // z-index 低於水管（水管預設約 1.0 ~ 2.0）才能隱藏進水管內
-    // Enemy::Enemy() 預設設 5.0，這裡覆寫為 0.5（水管底層）
     SetZIndex(0.5f);
 
     std::vector<std::string> paths = {
@@ -26,7 +27,24 @@ PiranhaPlant::PiranhaPlant(float extendedX, float extendedY) {
         MakeAssetPath("enemy/Piranha/underground/piranha-2.png"),
     };
     m_Anim = std::make_shared<Util::Animation>(paths, true, 180, true);
-    SetDrawable(m_Anim);
+
+    // 水管只是背景圖（z=-1），無法遮住食人花，導致看起來「透明」。
+    // 改用裁切：只露出管口（m_HiddenY，植物完全縮回時的頂線）以上的部分。
+    m_Clip = std::make_shared<ClipDrawable>(m_Anim);
+    SetDrawable(m_Clip);
+}
+
+void PiranhaPlant::Draw(const Camera& camera) {
+    Enemy::Draw(camera); // 設定 transform 與可見性
+
+    if (!m_Clip) return;
+    const auto  ctx   = Core::Context::GetInstance();
+    const float halfH = static_cast<float>(ctx->GetWindowHeight()) * 0.5f;
+    // 管口 framebuffer 像素 Y：保留此線以上（食人花露出的部分）
+    const float mouthPx =
+        camera.WorldToScreen({m_Position.x, m_HiddenY}).y + halfH;
+    m_Clip->SetClipKeepAbovePx(mouthPx);
+    m_Clip->SetEnabled(true);
 }
 
 void PiranhaPlant::Update(float deltaTime) {

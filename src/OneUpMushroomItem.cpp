@@ -7,8 +7,8 @@
 
 OneUpMushroomItem::OneUpMushroomItem(glm::vec2 pos, const ThemeAssets& assets) : Item(pos) {
     m_Size = {TILE_SIZE, TILE_SIZE};
-    SetDrawable(std::make_shared<Util::Image>(
-        assets.Sprite("item/powerup/{theme}/oneup/oneup.png")));
+    SetClippedDrawable(std::make_shared<Util::Image>(
+        assets.Sprite("item/powerup/{theme}/oneup/oneup.png"))); // 冒出期間沿方塊頂線裁切
     SetZIndex(0.5f);
     m_Velocity = {0.0f, -30.0f};
 }

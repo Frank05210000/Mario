@@ -14,7 +14,7 @@ FireFlowerItem::FireFlowerItem(glm::vec2 pos, const ThemeAssets& assets) : Item(
     };
     
     m_Animation = std::make_shared<Util::Animation>(animPaths, true, 100, true);
-    SetDrawable(m_Animation);
+    SetClippedDrawable(m_Animation); // 冒出期間沿方塊頂線裁切
     SetZIndex(0.5f); // 在方塊後方一點點
 
     // 初始速度 (往上冒)

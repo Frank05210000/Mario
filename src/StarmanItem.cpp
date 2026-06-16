@@ -19,7 +19,7 @@ StarmanItem::StarmanItem(glm::vec2 pos, const ThemeAssets& assets) : Item(pos) {
         true,
         100,
         true);
-    SetDrawable(m_Animation);
+    SetClippedDrawable(m_Animation); // 冒出期間沿方塊頂線裁切
     SetZIndex(0.5f);
     m_Velocity = {0.0f, -30.0f};
 }

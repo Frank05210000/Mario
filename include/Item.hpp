@@ -1,8 +1,11 @@
 #ifndef ITEM_HPP
 #define ITEM_HPP
 
+#include <memory>
+
 #include "Util/GameObject.hpp"
 #include "Camera.hpp"
+#include "ClipDrawable.hpp"
 #include "GameConstants.hpp"
 
 class Player;
@@ -42,6 +45,16 @@ public:
 
 protected:
     void ApplyGravity(float deltaTime);
+
+    // 設定一個會被「方塊頂線」裁切的可繪物：道具在 Spawning（自方塊冒出）期間，
+    // 只露出方塊頂線以上的部分，避免方塊彈跳時露出道具下緣造成破圖。
+    // 冒出完成（Active）後自動停用裁切。
+    void SetClippedDrawable(const std::shared_ptr<Core::Drawable>& inner) {
+        m_Clip = std::make_shared<ClipDrawable>(inner);
+        SetDrawable(m_Clip);
+    }
+
+    std::shared_ptr<ClipDrawable> m_Clip = nullptr;
 
     glm::vec2 m_Position = {0.0f, 0.0f};
     glm::vec2 m_Velocity = {0.0f, 0.0f};

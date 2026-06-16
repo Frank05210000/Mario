@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "Enemy.hpp"
+#include "ClipDrawable.hpp"
 #include "Util/Animation.hpp"
 
 class PiranhaPlant : public Enemy {
@@ -11,6 +12,7 @@ public:
     PiranhaPlant(float extendedX, float extendedY);
 
     void Update(float deltaTime) override;
+    void Draw(const Camera& camera) override;
     StompOutcome Stomp() override;
     bool UsesBlockCollision() const override { return false; }
 
@@ -41,6 +43,7 @@ private:
     State m_State       = State::HiddenPause;
 
     std::shared_ptr<Util::Animation> m_Anim;
+    std::shared_ptr<ClipDrawable>    m_Clip;
 };
 
 #endif

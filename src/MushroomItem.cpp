@@ -8,7 +8,7 @@ MushroomItem::MushroomItem(glm::vec2 pos, const ThemeAssets& assets) : Item(pos)
     m_Size = {TILE_SIZE, TILE_SIZE};
     auto image = std::make_shared<Util::Image>(
         assets.Sprite("item/powerup/{theme}/mushroom/mushroom.png"));
-    SetDrawable(image);
+    SetClippedDrawable(image); // 冒出期間沿方塊頂線裁切，避免彈跳露出白色蒂部
     SetZIndex(0.5f); // 在方塊後方一點點
 
     // 初始速度 (往上冒)
