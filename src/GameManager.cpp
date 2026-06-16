@@ -1403,9 +1403,9 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
         }
     }
 
-    // 將瑪利歐放在獨立的出生點
-    m_Player.SetSpawnPosition(m_Level.playerSpawn);
-    LOG_INFO("Player spawn applied: {}", m_Player.GetPosition());
+    // 將玩家放在獨立的出生點，P2 稍微往右錯開避免完全重疊。
+    SetPlayersSpawnPosition(m_Level.playerSpawn);
+    LOG_INFO("Player spawns applied: p1={} p2={}", m_Player.GetPosition(), m_Player2.GetPosition());
 }
 
 std::string GameManager::MakeLevelPath(const std::string& levelName) {
@@ -1437,54 +1437,48 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
     m_Audio.SetAreaBGM(m_LevelBGMName);
 
     if (spawnOverride.has_value()) {
-        m_Player.SetSpawnPosition(*spawnOverride);
-        LOG_INFO("Player spawn override applied: {}", m_Player.GetPosition());
+        SetPlayersSpawnPosition(*spawnOverride);
+        LOG_INFO("Player spawn override applied: p1={} p2={}", m_Player.GetPosition(), m_Player2.GetPosition());
     }
 
     {
         const float lvW = static_cast<float>(m_Level.levelWidth);
         m_Camera.SetX(std::clamp(
-            m_Player.GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
+            LeadPlayer().GetPosition().x - m_Camera.GetViewWorldWidth() * 0.5f,
             0.0f, std::max(0.0f, lvW - m_Camera.GetViewWorldWidth())));
     }
     BuildScene();
     m_Hud.Init(m_Renderer, m_SelectedWorldLabel);
 
     // ─── 檢查是否起點對應水管，如果是則觸發鑽出動畫 ───
-    glm::vec2 pPos = m_Player.GetPosition();
-    glm::vec2 pSize = m_Player.GetSize();
-    for (const auto& block : m_Blocks) {
-        if (block->GetType() != Block::Type::Pipe) continue;
-        auto* pipe = dynamic_cast<PipeBlock*>(block.get());
-        if (!pipe) continue;
+    for (auto* player : Players()) {
+        glm::vec2 pPos = player->GetPosition();
+        glm::vec2 pSize = player->GetSize();
+        for (const auto& block : m_Blocks) {
+            if (block->GetType() != Block::Type::Pipe) continue;
+            auto* pipe = dynamic_cast<PipeBlock*>(block.get());
+            if (!pipe) continue;
 
-        if (ShouldStartPipeExitForSpawn(*pipe, pPos, pSize)) {
-            m_Player.StartPipeExit(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), 1.0f);
-            break;
+            if (ShouldStartPipeExitForSpawn(*pipe, pPos, pSize)) {
+                player->StartPipeExit(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), 1.0f);
+                break;
+            }
         }
     }
 }
 
-bool GameManager::CheckPipeTransition() {
-    const bool pressingDown =
-        Util::Input::IsKeyPressed(Util::Keycode::DOWN) ||
-        Util::Input::IsKeyPressed(Util::Keycode::S);
-    const bool pressingUp =
-        Util::Input::IsKeyPressed(Util::Keycode::UP) ||
-        Util::Input::IsKeyPressed(Util::Keycode::W);
-    const bool pressingLeft =
-        Util::Input::IsKeyPressed(Util::Keycode::LEFT) ||
-        Util::Input::IsKeyPressed(Util::Keycode::A);
-    const bool pressingRight =
-        Util::Input::IsKeyPressed(Util::Keycode::RIGHT) ||
-        Util::Input::IsKeyPressed(Util::Keycode::D);
+bool GameManager::CheckPipeTransition(Player& player) {
+    const bool pressingDown = player.IsPressingDown();
+    const bool pressingUp = player.IsPressingUp();
+    const bool pressingLeft = player.IsPressingLeft();
+    const bool pressingRight = player.IsPressingRight();
 
     for (const auto& block : m_Blocks) {
         if (block->GetType() != Block::Type::Pipe) continue;
 
         auto* pipe = dynamic_cast<PipeBlock*>(block.get());
         if (!pipe) continue;
-        if (!pipe->CanEnter(m_Player, pressingUp, pressingDown, pressingLeft, pressingRight)) continue;
+        if (!pipe->CanEnter(player, pressingUp, pressingDown, pressingLeft, pressingRight)) continue;
 
         const std::string targetLevel = pipe->GetDestinationLevel();
         if (targetLevel.empty()) {
@@ -1494,7 +1488,7 @@ bool GameManager::CheckPipeTransition() {
 
         m_PendingLevel = targetLevel;
         m_PendingSpawn = pipe->GetDestinationSpawn();
-        m_Player.StartPipeEntry(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), 1.0f);
+        player.StartPipeEntry(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), 1.0f);
         m_Audio.PauseBGM();
         m_Audio.PlaySFX("pipe"); // 進水管音效
         return true;
@@ -1555,16 +1549,16 @@ void GameManager::SpawnEnemy(const ObjectData& data) {
 }
 
 // ─── CheckStompCollision ──────────────────────────────────────────────────
-void GameManager::CheckStompCollision() {
-    if (!m_Player.IsAlive()) return;
+void GameManager::CheckStompCollision(Player& player, float& pendingDamageInvincibility) {
+    if (!player.IsAlive()) return;
 
-    const glm::vec2 pPos  = m_Player.GetPosition();
-    const glm::vec2 pSize = m_Player.GetSize();
-    const glm::vec2 pPrev = m_Player.GetPreviousPosition();
-    const glm::vec2 pVel  = m_Player.GetVelocity();
+    const glm::vec2 pPos  = player.GetPosition();
+    const glm::vec2 pSize = player.GetSize();
+    const glm::vec2 pPrev = player.GetPreviousPosition();
+    const glm::vec2 pVel  = player.GetVelocity();
 
     // 玩家落地時重置踩踏連殺 combo
-    if (m_Player.IsOnGround()) {
+    if (player.IsOnGround()) {
         ResetCombo();
     }
 
@@ -1577,10 +1571,10 @@ void GameManager::CheckStompCollision() {
         // 矩形重疊判斷（AABB）
         if (!CollisionUtils::CheckAABB(pPos, pSize, ePos, eSize)) continue;
 
-        if (m_Player.IsStarInvincible()) {
+        if (player.IsStarInvincible()) {
             // 星星無敵：觸發翻轉死亡（使用 combo 計分）
             const bool flipLeft = (enemy->GetPosition().x + enemy->GetSize().x * 0.5f) >=
-                                  (m_Player.GetPosition().x + m_Player.GetSize().x * 0.5f);
+                                  (player.GetPosition().x + player.GetSize().x * 0.5f);
             if (auto* koopa = dynamic_cast<Koopa*>(enemy.get())) {
                 koopa->Die(flipLeft);
             } else if (auto* goomba = dynamic_cast<Goomba*>(enemy.get())) {
@@ -1648,9 +1642,9 @@ void GameManager::CheckStompCollision() {
             }
 
             if (outcome != Enemy::StompOutcome::NoEffect) {
-                glm::vec2 vel = m_Player.GetVelocity();
+                glm::vec2 vel = player.GetVelocity();
                 vel.y = -180.0f;
-                m_Player.SetVelocity(vel);
+                player.SetVelocity(vel);
             }
         } else {
             // ── 側碰 / 從下方衝入 ──
@@ -1667,13 +1661,13 @@ void GameManager::CheckStompCollision() {
             } else {
                 // 碰到有殺傷力的敵人：玩家受傷降級
                 // 變身動畫中視為無敵，不可被重複傷害
-                if (!m_Player.IsDamageInvincible() && !m_Player.IsTransforming()) {
-                    m_Player.Downgrade();
-                    if (m_Player.IsDying()) {
+                if (!player.IsDamageInvincible() && !player.IsTransforming()) {
+                    player.Downgrade();
+                    if (player.IsDying()) {
                         // SMALL 直接死亡，無無敵倒數需求
-                    } else if (m_Player.IsTransforming()) {
+                    } else if (player.IsTransforming()) {
                         // 觸發縮小動畫：無敵倒數等動畫結束後才開始
-                        m_PendingDamageInvincibility = 2.0f;
+                        pendingDamageInvincibility = 2.0f;
                         m_Audio.PlaySFX("pipe"); // 受傷縮小音效
                     }
                     LOG_INFO("Player hit by enemy! Downgrade triggered.");
