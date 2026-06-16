@@ -1726,7 +1726,7 @@ void GameManager::CheckShellEnemyCollision() {
 }
 
 // ─── CheckBlockCollision ──────────────────────────────────────────────────
-void GameManager::CheckBlockCollision() {
+void GameManager::CheckBlockCollision(Player& player) {
     // ── Bug 1 修復：分兩個 pass 處理 ──────────────────────────────────────
     // 問題根源：原本在同一迴圈中邊掃描邊修改 pPos，
     // 導致後面的方塊用「已位移後的位置」做 hitFromBelow 判斷，
@@ -1738,11 +1738,11 @@ void GameManager::CheckBlockCollision() {
     //   Pass 2：對所有重疊方塊做位置修正（落地、側碰）。
     // ──────────────────────────────────────────────────────────────────────
 
-    const glm::vec2 pPosOrig = m_Player.GetPosition();  // 原始位置，整個函式內不變
-    const glm::vec2 pPrev    = m_Player.GetPreviousPosition();
-    const glm::vec2 pSize    = m_Player.GetSize();
+    const glm::vec2 pPosOrig = player.GetPosition();  // 原始位置，整個函式內不變
+    const glm::vec2 pPrev    = player.GetPreviousPosition();
+    const glm::vec2 pSize    = player.GetSize();
     glm::vec2 pPos           = pPosOrig;                // 工作用位置，可累積修正
-    glm::vec2 pVel           = m_Player.GetVelocity();
+    glm::vec2 pVel           = player.GetVelocity();
     bool onGround = false;
 
     // 效能優化：複用 member 暫存容器，避免每幀 heap allocation
@@ -1816,7 +1816,7 @@ void GameManager::CheckBlockCollision() {
         pPos.y += penY;
         pVel.y  = 0.0f;
 
-        BlockHitResult hitRes = hitBelowBlock->OnHit(&m_Player);
+        BlockHitResult hitRes = hitBelowBlock->OnHit(&player);
 
         if (hitRes.isDestroyed) {
             SpawnBrickDebris(bPos);
@@ -1829,7 +1829,7 @@ void GameManager::CheckBlockCollision() {
         }
 
         if (hitRes.spawnItem != "None") {
-            SpawnItem(hitRes.spawnItem, bPos);
+            SpawnItem(hitRes.spawnItem, bPos, &player);
         } else if (!hitRes.isDestroyed) {
             // 頂到方塊但沒有打破也沒有道具：播 bump 音效（頂空磚或不可破磚）
             m_Audio.PlaySFX("bump");
@@ -1998,9 +1998,9 @@ void GameManager::CheckBlockCollision() {
     if (touchingWallLeft  && pVel.x < 0.0f) pVel.x = 0.0f;
     if (touchingWallRight && pVel.x > 0.0f) pVel.x = 0.0f;
 
-    m_Player.SetPosition(pPos);
-    m_Player.SetVelocity(pVel);
-    m_Player.SetOnGround(onGround);
+    player.SetPosition(pPos);
+    player.SetVelocity(pVel);
+    player.SetOnGround(onGround);
 
     // 清理碎裂的方塊（使用 member 暫存容器）
     for (auto& b : m_TmpBlocksToRemove) {
@@ -2100,6 +2100,7 @@ void GameManager::BuildScene() {
 
     // Player（用 no-op deleter 避免 shared_ptr 誤刪 stack 物件）
     m_Renderer.AddChild(std::shared_ptr<Player>(&m_Player, [](Player*){}));
+    m_Renderer.AddChild(std::shared_ptr<Player>(&m_Player2, [](Player*){}));
 
     // 所有敵人
     for (auto& enemy : m_Enemies) m_Renderer.AddChild(enemy);
@@ -2118,7 +2119,7 @@ void GameManager::BuildScene() {
 }
 
 // ─── SpawnItem ────────────────────────────────────────────────────────────
-void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
+void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position, Player* sourcePlayer) {
     std::shared_ptr<Item> newItem;
     std::string spawnedType;
 
@@ -2130,7 +2131,8 @@ void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
         SpawnScorePopup(200, position);
         m_Audio.PlaySFX("coin"); // 金幣音效
     } else if (itemType == "PowerUp" || itemType == "Mushroom") {
-        if (m_Player.GetForm() == Player::Form::SMALL) {
+        const Player::Form sourceForm = sourcePlayer ? sourcePlayer->GetForm() : m_Player.GetForm();
+        if (sourceForm == Player::Form::SMALL) {
             newItem = std::make_shared<MushroomItem>(position, m_ThemeAssets);
             spawnedType = "Mushroom";
         } else {
@@ -2166,9 +2168,6 @@ void GameManager::SpawnItem(const std::string& itemType, glm::vec2 position) {
 
 // ─── CheckItemCollision ───────────────────────────────────────────────────
 void GameManager::CheckItemCollision() {
-    const glm::vec2 pPos  = m_Player.GetPosition();
-    const glm::vec2 pSize = m_Player.GetSize();
-
     // 效能優化：複用 member 暫存容器
     m_TmpItemsToRemove.clear();
 
@@ -2179,9 +2178,20 @@ void GameManager::CheckItemCollision() {
             const glm::vec2 iPos  = item->GetPosition();
             const glm::vec2 iSize = item->GetSize();
 
-            if (CollisionUtils::CheckAABB(pPos, pSize, iPos, iSize)) {
+            Player* collectingPlayer = nullptr;
+            for (auto* player : Players()) {
+                if (!player->IsAlive()) continue;
+                const glm::vec2 pPos  = player->GetPosition();
+                const glm::vec2 pSize = player->GetSize();
+                if (CollisionUtils::CheckAABB(pPos, pSize, iPos, iSize)) {
+                    collectingPlayer = player;
+                    break;
+                }
+            }
+
+            if (collectingPlayer) {
                 const std::string itemType = item->GetType();
-                item->OnCollect(&m_Player);
+                item->OnCollect(collectingPlayer);
                 if (item->GetState() == ItemState::Collected) {
                     LOG_INFO("Item collected: type='{}' position={}", itemType, iPos);
                     if (itemType == "LevelCoin") {
