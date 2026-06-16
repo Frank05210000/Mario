@@ -11,7 +11,7 @@ block,underground,floor,underground_floor,可走地面,sprites/tiles.png,0,32,16
 block,underground,wall,underground_wall,不可穿越牆面,sprites/tiles.png,32,32,16,16,0,generated_sprites/block/underground/wall/wall.png
 block,underground,brick,underground_brick,可被頂擊的磚塊,sprites/tiles.png,16,32,16,16,0,generated_sprites/block/underground/brick/brick.png
 block,underground,brick_bounce,underground_brick_bounce,可被頂擊的磚塊,sprites/tiles.png,48,32,16,16,0,generated_sprites/block/underground/brick_bounce/brick_bounce.png
-block,underground,used_block,underground_used_block,已使用的問號磚替換圖,sprites/tiles.png,64,32,16,16,0,generated_sprites/block/underground/used_block/used_block.png
+block,underground,used_block,underground_used_block,已使用的問號磚替換圖,sprites/tiles.png,48,32,16,16,0,generated_sprites/block/underground/used_block/used_block.png
 block,underground,question_block,underground_question_block,可頂出道具或金幣的問號磚,sprites/tiles.png,384,32,16,16,"0,1,2,3",generated_sprites/block/underground/question_block/question_block-1.png
 block,underground,question_block,underground_question_block,可頂出道具或金幣的問號磚,sprites/tiles.png,400,32,16,16,"4,6",generated_sprites/block/underground/question_block/question_block-2.png
 block,underground,question_block,underground_question_block,可頂出道具或金幣的問號磚,sprites/tiles.png,416,32,16,16,5,generated_sprites/block/underground/question_block/question_block-3.png

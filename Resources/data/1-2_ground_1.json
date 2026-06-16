@@ -2,6 +2,12 @@
   "backgroundImage": "level_image/1-2/1-2_ground_1.png",
   "levelWidth": 384,
   "levelHeight": 240,
+  "introCutscene": {
+    "type": "autoEnterPipe",
+    "pipeTargetLevel": "1-2_underground_1",
+    "walkSpeed": 60.0,
+    "pipeEntryDuration": 1.0
+  },
   "objects": [
     {
       "type": "PipeCollision",
