@@ -1124,7 +1124,8 @@ void GameManager::EnterLevelClearTransition() {
     // TIME 遞減、SCORE 遞增（見 UpdateLevelClearTransition）
     m_FlowState = FlowState::LevelClearTransition;
     // 馬力歐已進城門，城堡升起小旗（與時間結算同時進行）
-    SpawnCastleFlag(m_Player.GetCastleDoorX(), m_FlagBottomY);
+    SpawnCastleFlag(m_LevelClearPlayer ? m_LevelClearPlayer->GetCastleDoorX() : m_Player.GetCastleDoorX(),
+                    m_FlagBottomY);
     // 播放過關 BGM（播一次，不循環）
     m_Audio.PlayEventBGM("level_clear", 0);
     LOG_INFO("Entered level clear transition (time countdown). timeRemaining={}",
@@ -2418,10 +2419,10 @@ void GameManager::CheckFireballCollision() {
 // ─── UpdateCheckpoints ────────────────────────────────────────────────────
 // 每幀呼叫：掃描關卡中繼點清單，若玩家 X 越過某中繼點 X，
 // 且比目前已記錄的中繼點更靠右，就更新 m_LastCheckpoint。
-void GameManager::UpdateCheckpoints() {
+void GameManager::UpdateCheckpoints(const Player& player) {
     if (m_Level.checkpoints.empty()) return;
 
-    const float playerX = m_Player.GetPosition().x;
+    const float playerX = player.GetPosition().x;
 
     for (const auto& cp : m_Level.checkpoints) {
         // 玩家中心 X 越過中繼點 X 才算達成
@@ -2446,12 +2447,12 @@ void GameManager::UpdateCheckpoints() {
  *   2. 把分數加入目前玩家進度
  *   3. 標記過關（避免重複觸發）
  */
-void GameManager::CheckFlagCollision() {
-    if (!m_Player.IsAlive())  return;
+void GameManager::CheckFlagCollision(Player& player) {
+    if (!player.IsAlive())  return;
     if (m_LevelCleared)       return; // 已過關，不重複計算
 
-    const glm::vec2 pPos  = m_Player.GetPosition();
-    const glm::vec2 pSize = m_Player.GetSize();
+    const glm::vec2 pPos  = player.GetPosition();
+    const glm::vec2 pSize = player.GetSize();
 
     for (const auto& block : m_Blocks) {
         if (block->GetType() != Block::Type::Flag) continue;
@@ -2473,6 +2474,7 @@ void GameManager::CheckFlagCollision() {
         const int score = flagBlock->GetContactScore(playerBottom);
         m_Session.AddScore(score);
         m_LevelCleared = true;
+        m_LevelClearPlayer = &player;
 
         // 記下旗杆底 Y（= 地面），稍後城堡升旗用作基準高度
         m_FlagBottomY = fPos.y + fSize.y;
@@ -2481,7 +2483,7 @@ void GameManager::CheckFlagCollision() {
         flagBlock->StartDescent();
 
         // 觸發玩家的過關下降演出
-        m_Player.StartLevelClearSequence(fPos.x, fPos.y + fSize.y);
+        player.StartLevelClearSequence(fPos.x, fPos.y + fSize.y);
 
         // 碰到旗杆：播放旗杆 SFX，同時停掉關卡 BGM
         m_Audio.StopBGM();
