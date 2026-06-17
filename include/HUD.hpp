@@ -1,6 +1,7 @@
 #ifndef HUD_HPP
 #define HUD_HPP
 
+#include <array>
 #include <memory>
 #include <string>
 
@@ -55,7 +56,6 @@ private:
     // Util::Text 是 Drawable，需包在 GameObject 才能加入 Renderer
 
     std::shared_ptr<Util::GameObject> m_ScoreObj;   // "MARIO\n000100"
-    std::shared_ptr<Util::GameObject> m_CoinImageObj;  // 金幣圖示（在數字左側）
     std::shared_ptr<Util::GameObject> m_CoinObj;    // "×03"
     std::shared_ptr<Util::GameObject> m_WorldObj;   // "WORLD\n 1-2"
     std::shared_ptr<Util::GameObject> m_TimeObj;    // "TIME\n 300"
@@ -64,6 +64,13 @@ private:
     std::shared_ptr<Util::Text> m_ScoreText;
     std::shared_ptr<Util::Text> m_CoinText;
     std::shared_ptr<Util::Text> m_TimeText;
+    std::array<std::shared_ptr<Util::GameObject>, 3> m_CoinImageObjs{};
+
+    int m_CoinAnimationTick = 0;
+    int m_CoinAnimationIndex = 0;
+    int m_LastScore = -1;
+    int m_LastCoins = -1;
+    int m_LastTimeLeft = -2;
     std::string m_PlayerName = "MARIO";
 };
 

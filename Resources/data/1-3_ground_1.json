@@ -499,7 +499,9 @@
     {
       "type": "Flag",
       "x": 2432.0,
-      "y": 192.0
+      "y": 192.0,
+      "clearWalkTiles": 7.0,
+      "castleFlagBaseTiles": 10.0
     },
     {
       "type": "TreePlatform",

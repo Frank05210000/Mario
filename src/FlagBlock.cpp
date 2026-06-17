@@ -9,8 +9,12 @@
 // 旗杆總高度（像素），由常數自動計算
 static constexpr float POLE_HEIGHT = FLAG_POLE_TILES * TILE_SIZE;
 
-FlagBlock::FlagBlock(glm::vec2 bottomPosition)
-    : Block({bottomPosition.x, bottomPosition.y - POLE_HEIGHT}, {TILE_SIZE, POLE_HEIGHT}) {
+FlagBlock::FlagBlock(glm::vec2 bottomPosition,
+                     float clearWalkTiles,
+                     float castleFlagBaseTiles)
+    : Block({bottomPosition.x, bottomPosition.y - POLE_HEIGHT}, {TILE_SIZE, POLE_HEIGHT}),
+      m_ClearWalkTiles(clearWalkTiles),
+      m_CastleFlagBaseTiles(castleFlagBaseTiles) {
     // 只顯示旗杆頂端的球（旗杆本體可之後另外疊加圖層）
     // TODO: Resources/Asset/item/flag/ 目前只有 ball.png，沒有旗幟 flag sprite。
     //       若後續取得 flag.png，請在此加入旗幟子 GameObject 並同步下移。

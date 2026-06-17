@@ -302,9 +302,9 @@ void Player::Update(float deltaTime) {
                     m_IsSlidingDown = false;
                     m_IsWalkingToCastle = true;
 
-                    // 走到城堡門中心：此刻 m_Position.x = poleX + 0.5格，
-                    // 再走 6 格 = poleX + 6.5格 = poleX + CASTLE_DOOR_DX（門中心）。
-                    m_WalkTargetX = m_Position.x + 6.0f * TILE_SIZE;
+                    // 走到城堡門中心：此刻 m_Position.x = poleX + 0.5 格，
+                    // 每關終點可用 Flag.clearWalkTiles 校正城堡距離。
+                    m_WalkTargetX = m_Position.x + m_LevelClearWalkTiles * TILE_SIZE;
                     // 沒入門內的最終位置：門中心再往內 0.5 格，讓 sprite 沒進門洞。
                     m_DoorEnterX  = m_WalkTargetX + 0.5f * TILE_SIZE;
 
@@ -783,6 +783,7 @@ void Player::ResetTransientState() {
     m_IsEnteringDoor = false;
     m_WalkTargetX = 0.0f;
     m_DoorEnterX = 0.0f;
+    m_LevelClearWalkTiles = DEFAULT_LEVEL_CLEAR_WALK_TILES;
     m_IntroAutoWalkTargetX = 0.0f;
     m_IntroAutoWalkSpeed = 0.0f;
     m_IntroAutoWalkFinished = false;
@@ -811,7 +812,7 @@ void Player::ClampToCameraBounds(float cameraX) {
 
 // ─── SetForm：切換形態，同時調整碰撞體大小 ──────────────────────────
 
-void Player::StartLevelClearSequence(float poleX, float bottomY) {
+void Player::StartLevelClearSequence(float poleX, float bottomY, float clearWalkTiles) {
     m_State = State::LevelClear;
     m_IsLevelCleared = true;
     m_IsSlidingDown = true;
@@ -825,13 +826,16 @@ void Player::StartLevelClearSequence(float poleX, float bottomY) {
     m_Position.x = poleX + TILE_SIZE * 0.5f;
 
     m_PoleBottomY = bottomY;
+    m_LevelClearWalkTiles = std::max(0.0f, clearWalkTiles);
 
     // 與旗子同速下滑（FlagBlock::DESCENT_SPEED 也用 POLE_SLIDE_SPEED）
     m_Velocity = {0.0f, POLE_SLIDE_SPEED};
     
     m_FacingLeft = true;
 
-    LOG_INFO("Player level clear sequence started. Target bottomY={}", bottomY);
+    LOG_INFO("Player level clear sequence started. Target bottomY={} clearWalkTiles={}",
+             bottomY,
+             m_LevelClearWalkTiles);
 }
 
 void Player::StartIntroAutoWalk(float targetX, float walkSpeed) {

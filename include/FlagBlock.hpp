@@ -20,7 +20,9 @@
  */
 class FlagBlock : public Block {
 public:
-    explicit FlagBlock(glm::vec2 bottomPosition);
+    explicit FlagBlock(glm::vec2 bottomPosition,
+                       float clearWalkTiles = DEFAULT_LEVEL_CLEAR_WALK_TILES,
+                       float castleFlagBaseTiles = DEFAULT_CASTLE_FLAG_BASE_TILES);
 
     Type GetType() const override { return Type::Flag; }
     bool IsSolid() const override { return false; }
@@ -37,6 +39,8 @@ public:
      * ratio 越大代表碰得越高，分數越高。
      */
     int GetContactScore(float playerY) const;
+    float GetClearWalkTiles() const { return m_ClearWalkTiles; }
+    float GetCastleFlagBaseTiles() const { return m_CastleFlagBaseTiles; }
 
     /*
      * 開始旗球下降動畫（由 GameManager::CheckFlagCollision 觸發）
@@ -50,6 +54,8 @@ private:
     bool  m_IsDescending = false;  // 是否正在下降中
     float m_BallOffsetY  = 0.0f;   // 旗子相對杆頂的 Y 偏移（世界像素，往下增加）
     float m_BallTargetY  = 0.0f;   // 下降目標 Y（杆底）
+    float m_ClearWalkTiles = DEFAULT_LEVEL_CLEAR_WALK_TILES;
+    float m_CastleFlagBaseTiles = DEFAULT_CASTLE_FLAG_BASE_TILES;
     // 旗子與馬力歐用同一下滑速度（POLE_SLIDE_SPEED），確保兩者同步到底
     static constexpr float DESCENT_SPEED = POLE_SLIDE_SPEED; // 下降速度（世界像素/秒）
 };

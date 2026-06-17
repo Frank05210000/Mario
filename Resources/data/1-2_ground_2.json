@@ -246,7 +246,9 @@
     {
       "type": "Flag",
       "x": 352.0,
-      "y": 192.0
+      "y": 192.0,
+      "clearWalkTiles": 6.0,
+      "castleFlagBaseTiles": 4.0
     }
   ],
   "playerSpawn": {

@@ -1,5 +1,6 @@
 #include "HUD.hpp"
 
+#include <array>
 #include <iomanip>
 #include <sstream>
 
@@ -41,6 +42,14 @@ static constexpr float kWorldX    = NesX(164.0f);
 static constexpr float kTimeX     = NesX(216.0f);
 static constexpr float kTopY      = kHalfH - 72.0f;
 
+static const std::array<std::string, 3> kCoinFramePaths = {
+    MakeAssetPath("ui/hud_coin/misc_3__hud_coin1_1.png"),
+    MakeAssetPath("ui/hud_coin/misc_3__hud_coin1_2.png"),
+    MakeAssetPath("ui/hud_coin/misc_3__hud_coin1_3.png"),
+};
+static constexpr std::array<int, 4> kCoinAnimationFrames = {0, 1, 2, 1};
+static constexpr int kCoinAnimationFrameTicks = 8;
+
 // ─── 輔助：建立一個包有 Text 的 GameObject ────────────────────────────────
 static std::shared_ptr<Util::GameObject> MakeTextObj(
     std::shared_ptr<Util::Text> text, float x, float y, float zIndex = 20.0f)
@@ -55,6 +64,9 @@ static std::shared_ptr<Util::GameObject> MakeTextObj(
 
 void HUD::Init(Util::Renderer& renderer, const std::string& worldLabel, const std::string& playerName) {
     m_PlayerName = playerName;
+    m_LastScore = -1;
+    m_LastCoins = -1;
+    m_LastTimeLeft = -2;
 
     // 分數區塊："MARIO" 標題 + 分數數值
     m_ScoreText = std::make_shared<Util::Text>(kFontPath, kFontSize, m_PlayerName + "\n000000", kWhite);
@@ -62,15 +74,17 @@ void HUD::Init(Util::Renderer& renderer, const std::string& worldLabel, const st
 
     // 金幣區塊：先加金幣圖示，再是文字「x03」
     // 原版 HUD 金幣圖示約 8 NES 像素高（= 24 螢幕像素），對齊數值列（NES y=24..32）
-    auto coinImage = std::make_shared<Util::Image>(MakeAssetPath("ui/hud_coin/misc_3__hud_coin1_1.png"));
-    m_CoinImageObj = std::make_shared<Util::GameObject>(coinImage, 20.0f);
-    m_CoinImageObj->m_Transform.translation = {kCoinIconX, kTopY - kFontSize * 0.5f};
-    {
+    m_CoinAnimationTick = 0;
+    m_CoinAnimationIndex = 0;
+    for (std::size_t i = 0; i < kCoinFramePaths.size(); ++i) {
+        auto coinImage = std::make_shared<Util::Image>(kCoinFramePaths[i]);
+        m_CoinImageObjs[i] = std::make_shared<Util::GameObject>(coinImage, 20.0f);
+        m_CoinImageObjs[i]->m_Transform.translation = {kCoinIconX, kTopY - kFontSize * 0.5f};
         const auto texSize = coinImage->GetSize();
         const float iconScale = (texSize.y > 0.0f) ? 24.0f / texSize.y : 1.5f;
-        m_CoinImageObj->m_Transform.scale = {iconScale, iconScale};
+        m_CoinImageObjs[i]->m_Transform.scale = {iconScale, iconScale};
+        m_CoinImageObjs[i]->SetVisible(i == 0);
     }
-    m_CoinImageObj->SetVisible(true);
 
     // 單行文字：垂直對齊數值列（兩行中心往下半個字高）
     m_CoinText  = std::make_shared<Util::Text>(kFontPath, kFontSize, "x00", kWhite);
@@ -85,7 +99,9 @@ void HUD::Init(Util::Renderer& renderer, const std::string& worldLabel, const st
 
     // 全部加進渲染器
     renderer.AddChild(m_ScoreObj);
-    renderer.AddChild(m_CoinImageObj);  // 金幣圖示
+    for (const auto& coinImageObj : m_CoinImageObjs) {
+        renderer.AddChild(coinImageObj);
+    }
     renderer.AddChild(m_CoinObj);       // 金幣數字
     renderer.AddChild(m_WorldObj);
     renderer.AddChild(m_TimeObj);
@@ -96,17 +112,37 @@ void HUD::Init(Util::Renderer& renderer, const std::string& worldLabel, const st
 // ─── Update ───────────────────────────────────────────────────────────────
 
 void HUD::Update(int score, int coins, int timeLeft) {
+    ++m_CoinAnimationTick;
+    if (m_CoinAnimationTick >= kCoinAnimationFrameTicks) {
+        m_CoinAnimationTick = 0;
+        m_CoinAnimationIndex = (m_CoinAnimationIndex + 1) %
+                               static_cast<int>(kCoinAnimationFrames.size());
+        const int visibleFrame = kCoinAnimationFrames[m_CoinAnimationIndex];
+        for (int i = 0; i < static_cast<int>(m_CoinImageObjs.size()); ++i) {
+            if (m_CoinImageObjs[i]) {
+                m_CoinImageObjs[i]->SetVisible(i == visibleFrame);
+            }
+        }
+    }
+
     // 分數：標題換行 + 6 位補零數值
-    m_ScoreText->SetText(m_PlayerName + "\n" + FormatScore(score));
+    if (score != m_LastScore) {
+        m_ScoreText->SetText(m_PlayerName + "\n" + FormatScore(score));
+        m_LastScore = score;
+    }
 
     // 金幣：「×」符號 + 2 位數
-    std::ostringstream cs;
-    cs << "x" << std::setw(2) << std::setfill('0') << std::min(coins, 99);
-    m_CoinText->SetText(cs.str());
+    if (coins != m_LastCoins) {
+        std::ostringstream cs;
+        cs << "x" << std::setw(2) << std::setfill('0') << std::min(coins, 99);
+        m_CoinText->SetText(cs.str());
+        m_LastCoins = coins;
+    }
 
     // 時間（傳入 -1 時顯示空）
-    if (timeLeft >= 0) {
+    if (timeLeft >= 0 && timeLeft != m_LastTimeLeft) {
         m_TimeText->SetText("TIME\n " + FormatTime(timeLeft));
+        m_LastTimeLeft = timeLeft;
     }
 }
 

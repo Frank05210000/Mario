@@ -120,6 +120,8 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
                 od.moveDistance = obj.value("moveDistance", 0.0f);
             }
             od.coinCount = obj.value("coinCount", 10);
+            od.clearWalkTiles = std::max(0.0f, obj.value("clearWalkTiles", DEFAULT_LEVEL_CLEAR_WALK_TILES));
+            od.castleFlagBaseTiles = std::max(0.0f, obj.value("castleFlagBaseTiles", DEFAULT_CASTLE_FLAG_BASE_TILES));
             if (obj.contains("targetSpawn")) {
                 od.targetSpawn.x = obj["targetSpawn"].value("x", 0.0f);
                 od.targetSpawn.y = obj["targetSpawn"].value("y", 0.0f);

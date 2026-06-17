@@ -7,6 +7,7 @@
 
 #include "Character.hpp"
 #include "ClipDrawable.hpp"
+#include "GameConstants.hpp"
 #include "Util/Animation.hpp"
 #include "Util/Image.hpp"
 #include "Util/Keycode.hpp"
@@ -149,7 +150,7 @@ public:
      * poleX: 旗杆的中心 X 座標
      * bottomY: 旗杆底部的 Y 座標 (滑行終點)
      */
-    void StartLevelClearSequence(float poleX, float bottomY);
+    void StartLevelClearSequence(float poleX, float bottomY, float clearWalkTiles = DEFAULT_LEVEL_CLEAR_WALK_TILES);
     bool IsLevelClearSequenceFinished() const {
         return m_IsLevelCleared && !m_IsSlidingDown && !m_IsWalkingToCastle
                && !m_IsEnteringDoor;
@@ -274,6 +275,7 @@ private:
     float m_PoleBottomY       = 0.0f;
     float m_WalkTargetX       = 0.0f; // 過關後自動行走的目標位置（城堡門中心）
     float m_DoorEnterX        = 0.0f; // 沒入門內的最終 X（門中心再往內一些）
+    float m_LevelClearWalkTiles = DEFAULT_LEVEL_CLEAR_WALK_TILES;
 
     // ── 開場自動走路過場狀態 ──
     float m_IntroAutoWalkTargetX = 0.0f;

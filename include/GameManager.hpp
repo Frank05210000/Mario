@@ -76,7 +76,7 @@ private:
         TimeUp,
         LevelClearTransition,  // 時間結算倒數（每幀扣時間、加分）
         LevelClearPause,       // 結算完後停頓約 1 秒，再進下一關 intro
-        GameOver,              // 命數歸零後顯示 GAME OVER 畫面約 3 秒再回標題
+        GameOver,              // 命數歸零後顯示 GAME OVER，BGM 播完再回標題
     };
 
     /* 讀入關卡 JSON，建立背景圖與所有方塊
@@ -200,6 +200,7 @@ private:
     std::vector<std::shared_ptr<Util::GameObject>> m_OverlayObjects;
 
     bool  m_LevelCleared = false;          // 是否已觸碰旗杆（防止重複計分）
+    bool  m_LevelClearCastleFlagSpawned = false; // 過關 BGM 播完後是否已生成城堡旗
     bool  m_WaitingForTimeUpDeath = false; // 時間到後等待玩家死亡動畫播完再進 TimeUp
     bool  m_PlayerWasDying = false;        // 上幀是否已在死亡狀態（偵測死亡事件用）
     float m_DeathSequenceTimer = 0.0f;     // 死亡 BGM / 死亡動畫流程同步計時
@@ -275,13 +276,16 @@ private:
     void UpdateScorePopups(float dt);
 
     // ─── 過關城堡升旗演出 ─────────────────────────────────────────
-    // 馬力歐進城門後，城堡頂升起小旗（與時間結算同時進行）。
+    // 過關 BGM 播完後，城堡頂長出小旗。
     // 比照 ScorePopup：以世界座標追蹤，每幀換算螢幕座標。
     std::shared_ptr<Util::GameObject> m_CastleFlag;
     glm::vec2 m_CastleFlagWorldPos = {0.0f, 0.0f};
-    float     m_CastleFlagTargetY  = 0.0f;   // 升到頂時的世界 Y
-    float     m_FlagBottomY        = 0.0f;   // 碰旗時記下的旗杆底 Y（=地面，城堡基準）
-    void SpawnCastleFlag(float doorCenterX, float groundY); // 生成並開始升旗
+    float     m_CastleFlagBaseY = 0.0f;      // 小旗底部固定在城堡塔頂的世界 Y
+    float     m_CastleFlagFullHeight = 0.0f; // 小旗原始世界高度
+    float     m_CastleFlagVisibleHeight = 0.0f; // 目前冒出的高度
+    float     m_FlagBottomY = 0.0f;   // 碰旗時記下的旗杆底 Y（=地面，城堡基準）
+    float     m_LevelClearCastleFlagBaseTiles = DEFAULT_CASTLE_FLAG_BASE_TILES;
+    void SpawnCastleFlag(float doorCenterX, float groundY, float castleFlagBaseTiles); // 生成並開始升旗
     void UpdateCastleFlagRaise(float dt);                   // 每幀讓小旗往上升
 };
 

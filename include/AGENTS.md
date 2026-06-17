@@ -53,7 +53,7 @@
 - `BrickBlock`：可藏 item；SMALL Mario 敲一般磚只 bounce；SUPER/FIRE 敲空磚會 destroyed；藏 item 的磚會變 used block 並 spawn item。
 - `QuestionBlock`：第一次敲出 item，之後變 used block；itemType 空值時由 `GameManager` 預設為 `Coin`。
 - `PipeBlock`：solid；支援 opening、enterable、target level、target spawn。
-- `FlagBlock`：非 solid；JSON y 是旗杆底部；內部用 `FLAG_POLE_TILES` 往上推算碰撞高度；`GetContactScore()` 依碰撞高度給分。
+- `FlagBlock`：非 solid；JSON y 是旗杆底部；內部用 `FLAG_POLE_TILES` 往上推算碰撞高度；`GetContactScore()` 依碰撞高度給分；可用 `clearWalkTiles` 與 `castleFlagBaseTiles` 校正過關走位和城堡旗高度。
 - `MovingPlatformBlock`：solid，沿 horizontal/vertical 移動；支援 `oscillate` 與 `verticalWrap`。
 - `TreePlatformBlock`：solid，使用多段 tree top sprite 組成 1-3 風格平台。
 - `HiddenBlock`：初始 invisible 但 solid；玩家從下方撞擊後顯示 used block 並依 `itemType` spawn item。

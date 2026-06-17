@@ -46,6 +46,8 @@ static const std::array<int, 9> kComboScores = {
     100, 200, 400, 500, 800, 1000, 2000, 4000, 5000
 };
 
+static constexpr int kParatroopaDemoteScore = 400;
+
 // 返回當前 combo 計數對應的分數，-1 表示 1UP（額外命）
 // 同時將 m_ComboCount 向前推進一步
 int GameManager::NextComboScore() {
@@ -74,7 +76,7 @@ void GameManager::SpawnScorePopup(int score, glm::vec2 worldPos) {
     std::string label = (score < 0) ? "1UP" : std::to_string(score);
 
     auto text = std::make_shared<Util::Text>(
-        fontPath, 12, label, Util::Color(255, 255, 255));
+        fontPath, 18, label, Util::Color(255, 255, 255));
 
     auto obj = std::make_shared<Util::GameObject>(text, 25.0f);
     obj->m_Transform.translation = m_Camera.WorldToScreen(worldPos);
@@ -114,12 +116,13 @@ void GameManager::UpdateScorePopups(float dt) {
 
 // ─── 過關城堡升旗 ───────────────────────────────────────────────────────
 //
-// 背景圖已畫死城堡本體（含城垛），這裡只負責「會動的小旗」：
-// 馬力歐沒入城門後，小旗從城垛後（起點較低）升到城堡頂（終點較高）。
+// 背景圖已畫死城堡本體（含城垛），這裡只負責「會動的小旗」。
+// 原版看起來像小旗從城堡頂冒出；由於背景是單張不透明圖，不能讓 sprite
+// 真正躲在城牆後，所以用底部固定、可見高度往上長的方式模擬。
 //
-// doorCenterX：城堡門中心 X（= 旗杆 x + CASTLE_DOOR_DX，由 Player 回傳）
+// doorCenterX：城堡門中心 X（由 Player 依 Flag.clearWalkTiles 回傳）
 // groundY    ：地面 Y（= 碰旗時的旗杆底 Y）
-void GameManager::SpawnCastleFlag(float doorCenterX, float groundY) {
+void GameManager::SpawnCastleFlag(float doorCenterX, float groundY, float castleFlagBaseTiles) {
     // tutorial 之類：城堡會超出關卡右界 → 沒有城堡可升旗，直接略過
     if (doorCenterX + TILE_SIZE > static_cast<float>(m_Level.levelWidth)) {
         LOG_INFO("Castle flag skipped (no castle within level bounds). doorX={}", doorCenterX);
@@ -128,35 +131,42 @@ void GameManager::SpawnCastleFlag(float doorCenterX, float groundY) {
 
     auto image = std::make_shared<Util::Image>(MakeAssetPath("item/flag/castle_flag.png"));
     m_CastleFlag = std::make_shared<Util::GameObject>(image, 9.0f); // 背景之上、HUD 之下
-    m_CastleFlag->m_Transform.scale = {GAME_SCALE, GAME_SCALE};
 
-    // 升到頂的位置：城堡頂中央
-    m_CastleFlagTargetY = groundY - CASTLE_FLAG_TOP_DY;
-    // 起點：比終點低 CASTLE_FLAG_RISE（藏在城垛後），往上升起
-    m_CastleFlagWorldPos = {doorCenterX, m_CastleFlagTargetY + CASTLE_FLAG_RISE};
+    const auto textureSize = image->GetSize();
+    m_CastleFlagFullHeight = std::max(1.0f, textureSize.y);
+    m_CastleFlagVisibleHeight = 0.0f;
+    m_CastleFlagBaseY = groundY - castleFlagBaseTiles * TILE_SIZE;
+    m_CastleFlagWorldPos = {doorCenterX, m_CastleFlagBaseY};
 
-    m_CastleFlag->m_Transform.translation = m_Camera.WorldToScreen(m_CastleFlagWorldPos);
+    UpdateCastleFlagRaise(0.0f);
     m_CastleFlag->SetVisible(true);
     m_Renderer.AddChild(m_CastleFlag);
 
-    LOG_INFO("Castle flag raised. doorX={} fromY={} toY={}",
-             doorCenterX, m_CastleFlagWorldPos.y, m_CastleFlagTargetY);
+    LOG_INFO("Castle flag raise started. doorX={} baseY={} fullHeight={}",
+             doorCenterX, m_CastleFlagBaseY, m_CastleFlagFullHeight);
 }
 
 void GameManager::UpdateCastleFlagRaise(float dt) {
     if (!m_CastleFlag) return;
-    if (m_CastleFlagWorldPos.y > m_CastleFlagTargetY) {
-        m_CastleFlagWorldPos.y -= CASTLE_FLAG_SPEED * dt;
-        if (m_CastleFlagWorldPos.y < m_CastleFlagTargetY) {
-            m_CastleFlagWorldPos.y = m_CastleFlagTargetY;
+    if (m_CastleFlagVisibleHeight < m_CastleFlagFullHeight) {
+        m_CastleFlagVisibleHeight += CASTLE_FLAG_SPEED * dt;
+        if (m_CastleFlagVisibleHeight > m_CastleFlagFullHeight) {
+            m_CastleFlagVisibleHeight = m_CastleFlagFullHeight;
         }
     }
+
+    const float scaleRatio = m_CastleFlagVisibleHeight / m_CastleFlagFullHeight;
+    m_CastleFlag->m_Transform.scale = {GAME_SCALE, GAME_SCALE * scaleRatio};
+    m_CastleFlagWorldPos.y = m_CastleFlagBaseY - m_CastleFlagVisibleHeight * 0.5f;
     m_CastleFlag->m_Transform.translation = m_Camera.WorldToScreen(m_CastleFlagWorldPos);
 }
 
 namespace {
 constexpr float kTitleTextZ = 30.0f;
 constexpr float kDeathSequenceMinDuration = 3.9f; // death.mp3 is about 3.87s
+constexpr float kPipeTransitionDuration = 2.0f;   // pipe.mp3 is 2.00s
+constexpr float kGameOverDuration = 4.8f;          // game_over.mp3 is about 4.72s
+constexpr float kLevelClearBgmDuration = 6.5f;     // level_clear.mp3 is about 6.49s
 
 glm::vec2 GetPipeSize(const std::string& opening, int segments) {
     const float clampedSegments = static_cast<float>(std::max(1, segments));
@@ -405,7 +415,7 @@ void GameManager::UpdateIntroCutscene(float dt) {
             m_PendingLevel = pipe->GetDestinationLevel();
             m_PendingSpawn = pipe->GetDestinationSpawn();
             const float duration = std::max(
-                0.01f,
+                kPipeTransitionDuration,
                 m_Level.introCutscene ? m_Level.introCutscene->pipeEntryDuration : 1.0f);
             m_Player.StartPipeEntry(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), duration);
             m_Audio.PauseBGM();
@@ -661,8 +671,8 @@ void GameManager::UpdateTimeUp(float dt) {
 
 void GameManager::UpdateGameOver(float dt) {
     m_StateTimer += dt;
-    // GAME OVER 畫面顯示約 3 秒後回標題
-    if (m_StateTimer >= 3.0f) {
+    // GAME OVER BGM 播完後再回標題
+    if (m_StateTimer >= kGameOverDuration) {
         EnterTitleScreen();
         DrawScene(false);
         return;
@@ -676,6 +686,15 @@ void GameManager::UpdateGameOver(float dt) {
 void GameManager::UpdateLevelClearTransition(float dt) {
     constexpr float TIME_DRAIN_PER_SECOND = 60.0f; // 每秒扣幾單位
     constexpr float SCORE_PER_UNIT = 50.0f;        // 每單位加 50 分
+
+    m_LevelClearTransitionTimer += dt;
+    if (!m_LevelClearCastleFlagSpawned &&
+        m_LevelClearTransitionTimer >= kLevelClearBgmDuration) {
+        m_LevelClearCastleFlagSpawned = true;
+        SpawnCastleFlag(m_LevelClearPlayer ? m_LevelClearPlayer->GetCastleDoorX() : m_Player.GetCastleDoorX(),
+                        m_FlagBottomY,
+                        m_LevelClearCastleFlagBaseTiles);
+    }
 
     // 注意：遊玩時 m_TimeRemaining 以 dt×2.5 扣減，結算開始時幾乎必帶小數。
     // 必須把殘餘小數（< 1 單位）視為 0，否則 actualDeduct = min(n, int(0.x)) = 0
@@ -700,13 +719,17 @@ void GameManager::UpdateLevelClearTransition(float dt) {
         }
     } else {
         m_TimeRemaining = 0.0f;
-        // 時間已歸零，進入停頓狀態
-        EnterLevelClearPause();
-        return;
+        if (m_LevelClearTransitionTimer >= kLevelClearBgmDuration) {
+            // 時間已歸零且過關 BGM 已播完，進入停頓狀態
+            EnterLevelClearPause();
+            return;
+        }
     }
 
-    // 城堡小旗持續升起（與倒數同時進行）
-    UpdateCastleFlagRaise(dt);
+    // 城堡小旗在過關 BGM 播完後才從塔頂冒出
+    if (m_LevelClearCastleFlagSpawned) {
+        UpdateCastleFlagRaise(dt);
+    }
 
     // 每幀更新畫面（含 HUD 時間與分數的即時動態顯示）
     DrawScene(true);
@@ -715,6 +738,9 @@ void GameManager::UpdateLevelClearTransition(float dt) {
 // 結算結束後停頓 1 秒，再進下一關
 void GameManager::UpdateLevelClearPause(float dt) {
     m_StateTimer += dt;
+    if (m_LevelClearCastleFlagSpawned) {
+        UpdateCastleFlagRaise(dt);
+    }
     if (m_StateTimer >= 1.0f) {
         AdvanceToNextLevel();
         return;
@@ -845,6 +871,8 @@ void GameManager::EnterLevelIntro() {
     m_StateTimer = 0.0f;
     m_TimeRemaining = 400.0f;
     m_LevelCleared = false;
+    m_LevelClearTransitionTimer = 0.0f;
+    m_LevelClearCastleFlagSpawned = false;
     m_LevelClearPlayer = &m_Player;
     m_WaitingForTimeUpDeath = false;
     m_PlayerWasDying = false;
@@ -999,6 +1027,7 @@ void GameManager::EnterTitleScreen() {
     m_DeathSequenceTimer = 0.0f;
     m_StateTimer = 0.0f;
     m_LevelClearTransitionTimer = 0.0f;
+    m_LevelClearCastleFlagSpawned = false;
     m_TitleSelectionIndex = 0;
     m_SelectedPlayerCount = 1;
     ResetPlayerForNewGame();
@@ -1024,6 +1053,8 @@ void GameManager::EnterTimeUp() {
     m_StateTimer = 0.0f;
     m_TimeRemaining = 0.0f;
     m_LevelCleared = false;
+    m_LevelClearTransitionTimer = 0.0f;
+    m_LevelClearCastleFlagSpawned = false;
     m_PlayerWasDying = false;
     m_DeathSequenceTimer = 0.0f;
 
@@ -1040,6 +1071,8 @@ void GameManager::EnterGameOver() {
     ResetSceneObjects();
     m_StateTimer = 0.0f;
     m_LevelCleared = false;
+    m_LevelClearTransitionTimer = 0.0f;
+    m_LevelClearCastleFlagSpawned = false;
     m_WaitingForTimeUpDeath = false;
     m_PlayerWasDying = false;
     m_DeathSequenceTimer = 0.0f;
@@ -1060,12 +1093,10 @@ void GameManager::EnterLevelClearTransition() {
     // （ResetSceneObjects 會在進下一關 EnterLevelIntro 時呼叫）
     m_LevelClearTransitionTimer = 0.0f;
     m_CountdownAccum = 0.0f;
+    m_LevelClearCastleFlagSpawned = false;
     // 原版 NES 的時間結算沒有任何提示文字，直接在遊戲畫面上
     // TIME 遞減、SCORE 遞增（見 UpdateLevelClearTransition）
     m_FlowState = FlowState::LevelClearTransition;
-    // 馬力歐已進城門，城堡升起小旗（與時間結算同時進行）
-    SpawnCastleFlag(m_LevelClearPlayer ? m_LevelClearPlayer->GetCastleDoorX() : m_Player.GetCastleDoorX(),
-                    m_FlagBottomY);
     // 播放過關 BGM（播一次，不循環）
     m_Audio.PlayEventBGM("level_clear", 0);
     LOG_INFO("Entered level clear transition (time countdown). timeRemaining={}",
@@ -1136,7 +1167,7 @@ void GameManager::BuildTitleOverlay() {
     constexpr int kTitleFontSize = 24; // NES 8px 字 × GAME_SCALE(3)
 
     AddOverlayImage("ui/title/logo.png", NesToScreen(128.0f, 80.0f), {GAME_SCALE, GAME_SCALE}, kTitleTextZ);
-    AddOverlayText("(C)1985 NINTENDO", kTitleFontSize, NesToScreen(152.0f, 132.0f), kTitleTextZ);
+    AddOverlayText("(C)1985 NINTENDO", kTitleFontSize, NesToScreen(152.0f, 132.0f) + glm::vec2(0.0f, 4.0f), kTitleTextZ);
 
     const float cursorY = m_TitleSelectionIndex == 0 ? 148.0f : 164.0f;
     AddOverlayImage("ui/title/cursor.png",
@@ -1335,7 +1366,10 @@ void GameManager::LoadLevel(const std::string& jsonPath) {
         } else if (obj.type == "Wall") {
             m_Blocks.push_back(std::make_shared<WallBlock>(pos, m_ThemeAssets));
         } else if (obj.type == "Flag") {
-            m_Blocks.push_back(std::make_shared<FlagBlock>(pos));
+            m_Blocks.push_back(std::make_shared<FlagBlock>(
+                pos,
+                obj.clearWalkTiles,
+                obj.castleFlagBaseTiles));
         } else if (obj.type == "Coin" || obj.type == "CollectibleCoin") {
             m_Items.push_back(std::make_shared<LevelCoinItem>(pos, m_ThemeAssets));
         } else if (obj.type == "EnemySpawn") {
@@ -1368,6 +1402,8 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
 
     ResetSceneObjects();
     m_LevelCleared = false;
+    m_LevelClearTransitionTimer = 0.0f;
+    m_LevelClearCastleFlagSpawned = false;
 
     // 換關（水管切換關卡）：清空中繼點，新關卡從頭開始
     m_LastCheckpoint = std::nullopt;
@@ -1400,7 +1436,7 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
         if (!pipe) continue;
 
         if (ShouldStartPipeExitForSpawn(*pipe, pPos, pSize)) {
-            m_Player.StartPipeExit(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), 1.0f);
+            m_Player.StartPipeExit(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), kPipeTransitionDuration);
             break;
         }
     }
@@ -1427,7 +1463,7 @@ bool GameManager::CheckPipeTransition(Player& player) {
 
         m_PendingLevel = targetLevel;
         m_PendingSpawn = pipe->GetDestinationSpawn();
-        player.StartPipeEntry(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), 1.0f);
+        player.StartPipeEntry(pipe->GetPosition(), pipe->GetSize(), pipe->GetOpening(), kPipeTransitionDuration);
         m_Audio.PauseBGM();
         m_Audio.PlaySFX("pipe"); // 進水管音效
         return true;
@@ -1570,11 +1606,10 @@ void GameManager::CheckStompCollision(Player& player, float& pendingDamageInvinc
                 m_Audio.PlaySFX("stomp"); // 踩踏音效
                 LOG_INFO("Stomp! combo={} score={}", m_ComboCount, pts);
             } else if (outcome == Enemy::StompOutcome::LostWings) {
-                constexpr int PARATROOPA_DEMOTE_SCORE = 400;
-                m_Session.AddScore(PARATROOPA_DEMOTE_SCORE);
-                SpawnScorePopup(PARATROOPA_DEMOTE_SCORE, ePos);
+                m_Session.AddScore(kParatroopaDemoteScore);
+                SpawnScorePopup(kParatroopaDemoteScore, ePos);
                 m_Audio.PlaySFX("stomp");
-                LOG_INFO("KoopaParatroopa demoted: score={}", PARATROOPA_DEMOTE_SCORE);
+                LOG_INFO("KoopaParatroopa demoted: score={}", kParatroopaDemoteScore);
             } else if (outcome == Enemy::StompOutcome::StoppedShell) {
                 m_Audio.PlaySFX("stomp");
                 LOG_INFO("Koopa shell stopped or revive timer reset.");
@@ -1761,9 +1796,8 @@ void GameManager::CheckBlockCollision(Player& player) {
             SpawnBrickDebris(bPos);
             hitBelowBlock->SetVisible(false);
             m_TmpBlocksToRemove.push_back(hitBelowBlock);
-            // 磚塊打破得 50 分
+            // NES 原版打碎磚塊會加 50 分，但不顯示浮動分數。
             m_Session.AddScore(50);
-            SpawnScorePopup(50, bPos);
             m_Audio.PlaySFX("brick_break"); // 磚塊破碎音效
         }
 
@@ -2133,7 +2167,6 @@ void GameManager::CheckItemCollision() {
                     if (itemType == "LevelCoin") {
                         m_Session.AddCoin();
                         m_Session.AddScore(200);
-                        SpawnScorePopup(200, iPos);
                         m_Audio.PlaySFX("coin"); // 場上金幣音效
                     } else if (itemType == "OneUp") {
                         m_Session.AddLife();
@@ -2319,6 +2352,17 @@ void GameManager::CheckFireballCollision() {
 
             if (CollisionUtils::CheckAABB(fPos, fSize, enemy->GetPosition(), enemy->GetSize())) {
                 const glm::vec2 ePos = enemy->GetPosition();
+                auto* paratroopa = dynamic_cast<KoopaParatroopa*>(enemy.get());
+                if (paratroopa && paratroopa->HasWings()) {
+                    paratroopa->Stomp();
+                    m_Session.AddScore(kParatroopaDemoteScore);
+                    SpawnScorePopup(kParatroopaDemoteScore, ePos);
+                    fireball->Explode();
+                    LOG_INFO("Fireball demoted KoopaParatroopa: score={} fireballPos={} enemyPos={}",
+                             kParatroopaDemoteScore, fPos, ePos);
+                    break;
+                }
+
                 // Koopa 系列：觸發翻轉死亡，得 200 分；其他敵人（Goomba 等）得 100 分
                 auto* koopa = dynamic_cast<Koopa*>(enemy.get());
                 const bool isKoopa = (koopa != nullptr);
@@ -2409,17 +2453,19 @@ void GameManager::CheckFlagCollision(Player& player) {
 
         const int score = flagBlock->GetContactScore(playerBottom);
         m_Session.AddScore(score);
+        SpawnScorePopup(score, {fPos.x + fSize.x + 8.0f, pPos.y});
         m_LevelCleared = true;
         m_LevelClearPlayer = &player;
 
         // 記下旗杆底 Y（= 地面），稍後城堡升旗用作基準高度
         m_FlagBottomY = fPos.y + fSize.y;
+        m_LevelClearCastleFlagBaseTiles = flagBlock->GetCastleFlagBaseTiles();
 
         // 觸發旗子下降動畫（與玩家下滑同速、同時進行）
         flagBlock->StartDescent();
 
         // 觸發玩家的過關下降演出
-        player.StartLevelClearSequence(fPos.x, fPos.y + fSize.y);
+        player.StartLevelClearSequence(fPos.x, fPos.y + fSize.y, flagBlock->GetClearWalkTiles());
 
         // 碰到旗杆：播放旗杆 SFX，同時停掉關卡 BGM
         m_Audio.StopBGM();

@@ -364,9 +364,18 @@ the game computes the pole height from `FLAG_POLE_TILES`.
 {
   "type": "Flag",
   "x": 576.0,
-  "y": 192.0
+  "y": 192.0,
+  "clearWalkTiles": 6.0,
+  "castleFlagBaseTiles": 4.0
 }
 ```
+
+- `clearWalkTiles` is optional and defaults to `6.0`. It controls how many
+  tiles Mario walks from the flag pole after sliding down, before entering the
+  castle door.
+- `castleFlagBaseTiles` is optional and defaults to `4.0`. It controls the
+  castle flag base height above the flag-pole ground. Use larger values for
+  tall castle backgrounds such as 1-3.
 
 ### MovingPlatform
 

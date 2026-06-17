@@ -7,6 +7,7 @@
 
 #include <glm/vec2.hpp>
 
+#include "GameConstants.hpp"
 #include "ThemeAssets.hpp"
 
 /*
@@ -41,6 +42,8 @@ struct ObjectData {
     int startOffsetTiles = 0;            // MovingPlatform: 初始相位偏移（沿行程方向先走幾格），同組平台錯開用
     int segments = 3;                    // TreePlatform/EnterablePipe: 長度（幾個 16px tile）
     int coinCount = 10;                  // MultiCoinBlock: 可敲出的金幣數
+    float clearWalkTiles = DEFAULT_LEVEL_CLEAR_WALK_TILES; // Flag: 碰旗後走到城堡門中心的距離
+    float castleFlagBaseTiles = DEFAULT_CASTLE_FLAG_BASE_TILES; // Flag: 城堡旗底部距地面高度
 };
 
 struct IntroCutsceneData {
