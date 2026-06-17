@@ -30,7 +30,15 @@ Player::Player() {
     InitAnimations();
 
     // 預設顯示 Small Mario 待機圖（InitAnimations 之後才有值）
-    SetDrawable(m_NormalVisuals[FormIndex(Form::SMALL)].idle);
+    // 永久套一層 ClipDrawable，進/出水管時沿管口裁切；平時停用裁切。
+    m_ClipWrapper = std::make_shared<ClipDrawable>(
+        m_NormalVisuals[FormIndex(Form::SMALL)].idle);
+    SetDrawable(m_ClipWrapper);
+}
+
+void Player::SetVisual(const std::shared_ptr<Core::Drawable>& drawable) {
+    // 只替換 ClipDrawable 的內層，外層包裝（含裁切設定）維持不變。
+    m_ClipWrapper->SetInner(drawable);
 }
 
 void Player::ResetForNewGame() {
@@ -46,30 +54,38 @@ void Player::InitAnimations() {
     if (m_VisualProfile == VisualProfile::Luigi) {
         for (std::size_t form = 0; form < FORM_COUNT; ++form) {
             m_NormalVisuals[form] = CreateLuigiVisualAssets(static_cast<Form>(form));
-            m_StarVisuals[form] = m_NormalVisuals[form];
+            for (std::size_t palette = 0; palette < STAR_PALETTE_COUNT; ++palette) {
+                m_StarVisuals[palette][form] = m_NormalVisuals[form];
+            }
         }
         m_DeadImage = std::make_shared<Util::Image>(
             MakeAssetPath(std::string(kLuigiSmallDir) + "frame_14_8x8.png"));
-    } else {
-        const std::array<std::string, FORM_COUNT> formNames = {
-            "Mario", "Super Mario", "Fiery Mario"
-        };
-        const std::array<std::string, FORM_COUNT> normalDirs = {
-            kSmallDir, kSuperDir, kFireDir
-        };
-
-        for (std::size_t form = 0; form < FORM_COUNT; ++form) {
-            const bool includeShoot = form == FormIndex(Form::FIRE);
-            m_NormalVisuals[form] = CreateVisualAssets(normalDirs[form], includeShoot);
-            m_StarVisuals[form] = CreateVisualAssets(
-                MakeAssetPath("player/Effects/Star1/" + formNames[form] + "/right/"),
-                includeShoot);
-        }
-
-        m_DeadImage = std::make_shared<Util::Image>(kSmallDir + "Dead/Dead.png");
+        LOG_INFO("Player::InitAnimations done (Luigi visuals)");
+        return;
     }
 
-    LOG_INFO("Player::InitAnimations done (normal / star palettes)");
+    const std::array<std::string, FORM_COUNT> formNames = {
+        "Mario", "Super Mario", "Fiery Mario"
+    };
+    const std::array<std::string, FORM_COUNT> normalDirs = {
+        kSmallDir, kSuperDir, kFireDir
+    };
+    const std::array<std::string, STAR_PALETTE_COUNT> starDirs = {
+        "Star1", "Star2", "Star3"
+    };
+
+    for (std::size_t form = 0; form < FORM_COUNT; ++form) {
+        const bool includeShoot = form == FormIndex(Form::FIRE);
+        m_NormalVisuals[form] = CreateVisualAssets(normalDirs[form], includeShoot);
+        for (std::size_t palette = 0; palette < STAR_PALETTE_COUNT; ++palette) {
+            m_StarVisuals[palette][form] = CreateVisualAssets(
+                MakeAssetPath("player/Effects/" + starDirs[palette] + "/" + formNames[form] + "/right/"),
+                includeShoot);
+        }
+    }
+
+    m_DeadImage = std::make_shared<Util::Image>(kSmallDir + "Dead/Dead.png");
+    LOG_INFO("Player::InitAnimations done (normal / rotating star palettes)");
 }
 
 Player::VisualAssets Player::CreateVisualAssets(const std::string& dir,
@@ -165,21 +181,6 @@ Player::Controls Player::DefaultControls() {
     return Controls{};
 }
 
-Player::Controls Player::PlayerTwoControls() {
-    Controls controls;
-    controls.left = {Util::Keycode::J, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-    controls.right = {Util::Keycode::L, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-    controls.up = {Util::Keycode::I, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-    controls.down = {Util::Keycode::K, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-    controls.jump = {Util::Keycode::U, Util::Keycode::I, Util::Keycode::UNKNOWN};
-    controls.run = {Util::Keycode::O, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-    controls.fire = {Util::Keycode::O, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-    controls.debugSmall = {Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-    controls.debugSuper = {Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-    controls.debugFire = {Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-    return controls;
-}
-
 void Player::SetVisualProfile(VisualProfile profile) {
     if (m_VisualProfile == profile) return;
     m_VisualProfile = profile;
@@ -224,8 +225,8 @@ const Player::VisualAssets& Player::CurrentVisualAssets() const {
 
     // 受傷無敵期間沿用一般圖，外觀由可見性閃爍呈現（見 UpdateDamageInvincibility）
 
-    if (m_StarTimer > 0.0f) {
-        return m_StarVisuals[form];
+    if (IsStarInvincible()) {
+        return m_StarVisuals[m_StarPaletteIndex][form];
     }
 
     return m_NormalVisuals[form];
@@ -275,7 +276,7 @@ void Player::Update(float deltaTime) {
             }
             // 階段 2：0.5 秒時，給一個往上的死亡彈跳（只執行一次）
             else if (m_DeathTimer >= 0.5f && !m_DeathBounced) {
-                m_Velocity.y = -500.0f;
+                m_Velocity.y = -PLAYER_DEATH_BOUNCE;
                 m_DeathBounced = true;
             }
             // 階段 3：之後套用重力，讓瑪利歐掉出畫面外
@@ -412,11 +413,21 @@ void Player::UpdateDamageFlicker(float deltaTime) {
 }
 
 void Player::UpdateStarInvincibility(float deltaTime) {
-    if (m_StarTimer <= 0.0f) return;
+    if (!IsStarInvincible()) return;
+
+    m_StarPaletteTimer += deltaTime;
+    while (m_StarPaletteTimer >= STAR_PALETTE_INTERVAL) {
+        m_StarPaletteTimer -= STAR_PALETTE_INTERVAL;
+        m_StarPaletteIndex = (m_StarPaletteIndex + 1) % STAR_PALETTE_COUNT;
+    }
+
+    if (m_StarInvincibleInfinite) return;
 
     m_StarTimer -= deltaTime;
     if (m_StarTimer <= 0.0f) {
         m_StarTimer = 0.0f;
+        m_StarPaletteTimer = 0.0f;
+        m_StarPaletteIndex = 0;
         m_StarEndedEventPending = true; // 通知 AudioManager 切回關卡 BGM
     }
 }
@@ -506,6 +517,40 @@ void Player::Draw(const Camera& camera) {
         m_Position.y + m_Size.y * 0.5f
     };
     m_Transform.translation = camera.WorldToScreen(centerPos);
+
+    UpdatePipeClip(camera);
+}
+
+void Player::UpdatePipeClip(const Camera& camera) {
+    if (!m_ClipWrapper) return;
+
+    if (m_State != State::EnteringPipe && m_State != State::ExitingPipe) {
+        m_ClipWrapper->SetEnabled(false);
+        return;
+    }
+
+    // 水管只是背景圖、無法遮住玩家，改用裁切：依開口方向，只露出管口外側的部分，
+    // 讓馬力歐看起來真的「沒入 / 鑽出」水管。
+    const auto  ctx   = Core::Context::GetInstance();
+    const float halfW = static_cast<float>(ctx->GetWindowWidth())  * 0.5f;
+    const float halfH = static_cast<float>(ctx->GetWindowHeight()) * 0.5f;
+
+    if (m_PipeOpening == "up") {
+        // 管口在水管頂面：保留頂線以上
+        const float px = camera.WorldToScreen({m_Position.x, m_PipePos.y}).y + halfH;
+        m_ClipWrapper->SetClipKeepAbovePx(px);
+    } else if (m_PipeOpening == "down") {
+        const float px = camera.WorldToScreen({m_Position.x, m_PipePos.y + m_PipeSize.y}).y + halfH;
+        m_ClipWrapper->SetClipKeepBelowPx(px);
+    } else if (m_PipeOpening == "left") {
+        // 管口在水管左面：保留左側
+        const float px = camera.WorldToScreen({m_PipePos.x, m_Position.y}).x + halfW;
+        m_ClipWrapper->SetClipKeepLeftPx(px);
+    } else if (m_PipeOpening == "right") {
+        const float px = camera.WorldToScreen({m_PipePos.x + m_PipeSize.x, m_Position.y}).x + halfW;
+        m_ClipWrapper->SetClipKeepRightPx(px);
+    }
+    m_ClipWrapper->SetEnabled(true);
 }
 
 // ─── 動畫切換邏輯 ────────────────────────────────────────────────────
@@ -518,53 +563,53 @@ void Player::UpdateAnimation() {
 
     if (m_State == State::EnteringPipe || m_State == State::ExitingPipe) {
         if (m_PipeOpening == "up" || m_PipeOpening == "down") {
-            SetDrawable(visuals.duck);
+            SetVisual(visuals.duck);
         } else {
-            SetDrawable(visuals.walk);
+            SetVisual(visuals.walk);
         }
         return;
     }
 
     if (m_State == State::IntroAutoWalk) {
-        SetDrawable(visuals.walk);
+        SetVisual(visuals.walk);
         return;
     }
 
     if (m_State == State::Dying) {
-        SetDrawable(m_DeadImage);
+        SetVisual(m_DeadImage);
         return;
     }
 
     // 變身動畫中：顯示當前 m_Form 的待機圖（m_Form 由閃爍邏輯交替切換）
     if (m_State == State::Transforming) {
-        SetDrawable(visuals.idle);
+        SetVisual(visuals.idle);
         return;
     }
 
     if (m_State == State::LevelClear) {
         if (m_IsSlidingDown) {
-            SetDrawable(visuals.climb);
+            SetVisual(visuals.climb);
         } else if (m_IsWalkingToCastle || m_IsEnteringDoor) {
-            SetDrawable(visuals.walk);
+            SetVisual(visuals.walk);
         } else {
-            SetDrawable(visuals.idle);
+            SetVisual(visuals.idle);
         }
         return;
     }
 
     if (m_Form == Form::FIRE && m_ShootingTimer > 0.0f) {
-        SetDrawable(visuals.shoot);
+        SetVisual(visuals.shoot);
         return;
     }
 
     if (!m_OnGround) {
-        SetDrawable(visuals.jump);
+        SetVisual(visuals.jump);
     } else if (m_IsSkidding) {
-        SetDrawable(visuals.skid);
+        SetVisual(visuals.skid);
     } else if (m_IsMoving) {
-        SetDrawable(visuals.walk);
+        SetVisual(visuals.walk);
     } else {
-        SetDrawable(visuals.idle);
+        SetVisual(visuals.idle);
     }
 }
 
@@ -577,6 +622,9 @@ void Player::HandleInput(float deltaTime) {
         SetForm(Form::SUPER);
     } else if (AnyDown(m_Controls.debugFire)) {
         SetForm(Form::FIRE);
+    }
+    if (AnyDown(m_Controls.debugStar)) {
+        ToggleDebugStarInvincibility();
     }
 
     bool pressingLeft = AnyPressed(m_Controls.left);
@@ -740,6 +788,9 @@ void Player::ResetTransientState() {
     m_IntroAutoWalkFinished = false;
     m_DamageInvincibleTimer = 0.0f;
     m_StarTimer = 0.0f;
+    m_StarInvincibleInfinite = false;
+    m_StarPaletteTimer = 0.0f;
+    m_StarPaletteIndex = 0;
     m_DamageFlickerTimer   = 0.0f;
     m_DamageFlickerVisible = true;
     // 變身動畫狀態重置
@@ -807,9 +858,37 @@ void Player::StartDamageInvincibility(float duration) {
 
 void Player::ActivateStarInvincibility(float duration) {
     if (duration <= 0.0f || m_State == State::Dying || m_State == State::LevelClear) return;
+    m_StarInvincibleInfinite = false;
     m_StarTimer = duration;
+    m_StarPaletteTimer = 0.0f;
+    m_StarPaletteIndex = 0;
     SetVisible(true);
     LOG_INFO("Player star invincibility activated for {} seconds.", duration);
+}
+
+void Player::ToggleDebugStarInvincibility() {
+    if (m_State == State::Dying || m_State == State::LevelClear) return;
+
+    if (m_StarInvincibleInfinite || m_StarTimer > 0.0f) {
+        const bool timedStarWasActive = m_StarTimer > 0.0f;
+        m_StarInvincibleInfinite = false;
+        m_StarTimer = 0.0f;
+        m_StarPaletteTimer = 0.0f;
+        m_StarPaletteIndex = 0;
+        if (timedStarWasActive) {
+            m_StarEndedEventPending = true;
+        }
+        UpdateAnimation();
+        LOG_INFO("Debug star invincibility disabled.");
+        return;
+    }
+
+    m_StarInvincibleInfinite = true;
+    m_StarPaletteTimer = 0.0f;
+    m_StarPaletteIndex = 0;
+    SetVisible(true);
+    UpdateAnimation();
+    LOG_INFO("Debug star invincibility enabled.");
 }
 
 void Player::SetForm(Form form) {
@@ -853,8 +932,11 @@ void Player::Downgrade() {
             m_DeathTimer = 0.0f;
             m_DamageInvincibleTimer = 0.0f;
             m_StarTimer = 0.0f;
+            m_StarInvincibleInfinite = false;
+            m_StarPaletteTimer = 0.0f;
+            m_StarPaletteIndex = 0;
             m_Velocity = {0.0f, 0.0f};
-            SetDrawable(m_DeadImage);
+            SetVisual(m_DeadImage);
             SetVisible(true);
             LOG_INFO("Player died! (SMALL hit by enemy) - Starting death animation");
             break;
@@ -866,6 +948,8 @@ void Player::Downgrade() {
 void Player::StartPipeEntry(glm::vec2 pipePosition, glm::vec2 pipeSize, const std::string& opening, float duration) {
     m_State = State::EnteringPipe;
     m_PipeOpening = opening;
+    m_PipePos  = pipePosition;
+    m_PipeSize = pipeSize;
     m_AnimTimer = 0.0f;
     m_AnimDuration = duration;
     m_Velocity = {0.0f, 0.0f};
@@ -903,6 +987,8 @@ void Player::StartPipeEntry(glm::vec2 pipePosition, glm::vec2 pipeSize, const st
 void Player::StartPipeExit(glm::vec2 pipePosition, glm::vec2 pipeSize, const std::string& opening, float duration) {
     m_State = State::ExitingPipe;
     m_PipeOpening = opening;
+    m_PipePos  = pipePosition;
+    m_PipeSize = pipeSize;
     m_AnimTimer = 0.0f;
     m_AnimDuration = duration;
     m_Velocity = {0.0f, 0.0f};

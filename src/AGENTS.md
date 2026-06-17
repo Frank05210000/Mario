@@ -100,6 +100,6 @@
 
 - HUD 世界名稱固定 `1-1`，如果加入多關卡顯示，需要讓 HUD 接收目前 level name。
 - `Player::ClampToCameraBounds()` 有實作但目前 `GameManager::UpdatePlaying()` 未呼叫。
-- `GameSession` 支援 2 players，但目前 new game 固定 1 player。
+- `GameSession` 支援 1P/2P 輪流進度；`GameManager` 仍只建立一個 `Player`，輪到 Luigi 時切換同一物件的外觀與 session 進度，不同場建立兩個 player。
 - `PiranhaPlant::Stomp()` 目前空實作，玩家若從上方踩到它仍可能進入 stomp collision 分支而沒有傷害；要精準 hazard 行為需調整 collision logic。
 - `MovingPlatformBlock` 已有 carry player 行為；修改平台碰撞時注意 `MovingPlatformBlock` 的 frame delta 補償。

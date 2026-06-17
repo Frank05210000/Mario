@@ -4,7 +4,6 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <array>
 #include <vector>
 
 #include "Block.hpp"
@@ -102,18 +101,17 @@ private:
     void BuildGameOverOverlay();
     void AddOverlayText(const std::string& text, int fontSize, glm::vec2 position, float zIndex = 30.0f);
     void AddOverlayImage(const std::string& assetPath, glm::vec2 position, glm::vec2 scale, float zIndex = 30.0f);
-    std::array<Player*, 2> Players();
-    std::array<const Player*, 2> Players() const;
-    void ConfigurePlayers();
-    void ResetPlayersForNewGame();
-    void SetPlayersSpawnPosition(glm::vec2 position);
-    void UpdateCameraForPlayers();
-    bool AnyPlayerAlive() const;
-    bool AnyPlayerDying() const;
-    bool AnyPlayerTransforming() const;
-    bool AnyPlayerLevelClearFinished() const;
-    Player& LeadPlayer();
-    const Player& LeadPlayer() const;
+    void ClearOverlayObjects();
+    void ConfigurePlayer();
+    void ResetPlayerForNewGame();
+    void ConfigurePlayerForCurrentSession();
+    void SetPlayerSpawnPosition(glm::vec2 position);
+    void UpdateCameraForPlayer();
+    int FindLevelIndexByName(const std::string& levelName) const;
+    std::string WorldLabelForLevelName(const std::string& levelName) const;
+    std::string CurrentPlayerWorldLabel() const;
+    void SyncCurrentLevelFromSession();
+    std::string CurrentPlayerIconPath() const;
     float GetClosestAlivePlayerX(glm::vec2 position) const;
     void UpdateTitle(float dt);
     void UpdateLevelIntro(float dt);
@@ -179,7 +177,6 @@ private:
     // ─── 持有的物件 ────────────────────────────────────────────────
 
     Player                              m_Player;
-    Player                              m_Player2;
     std::vector<std::shared_ptr<Enemy>> m_Enemies;           // 已生成、存活中的敵人
     std::vector<ObjectData>             m_EnemySpawnQueue;   // 還沒生成的敵人（等鏡頭到達）
     // 道具
@@ -211,9 +208,11 @@ private:
     std::shared_ptr<Util::GameObject> m_PauseOverlay; // 「PAUSED」文字 overlay
     // 受傷縮小變身動畫結束後需要啟動的傷害無敵計時（秒）；0 = 無待定
     float m_PendingDamageInvincibility = 0.0f;
-    float m_PendingDamageInvincibility2 = 0.0f;
+    Player* m_LevelClearPlayer = &m_Player;
     std::string m_SelectedInitialLevelName = "1-1"; // 標題選關用（不影響遊戲中推進）
     std::string m_SelectedWorldLabel = "1-1";
+    int m_TitleSelectionIndex = 0; // 0 = 1 PLAYER GAME, 1 = 2 PLAYER GAME
+    int m_SelectedPlayerCount = 1;
 
     // ─── 關卡鏈（Batch A）─────────────────────────────────────────────────
     // 每個元素：{levelName, worldLabel}

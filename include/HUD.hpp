@@ -32,7 +32,9 @@ public:
      *
      * @param renderer  PTSD 渲染器的參考
      */
-    void Init(Util::Renderer& renderer, const std::string& worldLabel = "1-1");
+    void Init(Util::Renderer& renderer,
+              const std::string& worldLabel = "1-1",
+              const std::string& playerName = "MARIO");
 
     /*
      * 每幀更新文字內容
@@ -62,6 +64,7 @@ private:
     std::shared_ptr<Util::Text> m_ScoreText;
     std::shared_ptr<Util::Text> m_CoinText;
     std::shared_ptr<Util::Text> m_TimeText;
+    std::string m_PlayerName = "MARIO";
 };
 
 #endif

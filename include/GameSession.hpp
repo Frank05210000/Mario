@@ -2,6 +2,7 @@
 #define GAME_SESSION_HPP
 
 #include <array>
+#include <optional>
 #include <string>
 
 #include "Player.hpp"
@@ -18,6 +19,7 @@ struct PlayerProgress {
     int coins = 0;
     std::string levelName = "1-1";
     Player::Form form = Player::Form::SMALL;
+    std::optional<glm::vec2> checkpoint;
 };
 
 class GameSession {
@@ -26,16 +28,19 @@ public:
 
     PlayerProgress& CurrentPlayer();
     const PlayerProgress& CurrentPlayer() const;
+    PlayerProgress& GetPlayerProgress(int index);
+    const PlayerProgress& GetPlayerProgress(int index) const;
 
     int GetPlayerCount() const { return m_PlayerCount; }
     int GetCurrentPlayerIndex() const { return m_CurrentPlayerIndex; }
+    PlayerSlot GetCurrentPlayerSlot() const { return CurrentPlayer().slot; }
     std::string GetCurrentPlayerName() const;
 
     void AddScore(int amount);
     void AddCoin(int amount = 1);
     void AddLife(int amount = 1);
     bool LoseLife();
-    void SwitchToNextAlivePlayer();
+    bool SwitchToNextAlivePlayer();
     bool IsGameOver() const;
 
 private:

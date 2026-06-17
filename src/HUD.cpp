@@ -53,9 +53,11 @@ static std::shared_ptr<Util::GameObject> MakeTextObj(
 
 // ─── Init ─────────────────────────────────────────────────────────────────
 
-void HUD::Init(Util::Renderer& renderer, const std::string& worldLabel) {
+void HUD::Init(Util::Renderer& renderer, const std::string& worldLabel, const std::string& playerName) {
+    m_PlayerName = playerName;
+
     // 分數區塊："MARIO" 標題 + 分數數值
-    m_ScoreText = std::make_shared<Util::Text>(kFontPath, kFontSize, "MARIO\n000000", kWhite);
+    m_ScoreText = std::make_shared<Util::Text>(kFontPath, kFontSize, m_PlayerName + "\n000000", kWhite);
     m_ScoreObj  = MakeTextObj(m_ScoreText, kScoreX, kTopY);
 
     // 金幣區塊：先加金幣圖示，再是文字「x03」
@@ -95,7 +97,7 @@ void HUD::Init(Util::Renderer& renderer, const std::string& worldLabel) {
 
 void HUD::Update(int score, int coins, int timeLeft) {
     // 分數：標題換行 + 6 位補零數值
-    m_ScoreText->SetText("MARIO\n" + FormatScore(score));
+    m_ScoreText->SetText(m_PlayerName + "\n" + FormatScore(score));
 
     // 金幣：「×」符號 + 2 位數
     std::ostringstream cs;

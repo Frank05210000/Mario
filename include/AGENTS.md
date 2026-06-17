@@ -14,7 +14,7 @@
 - `GameManager`：所有物件生命週期與互動的中樞。
   - 持有 `Player`、`Camera`、`HUD`、`GameSession`。
   - 持有 `m_Blocks`、`m_Enemies`、`m_EnemySpawnQueue`、`m_Items`、`m_Fireballs`、`m_BrickDebris`。
-- `GameSession`：玩家進度，包含 lives、score、coins、levelName、form。支援 1 或 2 player，但目前 `StartNewGame()` 固定 `ResetNewGame(1)`。
+- `GameSession`：支援 1P 或 2P 輪流玩家進度，每位玩家各自保存 lives、score、coins、levelName、form、checkpoint。
 
 ## Level Data
 
@@ -27,8 +27,9 @@
 - `Character` 繼承 `Util::GameObject`，提供 position、velocity、size、alive、gravity 與 `ApplyGravity()`。
 - `Player`
   - forms：`SMALL`、`SUPER`、`FIRE`。
-  - controls：左右方向鍵或 A/D 移動，Space/W/Up 跳，Z 跑步，FIRE 形態按 Z 也會請求射火球。
-  - debug shortcuts：1/2/3 切換 SMALL/SUPER/FIRE。
+  - controls：左右方向鍵或 A/D 移動，Space/W/Up 跳，Z 跑步/射火球。
+  - visual profile：同一個 `Player` 物件可切換 Mario/Luigi 外觀；2P 模式仍是輪流玩，不同場建立兩個 player。
+  - debug shortcuts：1/2/3 切換 SMALL/SUPER/FIRE；7 切換無限星星無敵。
   - `Update()` 儲存 previous position，處理輸入、重力、死亡動畫、無敵配色顯示、過關自動走位與動畫切換。
   - `ConsumeShootRequest()` 由 `GameManager` 消耗，限制畫面最多 2 顆火球。
 - `Enemy`
@@ -72,7 +73,7 @@
 
 ## HUD
 
-- `HUD::Init(renderer)` 建立並加入固定螢幕座標文字。
+- `HUD::Init(renderer, worldLabel, playerName)` 建立並加入固定螢幕座標文字。
 - `HUD::Update(score, coins, timeLeft)` 更新分數、金幣與倒數。
 - 字體：`Resources/Asset/font/Super Mario Bros. NES.ttf`。
 - 目前世界文字固定為 `1-1`。

@@ -54,13 +54,13 @@ public:
         std::array<Util::Keycode, 3> debugSmall = {Util::Keycode::NUM_1, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
         std::array<Util::Keycode, 3> debugSuper = {Util::Keycode::NUM_2, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
         std::array<Util::Keycode, 3> debugFire  = {Util::Keycode::NUM_3, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> debugStar  = {Util::Keycode::NUM_7, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
     };
 
     Player();
     void ResetForNewGame();
     void SetControls(const Controls& controls) { m_Controls = controls; }
     static Controls DefaultControls();
-    static Controls PlayerTwoControls();
     void SetVisualProfile(VisualProfile profile);
 
     // ─── 覆寫 Character 的純虛擬方法 ──────────────────────────────
@@ -87,7 +87,7 @@ public:
     void StartDamageInvincibility(float duration = 2.0f);
     bool IsDamageInvincible() const { return m_DamageInvincibleTimer > 0.0f; }
     void ActivateStarInvincibility(float duration = 10.0f);
-    bool IsStarInvincible() const { return m_StarTimer > 0.0f; }
+    bool IsStarInvincible() const { return m_StarTimer > 0.0f || m_StarInvincibleInfinite; }
 
     // 取得死亡狀態
     bool IsDying() const { return m_State == State::Dying; }
@@ -208,6 +208,7 @@ private:
     void UpdateDamageInvincibility(float deltaTime);
     void UpdateDamageFlicker(float deltaTime);
     void UpdateStarInvincibility(float deltaTime);
+    void ToggleDebugStarInvincibility();
     void UpdateTransformAnimation(float deltaTime); // 變身閃爍動畫更新
     void ResetTransientState();
 
@@ -246,6 +247,9 @@ private:
 
     float m_DamageInvincibleTimer = 0.0f;
     float m_StarTimer = 0.0f;
+    bool  m_StarInvincibleInfinite = false;
+    float m_StarPaletteTimer = 0.0f;
+    std::size_t m_StarPaletteIndex = 0;
 
     // ── 受傷閃爍（模擬 NES 逐幀顯示/隱藏 sprite，視覺上呈半透明）──
     float m_DamageFlickerTimer   = 0.0f;
@@ -254,8 +258,10 @@ private:
 
     Form m_Form = Form::SMALL;     // 預設小馬力歐
     static constexpr std::size_t FORM_COUNT = 3;
+    static constexpr std::size_t STAR_PALETTE_COUNT = 3;
+    static constexpr float STAR_PALETTE_INTERVAL = 0.08f;
     std::array<VisualAssets, FORM_COUNT> m_NormalVisuals;
-    std::array<VisualAssets, FORM_COUNT> m_StarVisuals;
+    std::array<std::array<VisualAssets, FORM_COUNT>, STAR_PALETTE_COUNT> m_StarVisuals;
     std::shared_ptr<Util::Image> m_DeadImage;
     Controls m_Controls;
     VisualProfile m_VisualProfile = VisualProfile::Mario;
@@ -303,6 +309,7 @@ private:
     // 永久作為 GameObject 的 drawable；切換動畫時只更新其內層。
     std::shared_ptr<ClipDrawable> m_ClipWrapper;
     void SetVisual(const std::shared_ptr<Core::Drawable>& drawable);
+    void UpdatePipeClip(const Camera& camera);
 };
 
 #endif

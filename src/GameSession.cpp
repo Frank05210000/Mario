@@ -25,6 +25,14 @@ const PlayerProgress& GameSession::CurrentPlayer() const {
     return m_Players[m_CurrentPlayerIndex];
 }
 
+PlayerProgress& GameSession::GetPlayerProgress(int index) {
+    return m_Players[std::clamp(index, 0, 1)];
+}
+
+const PlayerProgress& GameSession::GetPlayerProgress(int index) const {
+    return m_Players[std::clamp(index, 0, 1)];
+}
+
 std::string GameSession::GetCurrentPlayerName() const {
     return CurrentPlayer().slot == PlayerSlot::Mario ? "MARIO" : "LUIGI";
 }
@@ -61,17 +69,19 @@ bool GameSession::LoseLife() {
     return player.lives > 0;
 }
 
-void GameSession::SwitchToNextAlivePlayer() {
-    if (IsGameOver()) return;
+bool GameSession::SwitchToNextAlivePlayer() {
+    if (IsGameOver()) return false;
 
     for (int step = 1; step <= m_PlayerCount; ++step) {
         const int candidate = (m_CurrentPlayerIndex + step) % m_PlayerCount;
         if (m_Players[candidate].lives > 0) {
             m_CurrentPlayerIndex = candidate;
             LOG_INFO("Switched player: index={} name={}", m_CurrentPlayerIndex, GetCurrentPlayerName());
-            return;
+            return true;
         }
     }
+
+    return false;
 }
 
 bool GameSession::IsGameOver() const {

@@ -70,7 +70,7 @@ constexpr float PLAYER_SKID_DECEL         = 400.0f;  // 轉向煞車（打滑，
 constexpr float PLAYER_FRICTION           = 200.0f;  // 放開方向鍵摩擦（沿用現值）
 
 // ─── 其他 ─────────────────────────────────────────────────────────────────
-constexpr float PLAYER_DEATH_BOUNCE       = 500.0f;  // 死亡上彈初速（取代 Player.cpp 硬編碼 -500）
+constexpr float PLAYER_DEATH_BOUNCE       = 280.0f;  // 死亡上彈初速；約 3.5 tiles，接近原版短彈起
 constexpr float ENEMY_GRAVITY             = 700.0f;  // 敵人/死亡動畫重力（沿用 Character 現值）
 constexpr float KOOPA_SHELL_SPEED         = 180.0f;  // SMB1 滑行龜殼速度（世界像素/秒）
 constexpr float KOOPA_REVIVE_DELAY        =   5.0f;  // 靜止殼開始復活前的總等待時間
