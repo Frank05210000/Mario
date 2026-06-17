@@ -28,6 +28,12 @@
   "levelWidth": 3584,
   "levelHeight": 240,
   "playerSpawn": { "x": 32.0, "y": 176.0 },
+  "introCutscene": {
+    "type": "autoEnterPipe",
+    "pipeTargetLevel": "1-2_underground_1",
+    "walkSpeed": 60.0,
+    "pipeEntryDuration": 1.0
+  },
   "objects": []
 }
 ```
@@ -81,6 +87,13 @@
   - 支援 `moveMode`：`oscillate`、`verticalWrap`。
 - `MultiCoinBlock`
   - 可用 `coinCount` 控制可敲出 coin 數量，預設 10。
+
+## Intro Cutscene
+
+- `introCutscene` 是 optional top-level 欄位；不寫時關卡 intro 後直接可操作。
+- 目前只支援 `{ "type": "autoEnterPipe" }`。
+- `pipeTargetLevel` 必須對應同一關物件列表中某個 `EnterablePipe.targetLevel`。
+- cutscene 期間玩家輸入被鎖住，Mario 自動向右走到水管，播放進水管動畫後切到目標關卡；期間不扣 TIME。
 
 ## 新增關卡
 

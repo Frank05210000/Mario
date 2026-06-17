@@ -42,6 +42,12 @@ This means the object's top-left corner is 128 pixels from the left edge and
       "y": 176.0
     }
   ],
+  "introCutscene": {
+    "type": "autoEnterPipe",
+    "pipeTargetLevel": "1-2_underground_1",
+    "walkSpeed": 60.0,
+    "pipeEntryDuration": 1.0
+  },
   "objects": []
 }
 ```
@@ -58,6 +64,11 @@ This means the object's top-left corner is 128 pixels from the left edge and
   value should match the normal ground spawn height so Mario appears on solid
   ground after respawning. If `checkpoints` is omitted the level behaves as
   before (always respawn at `playerSpawn`).
+- `introCutscene`: optional opening sequence. The only supported `type` is
+  `autoEnterPipe`, which locks player input, walks Mario right to the
+  `EnterablePipe` whose destination matches `pipeTargetLevel`, plays the pipe
+  entry animation, and changes to that target level. Omit this field for normal
+  playable starts.
 - `objects`: list of all gameplay objects in the level.
 
 ## Theme

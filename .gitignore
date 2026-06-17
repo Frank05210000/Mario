@@ -143,6 +143,9 @@ nunit-*.xml
 [Rr]eleasePS/
 dlldata.c
 
+# macOS metadata
+.DS_Store
+
 # Benchmark Results
 BenchmarkDotNet.Artifacts/
 
