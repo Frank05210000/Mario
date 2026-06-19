@@ -52,10 +52,20 @@ void Player::ResetForNewGame() {
 
 void Player::InitAnimations() {
     if (m_VisualProfile == VisualProfile::Luigi) {
+        const std::array<std::string, FORM_COUNT> formNames = {
+            "Luigi", "Super Luigi", "Fiery Luigi"
+        };
+        const std::array<std::string, STAR_PALETTE_COUNT> starDirs = {
+            "Star1", "Star2", "Star3"
+        };
+
         for (std::size_t form = 0; form < FORM_COUNT; ++form) {
+            const bool includeShoot = form == FormIndex(Form::FIRE);
             m_NormalVisuals[form] = CreateLuigiVisualAssets(static_cast<Form>(form));
             for (std::size_t palette = 0; palette < STAR_PALETTE_COUNT; ++palette) {
-                m_StarVisuals[palette][form] = m_NormalVisuals[form];
+                m_StarVisuals[palette][form] = CreateVisualAssets(
+                    MakeAssetPath("player/Effects/" + starDirs[palette] + "/" + formNames[form] + "/right/"),
+                    includeShoot);
             }
         }
         m_DeadImage = std::make_shared<Util::Image>(
@@ -433,6 +443,7 @@ void Player::UpdateStarInvincibility(float deltaTime) {
         m_StarPaletteTimer = 0.0f;
         m_StarPaletteIndex = 0;
         m_StarEndedEventPending = true; // 通知 AudioManager 切回關卡 BGM
+        m_StarEndedDebugEventPending = false;
     }
 }
 
@@ -621,15 +632,18 @@ void Player::UpdateAnimation() {
 // ─── 鍵盤輸入 ────────────────────────────────────────────────────────
 
 void Player::HandleInput(float deltaTime) {
-    if (AnyDown(m_Controls.debugSmall)) {
-        SetForm(Form::SMALL);
-    } else if (AnyDown(m_Controls.debugSuper)) {
-        SetForm(Form::SUPER);
-    } else if (AnyDown(m_Controls.debugFire)) {
-        SetForm(Form::FIRE);
-    }
-    if (AnyDown(m_Controls.debugStar)) {
-        ToggleDebugStarInvincibility();
+    // Debug mode 關閉時，忽略 4~7 變身/無敵作弊鍵
+    if (m_DebugEnabled) {
+        if (AnyDown(m_Controls.debugSmall)) {
+            SetForm(Form::SMALL);
+        } else if (AnyDown(m_Controls.debugSuper)) {
+            SetForm(Form::SUPER);
+        } else if (AnyDown(m_Controls.debugFire)) {
+            SetForm(Form::FIRE);
+        }
+        if (AnyDown(m_Controls.debugStar)) {
+            ToggleDebugStarInvincibility();
+        }
     }
 
     bool pressingLeft = AnyPressed(m_Controls.left);
@@ -768,6 +782,9 @@ void Player::ResetTransientState() {
     m_ShootingTimer = 0.0f;
     m_JumpEventPending = false;
     m_StarEndedEventPending = false;
+    m_StarStartedEventPending = false;
+    m_StarEndedDebugEventPending = false;
+    m_StarStartedDebugEventPending = false;
     m_IsAlive = true;
     m_IsDying = false;
     m_DeathTimer = 0.0f;
@@ -857,10 +874,17 @@ void Player::StartDamageInvincibility(float duration) {
 
 void Player::ActivateStarInvincibility(float duration) {
     if (duration <= 0.0f || m_State == State::Dying || m_State == State::LevelClear) return;
+    // 作弊的無限無敵優先：吃到星星不應把無限無敵降級成計時無敵。
+    if (m_StarInvincibleInfinite) {
+        LOG_INFO("Star picked up while debug infinite invincibility active; keeping infinite.");
+        return;
+    }
     m_StarInvincibleInfinite = false;
     m_StarTimer = duration;
     m_StarPaletteTimer = 0.0f;
     m_StarPaletteIndex = 0;
+    m_StarStartedEventPending = false;
+    m_StarStartedDebugEventPending = false;
     SetVisible(true);
     LOG_INFO("Player star invincibility activated for {} seconds.", duration);
 }
@@ -869,14 +893,16 @@ void Player::ToggleDebugStarInvincibility() {
     if (m_State == State::Dying || m_State == State::LevelClear) return;
 
     if (m_StarInvincibleInfinite || m_StarTimer > 0.0f) {
-        const bool timedStarWasActive = m_StarTimer > 0.0f;
+        const bool wasDebugStar = m_StarInvincibleInfinite;
         m_StarInvincibleInfinite = false;
         m_StarTimer = 0.0f;
         m_StarPaletteTimer = 0.0f;
         m_StarPaletteIndex = 0;
-        if (timedStarWasActive) {
-            m_StarEndedEventPending = true;
-        }
+        // 關閉無敵：通知 AudioManager 切回關卡 BGM（不論先前是計時或無限星星）
+        m_StarEndedEventPending = true;
+        m_StarEndedDebugEventPending = wasDebugStar;
+        m_StarStartedEventPending = false;
+        m_StarStartedDebugEventPending = false;
         UpdateAnimation();
         LOG_INFO("Debug star invincibility disabled.");
         return;
@@ -886,6 +912,11 @@ void Player::ToggleDebugStarInvincibility() {
     m_StarPaletteTimer = 0.0f;
     m_StarPaletteIndex = 0;
     SetVisible(true);
+    // 開啟無限無敵：通知 AudioManager 播放 debug 專用 BGM
+    m_StarStartedEventPending = true;
+    m_StarStartedDebugEventPending = true;
+    m_StarEndedEventPending = false;
+    m_StarEndedDebugEventPending = false;
     UpdateAnimation();
     LOG_INFO("Debug star invincibility enabled.");
 }

@@ -15,6 +15,7 @@ public:
 
     void Update(float deltaTime) override;
     StompOutcome Stomp() override;
+    void Die(bool flipLeft) override;
     bool UsesBlockCollision() const override {
         return !m_HasWings || m_FlightMode == FlightMode::Hop;
     }

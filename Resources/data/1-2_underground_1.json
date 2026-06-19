@@ -1405,14 +1405,14 @@
     {
       "type": "MovingPlatform",
       "x": 2480.0,
-      "y": 208.0,
+      "y": 256.0,
       "moveAxis": "vertical",
       "moveMode": "verticalWrap",
       "startDirection": "up",
-      "moveTiles": 14,
+      "moveTiles": 17,
       "moveSpeed": 35.0,
       "segments": 3,
-      "startOffsetTiles": 7
+      "startOffsetTiles": 0
     },
     {
       "type": "Wall",
@@ -1572,14 +1572,14 @@
     {
       "type": "MovingPlatform",
       "x": 2240.0,
-      "y": 16.0,
+      "y": -16.0,
       "moveAxis": "vertical",
       "moveMode": "verticalWrap",
       "startDirection": "down",
-      "moveTiles": 14,
+      "moveTiles": 17,
       "moveSpeed": 35.0,
       "segments": 3,
-      "startOffsetTiles": 6
+      "startOffsetTiles": 0
     },
     {
       "type": "Wall",
@@ -2305,8 +2305,8 @@
     },
     {
       "type": "EnemySpawn",
-      "x": 272.0,
-      "y": 176.0,
+      "x": 256.0,
+      "y": 192.0,
       "enemyType": "Goomba"
     },
     {
@@ -2494,7 +2494,7 @@
     },
     {
       "type": "EnemySpawn",
-      "x": 256.0,
+      "x": 240.0,
       "y": 192.0,
       "enemyType": "Goomba"
     },
@@ -2733,25 +2733,50 @@
     {
       "type": "MovingPlatform",
       "x": 2480.0,
-      "y": 208.0,
+      "y": 256.0,
       "moveAxis": "vertical",
       "moveMode": "verticalWrap",
       "startDirection": "up",
-      "moveTiles": 14,
+      "moveTiles": 17,
       "moveSpeed": 35.0,
-      "segments": 3
+      "segments": 3,
+      "startOffsetTiles": 6
+    },
+    {
+      "type": "MovingPlatform",
+      "x": 2480.0,
+      "y": 256.0,
+      "moveAxis": "vertical",
+      "moveMode": "verticalWrap",
+      "startDirection": "up",
+      "moveTiles": 17,
+      "moveSpeed": 35.0,
+      "segments": 3,
+      "startOffsetTiles": 11
     },
     {
       "type": "MovingPlatform",
       "x": 2240.0,
-      "y": 16.0,
+      "y": -16.0,
       "moveAxis": "vertical",
       "moveMode": "verticalWrap",
       "startDirection": "down",
-      "moveTiles": 14,
+      "moveTiles": 17,
       "moveSpeed": 35.0,
       "segments": 3,
-      "startOffsetTiles": 13
+      "startOffsetTiles": 6
+    },
+    {
+      "type": "MovingPlatform",
+      "x": 2240.0,
+      "y": -16.0,
+      "moveAxis": "vertical",
+      "moveMode": "verticalWrap",
+      "startDirection": "down",
+      "moveTiles": 17,
+      "moveSpeed": 35.0,
+      "segments": 3,
+      "startOffsetTiles": 11
     }
   ],
   "playerSpawn": {

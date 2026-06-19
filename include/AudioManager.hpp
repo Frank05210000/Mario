@@ -21,6 +21,7 @@
  *   overworld.mp3、underground.mp3、starman.mp3、
  *   overworld_hurry.mp3、underground_hurry.mp3、
  *   level_clear.mp3、death.mp3、game_over.mp3
+ *   debug_starman_hurry_loop 例外對應 Resources/music/Bgm/16. Invincibility Theme (Hurry Up!)_loopVerison.mp3
  *
  * SFX 檔名約定（放在 Resources/Asset/audio/sfx/）：
  *   jump_small.mp3、jump_super.mp3、stomp.mp3、coin.mp3、
@@ -55,6 +56,12 @@ public:
     // durationMs：-1 播完整音檔；正數會在指定毫秒後停止該次播放
     void PlaySFX(const std::string& name, int loop = 0, int durationMs = -1);
 
+    // ─── 音量控制 ─────────────────────────────────────────────────
+    // 單一主音量（0~100%），同時套用到 BGM（Mix_VolumeMusic，全域）
+    // 與所有 SFX（Mix_VolumeChunk，逐一設定快取中的音效）。
+    void SetVolumePercent(int percent);
+    int  GetVolumePercent() const { return m_VolumePercent; }
+
     // ─── 查詢 ──────────────────────────────────────────────────────
     // 目前正在播放哪個 BGM（name，空字串代表沒在播）
     const std::string& CurrentBGM() const { return m_CurrentBGMName; }
@@ -67,6 +74,10 @@ private:
     static int EventPriority(const std::string& name);
     static std::string HurryBGMName(const std::string& areaName);
     void RefreshAreaBGM();
+    // 主音量百分比（0~100）換算成 SDL_mixer 的 0~128
+    static int VolumeMixLevel(int percent) { return percent * 128 / 100; }
+
+    int m_VolumePercent = 70; // 主音量，預設 70%
 
     // 目前正在播放的 BGM 物件（nullptr = 沒有或音檔不存在）
     std::unique_ptr<Util::BGM> m_CurrentBGM;
@@ -78,6 +89,7 @@ private:
 
     // SFX 快取：避免每次呼叫 PlaySFX 都重新建構 Util::SFX
     std::unordered_map<std::string, std::shared_ptr<Util::SFX>> m_SfxCache;
+    std::unordered_map<std::string, unsigned int> m_LastSfxPlayTicks;
 };
 
 #endif // AUDIO_MANAGER_HPP

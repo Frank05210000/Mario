@@ -87,6 +87,11 @@ Enemy::StompOutcome KoopaParatroopa::Stomp() {
     return Koopa::Stomp();
 }
 
+void KoopaParatroopa::Die(bool flipLeft) {
+    m_HasWings = false;        // 先掉翅膀，Update() 才會走 Koopa 的 Defeated 死亡邏輯
+    Koopa::Die(flipLeft);
+}
+
 void KoopaParatroopa::UpdateFlightDrawable() {
     SetDrawable(m_Velocity.x > 0.0f ? m_FlyRightAnim : m_FlyLeftAnim);
 }

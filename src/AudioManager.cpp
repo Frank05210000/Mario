@@ -3,15 +3,22 @@
 #include "AssetPath.hpp"
 #include "Util/Logger.hpp"
 
+#include <algorithm>
 #include <filesystem>
 
 namespace {
 constexpr int kSfxChannelCount = 32;
+constexpr unsigned int kCoinSfxCooldownMs = 35;
+constexpr const char* kDebugStarBGMName = "debug_starman_hurry_loop";
+constexpr const char* kDebugStarBGMPath = "16. Invincibility Theme (Hurry Up!)_loopVerison.mp3";
 }
 
 // ─── 路徑組裝輔助 ────────────────────────────────────────────────────────────
 
 std::string AudioManager::MakeBGMPath(const std::string& name) {
+    if (name == kDebugStarBGMName) {
+        return (std::filesystem::path(RESOURCE_DIR) / "music" / "Bgm" / kDebugStarBGMPath).string();
+    }
     return MakeAssetPath("audio/bgm/" + name + ".mp3");
 }
 
@@ -23,7 +30,7 @@ int AudioManager::EventPriority(const std::string& name) {
     if (name == "death" || name == "game_over" || name == "level_clear") {
         return 3;
     }
-    if (name == "starman") {
+    if (name == "starman" || name == kDebugStarBGMName) {
         return 2;
     }
     return 1;
@@ -68,6 +75,7 @@ void AudioManager::PlayBGM(const std::string& name, int loop) {
         m_CurrentBGM.reset();
         m_CurrentBGM     = std::make_unique<Util::BGM>(path);
         m_CurrentBGMName = name;
+        m_CurrentBGM->SetVolume(VolumeMixLevel(m_VolumePercent)); // 套用目前主音量
         m_CurrentBGM->Play(loop);
         LOG_INFO("AudioManager: PlayBGM '{}' (loop={})", name, loop);
     } catch (const std::exception& e) {
@@ -160,11 +168,21 @@ void AudioManager::RefreshAreaBGM() {
 // ─── SFX 控制 ────────────────────────────────────────────────────────────────
 
 void AudioManager::PlaySFX(const std::string& name, int loop, int durationMs) {
+    if (name == "coin") {
+        const unsigned int now = SDL_GetTicks();
+        const auto last = m_LastSfxPlayTicks.find(name);
+        if (last != m_LastSfxPlayTicks.end() && now - last->second < kCoinSfxCooldownMs) {
+            return;
+        }
+        m_LastSfxPlayTicks[name] = now;
+    }
+
     // 先查快取
     auto it = m_SfxCache.find(name);
     if (it != m_SfxCache.end()) {
         // 快取命中：可能是已驗證存在的 SFX，或是已標記為「缺檔」的 nullptr
         if (it->second) {
+            it->second->SetVolume(VolumeMixLevel(m_VolumePercent));
             it->second->Play(loop, durationMs);
         }
         // nullptr 表示音檔不存在，直接靜音（不重複 warn）
@@ -183,6 +201,7 @@ void AudioManager::PlaySFX(const std::string& name, int loop, int durationMs) {
     try {
         auto sfx = std::make_shared<Util::SFX>(path);
         m_SfxCache[name] = sfx;
+        sfx->SetVolume(VolumeMixLevel(m_VolumePercent));
         sfx->Play(loop, durationMs);
         LOG_INFO("AudioManager: PlaySFX '{}' (loop={})", name, loop);
     } catch (const std::exception& e) {
@@ -192,4 +211,23 @@ void AudioManager::PlaySFX(const std::string& name, int loop, int durationMs) {
         LOG_WARN("AudioManager: Unknown error while playing SFX '{}'.", name);
         m_SfxCache[name] = nullptr;
     }
+}
+
+// ─── 音量控制 ────────────────────────────────────────────────────────────────
+
+void AudioManager::SetVolumePercent(int percent) {
+    m_VolumePercent = std::clamp(percent, 0, 100);
+    const int mix = VolumeMixLevel(m_VolumePercent);
+
+    // BGM：Mix_VolumeMusic 為全域設定，套到目前曲目即生效並延續到後續曲目
+    if (m_CurrentBGM) {
+        m_CurrentBGM->SetVolume(mix);
+    }
+    // SFX：Mix_VolumeChunk 是逐音效設定，更新所有已快取的音效
+    for (auto& [name, sfx] : m_SfxCache) {
+        if (sfx) {
+            sfx->SetVolume(mix);
+        }
+    }
+    LOG_INFO("AudioManager: master volume set to {}%", m_VolumePercent);
 }

@@ -1,945 +1,440 @@
 {
-  "source": "/var/folders/n_/t94pmt_s20z1d61_h8r1jr0w0000gn/T/codex-clipboard-eb424b6a-ed51-4ec3-b4dd-acbc8cb5b38f.png",
-  "transparent_colors_rgba": [
-    [
-      13,
-      40,
-      135,
+  "source": "/var/folders/n_/t94pmt_s20z1d61_h8r1jr0w0000gn/T/codex-clipboard-553135c1-569b-44d8-a742-bb1e97f305cb.png",
+  "rebuild_method": "Runtime Luigi sprites were rebuilt from the existing Mario runtime silhouettes, using the supplied image as the Luigi palette reference so action contours match Mario exactly.",
+  "palette_rgba": {
+    "green": [
+      83,
+      181,
+      52,
       255
     ],
-    [
-      146,
-      144,
-      248,
+    "orange": [
+      242,
+      165,
+      87,
       255
     ],
-    [
-      201,
-      200,
-      251,
+    "white": [
+      255,
+      255,
+      255,
       255
     ]
-  ],
+  },
   "frames": [
-    {
-      "index": 0,
-      "group": "small_luigi",
-      "source_box": [
-        9,
-        43,
-        91,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_00_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_00_16x16.png"
-    },
-    {
-      "index": 1,
-      "group": "small_luigi",
-      "source_box": [
-        111,
-        43,
-        194,
-        125
-      ],
-      "raw_size": [
-        83,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_01_83x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_01_16x16.png"
-    },
-    {
-      "index": 2,
-      "group": "small_luigi",
-      "source_box": [
-        204,
-        43,
-        286,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_02_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_02_16x16.png"
-    },
-    {
-      "index": 3,
-      "group": "small_luigi",
-      "source_box": [
-        296,
-        43,
-        378,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_03_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_03_16x16.png"
-    },
-    {
-      "index": 4,
-      "group": "small_luigi",
-      "source_box": [
-        399,
-        43,
-        481,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_04_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_04_16x16.png"
-    },
-    {
-      "index": 5,
-      "group": "small_luigi",
-      "source_box": [
-        502,
-        43,
-        584,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_05_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_05_16x16.png"
-    },
-    {
-      "index": 6,
-      "group": "small_luigi",
-      "source_box": [
-        604,
-        43,
-        686,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_06_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_06_16x16.png"
-    },
-    {
-      "index": 7,
-      "group": "small_luigi",
-      "source_box": [
-        707,
-        43,
-        789,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_07_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_07_16x16.png"
-    },
-    {
-      "index": 8,
-      "group": "small_luigi",
-      "source_box": [
-        799,
-        43,
-        881,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_08_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_08_16x16.png"
-    },
-    {
-      "index": 9,
-      "group": "small_luigi",
-      "source_box": [
-        902,
-        43,
-        984,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_09_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_09_16x16.png"
-    },
-    {
-      "index": 10,
-      "group": "small_luigi",
-      "source_box": [
-        994,
-        43,
-        1076,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_10_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_10_16x16.png"
-    },
-    {
-      "index": 11,
-      "group": "small_luigi",
-      "source_box": [
-        1087,
-        43,
-        1169,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_11_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_11_16x16.png"
-    },
-    {
-      "index": 12,
-      "group": "small_luigi",
-      "source_box": [
-        1179,
-        43,
-        1261,
-        125
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_12_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_12_16x16.png"
-    },
-    {
-      "index": 13,
-      "group": "small_luigi",
-      "source_box": [
-        1271,
-        43,
-        1354,
-        125
-      ],
-      "raw_size": [
-        83,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_13_83x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_13_16x16.png"
-    },
-    {
-      "index": 14,
-      "group": "small_luigi",
-      "source_box": [
-        1364,
-        43,
-        1405,
-        84
-      ],
-      "raw_size": [
-        41,
-        41
-      ],
-      "native_size": [
-        8,
-        8
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/small_luigi/frame_14_41x41.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_14_8x8.png"
-    },
-    {
-      "index": 15,
-      "group": "fire_luigi",
-      "source_box": [
-        707,
-        161,
-        789,
-        325
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
-      "native_size": [
-        16,
-        32
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fire_luigi/frame_15_82x164.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_15_16x32.png"
-    },
-    {
-      "index": 16,
-      "group": "fire_luigi",
-      "source_box": [
-        799,
-        161,
-        881,
-        325
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
-      "native_size": [
-        16,
-        32
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fire_luigi/frame_16_82x164.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_16_16x32.png"
-    },
-    {
-      "index": 17,
-      "group": "fire_luigi",
-      "source_box": [
-        902,
-        161,
-        984,
-        325
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
-      "native_size": [
-        16,
-        32
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fire_luigi/frame_17_82x164.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_17_16x32.png"
-    },
-    {
-      "index": 18,
-      "group": "fire_luigi",
-      "source_box": [
-        994,
-        161,
-        1076,
-        325
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
-      "native_size": [
-        16,
-        32
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fire_luigi/frame_18_82x164.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_18_16x32.png"
-    },
-    {
-      "index": 19,
-      "group": "fire_luigi",
-      "source_box": [
-        1087,
-        161,
-        1169,
-        325
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
-      "native_size": [
-        16,
-        32
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fire_luigi/frame_19_82x164.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_19_16x32.png"
-    },
-    {
-      "index": 20,
-      "group": "fire_luigi",
-      "source_box": [
-        1179,
-        161,
-        1261,
-        325
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
-      "native_size": [
-        16,
-        32
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fire_luigi/frame_20_82x164.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_20_16x32.png"
-    },
-    {
-      "index": 21,
-      "group": "fire_luigi",
-      "source_box": [
-        1271,
-        161,
-        1354,
-        325
-      ],
-      "raw_size": [
-        83,
-        164
-      ],
-      "native_size": [
-        16,
-        32
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fire_luigi/frame_21_83x164.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_21_16x32.png"
-    },
-    {
-      "index": 22,
-      "group": "fire_luigi",
-      "source_box": [
-        1364,
-        161,
-        1446,
-        325
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
-      "native_size": [
-        16,
-        32
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fire_luigi/frame_22_82x164.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_22_16x32.png"
-    },
     {
       "index": 23,
       "group": "big_luigi",
-      "source_box": [
-        9,
-        166,
-        91,
-        330
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
       "native_size": [
         16,
         32
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/big_luigi/frame_23_82x164.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/big_luigi/frame_23_16x32.png"
     },
     {
       "index": 24,
       "group": "big_luigi",
-      "source_box": [
-        111,
-        166,
-        194,
-        330
-      ],
-      "raw_size": [
-        83,
-        164
-      ],
       "native_size": [
         16,
         32
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/big_luigi/frame_24_83x164.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/big_luigi/frame_24_16x32.png"
     },
     {
       "index": 25,
       "group": "big_luigi",
-      "source_box": [
-        204,
-        166,
-        286,
-        330
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
       "native_size": [
         16,
         32
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/big_luigi/frame_25_82x164.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/big_luigi/frame_25_16x32.png"
     },
     {
       "index": 26,
       "group": "big_luigi",
-      "source_box": [
-        296,
-        166,
-        378,
-        330
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
       "native_size": [
         16,
         32
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/big_luigi/frame_26_82x164.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/big_luigi/frame_26_16x32.png"
     },
     {
       "index": 27,
       "group": "big_luigi",
-      "source_box": [
-        399,
-        166,
-        481,
-        330
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
       "native_size": [
         16,
         32
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/big_luigi/frame_27_82x164.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/big_luigi/frame_27_16x32.png"
     },
     {
       "index": 28,
       "group": "big_luigi",
-      "source_box": [
-        502,
-        166,
-        584,
-        330
-      ],
-      "raw_size": [
-        82,
-        164
-      ],
       "native_size": [
         16,
         32
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/big_luigi/frame_28_82x164.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/big_luigi/frame_28_16x32.png"
     },
     {
       "index": 29,
       "group": "big_luigi",
-      "source_box": [
-        604,
-        207,
-        686,
-        330
-      ],
-      "raw_size": [
-        82,
-        123
-      ],
       "native_size": [
         16,
-        24
+        32
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/big_luigi/frame_29_82x123.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/big_luigi/frame_29_16x24.png"
     },
     {
-      "index": 30,
-      "group": "grow_shrink_animation",
-      "source_box": [
-        194,
-        371,
-        276,
-        536
-      ],
-      "raw_size": [
-        82,
-        165
-      ],
+      "index": 15,
+      "group": "fire_luigi",
       "native_size": [
         16,
         32
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/grow_shrink_animation/frame_30_82x165.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_30_16x32.png"
+      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_15_16x32.png"
     },
     {
-      "index": 31,
-      "group": "grow_shrink_animation",
-      "source_box": [
-        296,
-        371,
-        378,
-        536
-      ],
-      "raw_size": [
-        82,
-        165
-      ],
+      "index": 16,
+      "group": "fire_luigi",
       "native_size": [
         16,
         32
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/grow_shrink_animation/frame_31_82x165.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_31_16x32.png"
+      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_16_16x32.png"
     },
     {
-      "index": 32,
-      "group": "grow_shrink_animation",
-      "source_box": [
-        389,
-        371,
-        471,
-        536
-      ],
-      "raw_size": [
-        82,
-        165
-      ],
+      "index": 17,
+      "group": "fire_luigi",
       "native_size": [
         16,
         32
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/grow_shrink_animation/frame_32_82x165.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_32_16x32.png"
+      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_17_16x32.png"
+    },
+    {
+      "index": 18,
+      "group": "fire_luigi",
+      "native_size": [
+        16,
+        32
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_18_16x32.png"
+    },
+    {
+      "index": 19,
+      "group": "fire_luigi",
+      "native_size": [
+        16,
+        32
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_19_16x32.png"
+    },
+    {
+      "index": 20,
+      "group": "fire_luigi",
+      "native_size": [
+        16,
+        32
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_20_16x32.png"
+    },
+    {
+      "index": 21,
+      "group": "fire_luigi",
+      "native_size": [
+        16,
+        32
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_21_16x32.png"
+    },
+    {
+      "index": 22,
+      "group": "fire_luigi",
+      "native_size": [
+        16,
+        32
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_22_16x32.png"
     },
     {
       "index": 33,
       "group": "fire_luigi",
-      "source_box": [
-        707,
-        371,
-        789,
-        536
-      ],
-      "raw_size": [
-        82,
-        165
-      ],
       "native_size": [
         16,
         32
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fire_luigi/frame_33_82x165.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_33_16x32.png"
     },
     {
       "index": 34,
       "group": "fire_luigi",
-      "source_box": [
-        799,
-        371,
-        881,
-        536
-      ],
-      "raw_size": [
-        82,
-        165
-      ],
       "native_size": [
         16,
-        32
+        30
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fire_luigi/frame_34_82x165.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/fire_luigi/frame_34_16x32.png"
     },
     {
       "index": 35,
       "group": "fireball_effects",
-      "source_box": [
-        892,
-        397,
-        933,
-        438
-      ],
-      "raw_size": [
-        41,
-        41
-      ],
       "native_size": [
         8,
         8
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fireball_effects/frame_35_41x41.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/fireball_effects/frame_35_8x8.png"
     },
     {
       "index": 36,
       "group": "fireball_effects",
-      "source_box": [
-        943,
-        397,
-        984,
-        438
-      ],
-      "raw_size": [
-        41,
-        41
-      ],
       "native_size": [
         8,
         8
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fireball_effects/frame_36_41x41.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/fireball_effects/frame_36_8x8.png"
     },
     {
       "index": 37,
       "group": "fireball_effects",
-      "source_box": [
-        994,
-        397,
-        1035,
-        438
-      ],
-      "raw_size": [
-        41,
-        41
-      ],
       "native_size": [
         8,
         8
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fireball_effects/frame_37_41x41.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/fireball_effects/frame_37_8x8.png"
     },
     {
       "index": 38,
       "group": "fireball_effects",
-      "source_box": [
-        1046,
-        397,
-        1087,
-        438
-      ],
-      "raw_size": [
-        41,
-        41
-      ],
       "native_size": [
         8,
         8
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fireball_effects/frame_38_41x41.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/fireball_effects/frame_38_8x8.png"
-    },
-    {
-      "index": 39,
-      "group": "grow_shrink_animation",
-      "source_box": [
-        101,
-        413,
-        183,
-        536
-      ],
-      "raw_size": [
-        82,
-        123
-      ],
-      "native_size": [
-        16,
-        24
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/grow_shrink_animation/frame_39_82x123.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_39_16x24.png"
-    },
-    {
-      "index": 40,
-      "group": "grow_shrink_animation",
-      "source_box": [
-        9,
-        454,
-        91,
-        536
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/grow_shrink_animation/frame_40_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_40_16x16.png"
-    },
-    {
-      "index": 41,
-      "group": "grow_shrink_animation",
-      "source_box": [
-        481,
-        454,
-        563,
-        536
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/grow_shrink_animation/frame_41_82x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_41_16x16.png"
-    },
-    {
-      "index": 42,
-      "group": "grow_shrink_animation",
-      "source_box": [
-        573,
-        454,
-        656,
-        536
-      ],
-      "raw_size": [
-        83,
-        82
-      ],
-      "native_size": [
-        16,
-        16
-      ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/grow_shrink_animation/frame_42_83x82.png",
-      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_42_16x16.png"
     },
     {
       "index": 43,
       "group": "fireball_effects",
-      "source_box": [
-        892,
-        454,
-        974,
-        536
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
       "native_size": [
         16,
         16
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fireball_effects/frame_43_82x82.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/fireball_effects/frame_43_16x16.png"
     },
     {
       "index": 44,
       "group": "fireball_effects",
-      "source_box": [
-        984,
-        454,
-        1066,
-        536
-      ],
-      "raw_size": [
-        82,
-        82
-      ],
       "native_size": [
         16,
         16
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fireball_effects/frame_44_82x82.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/fireball_effects/frame_44_16x16.png"
     },
     {
       "index": 45,
       "group": "fireball_effects",
-      "source_box": [
-        1076,
-        454,
-        1159,
-        536
-      ],
-      "raw_size": [
-        83,
-        82
-      ],
       "native_size": [
         16,
         16
       ],
-      "raw_path": "Resources/Asset/player/LuigiSprites/raw/fireball_effects/frame_45_83x82.png",
       "native_path": "Resources/Asset/player/LuigiSprites/native/fireball_effects/frame_45_16x16.png"
+    },
+    {
+      "index": 30,
+      "group": "grow_shrink_animation",
+      "native_size": [
+        16,
+        32
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_30_16x32.png"
+    },
+    {
+      "index": 31,
+      "group": "grow_shrink_animation",
+      "native_size": [
+        16,
+        32
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_31_16x32.png"
+    },
+    {
+      "index": 32,
+      "group": "grow_shrink_animation",
+      "native_size": [
+        16,
+        32
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_32_16x32.png"
+    },
+    {
+      "index": 39,
+      "group": "grow_shrink_animation",
+      "native_size": [
+        16,
+        32
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_39_16x24.png"
+    },
+    {
+      "index": 40,
+      "group": "grow_shrink_animation",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_40_16x16.png"
+    },
+    {
+      "index": 41,
+      "group": "grow_shrink_animation",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_41_16x16.png"
+    },
+    {
+      "index": 42,
+      "group": "grow_shrink_animation",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/grow_shrink_animation/frame_42_16x16.png"
+    },
+    {
+      "index": 0,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_00_16x16.png"
+    },
+    {
+      "index": 1,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_01_16x16.png"
+    },
+    {
+      "index": 2,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_02_16x16.png"
+    },
+    {
+      "index": 3,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_03_16x16.png"
+    },
+    {
+      "index": 4,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_04_16x16.png"
+    },
+    {
+      "index": 5,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_05_16x16.png"
+    },
+    {
+      "index": 6,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_06_16x16.png"
+    },
+    {
+      "index": 7,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_07_16x16.png"
+    },
+    {
+      "index": 8,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_08_16x16.png"
+    },
+    {
+      "index": 9,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_09_16x16.png"
+    },
+    {
+      "index": 10,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_10_16x16.png"
+    },
+    {
+      "index": 11,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_11_16x16.png"
+    },
+    {
+      "index": 12,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_12_16x16.png"
+    },
+    {
+      "index": 13,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_13_16x16.png"
+    },
+    {
+      "index": 14,
+      "group": "small_luigi",
+      "native_size": [
+        16,
+        16
+      ],
+      "native_path": "Resources/Asset/player/LuigiSprites/native/small_luigi/frame_14_8x8.png"
     }
   ]
 }

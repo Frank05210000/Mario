@@ -31,7 +31,7 @@
   - visual profile：同一個 `Player` 物件可切換 Mario/Luigi 外觀；2P 模式仍是輪流玩，不同場建立兩個 player。
   - debug shortcuts：1/2/3 切換 SMALL/SUPER/FIRE；7 切換無限星星無敵。
   - `Update()` 儲存 previous position，處理輸入、重力、死亡動畫、無敵配色顯示、過關自動走位與動畫切換。
-  - `ConsumeShootRequest()` 由 `GameManager` 消耗，限制畫面最多 2 顆火球。
+  - `ConsumeShootRequest()` 由 `GameManager` 消耗並生成火球；目前不限制畫面上的火球數。
 - `Enemy`
   - 共用走路、重力、轉向。
   - `Stomp()` 是純虛擬並回傳 `StompOutcome`，呼叫端依結果處理得分與互動。

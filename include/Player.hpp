@@ -61,6 +61,8 @@ public:
     Player();
     void ResetForNewGame();
     void SetControls(const Controls& controls) { m_Controls = controls; }
+    // Debug mode 開關：關閉時忽略 4~7 變身作弊鍵
+    void SetDebugEnabled(bool enabled) { m_DebugEnabled = enabled; }
     static Controls DefaultControls();
     void SetVisualProfile(VisualProfile profile);
 
@@ -89,6 +91,7 @@ public:
     bool IsDamageInvincible() const { return m_DamageInvincibleTimer > 0.0f; }
     void ActivateStarInvincibility(float duration = 10.0f);
     bool IsStarInvincible() const { return m_StarTimer > 0.0f || m_StarInvincibleInfinite; }
+    bool IsDebugStarInvincible() const { return m_StarInvincibleInfinite; }
 
     // 取得死亡狀態
     bool IsDying() const { return m_State == State::Dying; }
@@ -125,11 +128,27 @@ public:
 
     // 給 AudioManager 詢問星星無敵是否剛結束（消耗式查詢）
     // 結束後需切回關卡 BGM
-    bool ConsumeStarEndedEvent() {
+    bool ConsumeStarEndedEvent(bool& debugStar) {
         if (m_StarEndedEventPending) {
             m_StarEndedEventPending = false;
+            debugStar = m_StarEndedDebugEventPending;
+            m_StarEndedDebugEventPending = false;
             return true;
         }
+        debugStar = false;
+        return false;
+    }
+
+    // 給 AudioManager 詢問星星無敵是否剛開始（消耗式查詢）
+    // 開始後需播放 starman BGM（用於 debug 無敵切換等沒有道具事件的情況）
+    bool ConsumeStarStartedEvent(bool& debugStar) {
+        if (m_StarStartedEventPending) {
+            m_StarStartedEventPending = false;
+            debugStar = m_StarStartedDebugEventPending;
+            m_StarStartedDebugEventPending = false;
+            return true;
+        }
+        debugStar = false;
         return false;
     }
 
@@ -241,6 +260,9 @@ private:
     float m_ShootingTimer  = 0.0f;  // 發射姿勢維持時間
     bool  m_JumpEventPending = false;   // 這幀是否剛跳躍（供 AudioManager 查詢）
     bool  m_StarEndedEventPending = false; // 星星效果剛結束（供 AudioManager 切回 BGM）
+    bool  m_StarStartedEventPending = false; // 星星效果剛開始（供 AudioManager 播放 starman BGM）
+    bool  m_StarEndedDebugEventPending = false;
+    bool  m_StarStartedDebugEventPending = false;
 
     bool  m_IsMoving   = false;    // 這幀有沒有按左右鍵（動畫用）
     bool  m_IsSkidding = false;    // 是否正在打滑
@@ -265,6 +287,7 @@ private:
     std::array<std::array<VisualAssets, FORM_COUNT>, STAR_PALETTE_COUNT> m_StarVisuals;
     std::shared_ptr<Util::Image> m_DeadImage;
     Controls m_Controls;
+    bool m_DebugEnabled = true; // Debug mode：是否啟用 4~7 變身作弊鍵
     VisualProfile m_VisualProfile = VisualProfile::Mario;
 
     // ── 過關動畫狀態 ──

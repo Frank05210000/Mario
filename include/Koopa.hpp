@@ -27,7 +27,7 @@ public:
     void Update(float deltaTime) override;
     StompOutcome Stomp() override;
     void Kick(bool kickLeft);
-    void Die(bool flipLeft);
+    virtual void Die(bool flipLeft);
     void Draw(const Camera& camera) override;
 
     bool CanCollide() const override {

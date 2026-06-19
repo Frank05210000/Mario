@@ -29,10 +29,10 @@ public:
 private:
     glm::vec2 m_Position = {0.0f, 0.0f};
     glm::vec2 m_Velocity = {0.0f, 0.0f};
-    glm::vec2 m_Size = {16.0f, 16.0f};
+    glm::vec2 m_Size = {8.0f, 8.0f};
 
     float m_Gravity = 1500.0f;
-    float m_BounceForce = 400.0f;
+    float m_BounceForce = 140.0f;
     
     bool m_IsExploded = false;
     bool m_IsDead = false;

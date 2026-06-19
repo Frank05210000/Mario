@@ -265,7 +265,7 @@
       "moveAxis": "horizontal",
       "moveMode": "oscillate",
       "startDirection": "left",
-      "moveTiles": 5,
+      "moveTiles": 6,
       "moveSpeed": 35.0,
       "segments": 3
     },
@@ -499,7 +499,7 @@
       "type": "Flag",
       "x": 2432.0,
       "y": 192.0,
-      "clearWalkTiles": 5.0,
+      "clearWalkTiles": 4.0,
       "castleFlagBaseTiles": 10.0
     },
     {

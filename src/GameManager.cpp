@@ -67,6 +67,12 @@ static int ShellComboScore(int idx) {
     return -1;
 }
 
+static std::string FormatScore6(int score) {
+    std::ostringstream ss;
+    ss << std::setw(6) << std::setfill('0') << std::min(score, 999999);
+    return ss.str();
+}
+
 void GameManager::ResetCombo() {
     m_ComboCount = 0;
 }
@@ -124,7 +130,7 @@ void GameManager::UpdateScorePopups(float dt) {
 // doorCenterX：城堡門中心 X（由 Player 依 Flag.clearWalkTiles 回傳）
 // groundY    ：地面 Y（= 碰旗時的旗杆底 Y）
 void GameManager::SpawnCastleFlag(float doorCenterX, float groundY, float castleFlagBaseTiles) {
-    constexpr float CASTLE_FLAG_X_OFFSET_TILES = 0.5f;
+    constexpr float CASTLE_FLAG_X_OFFSET_TILES = 1.0f;
 
     // tutorial 之類：城堡會超出關卡右界 → 沒有城堡可升旗，直接略過
     if (doorCenterX + TILE_SIZE > static_cast<float>(m_Level.levelWidth)) {
@@ -170,6 +176,8 @@ constexpr float kDeathSequenceMinDuration = 3.9f; // death.mp3 is about 3.87s
 constexpr float kPipeTransitionDuration = 2.0f;   // pipe.mp3 is 2.00s
 constexpr float kGameOverDuration = 4.8f;          // game_over.mp3 is about 4.72s
 constexpr float kLevelClearBgmDuration = 6.5f;     // level_clear.mp3 is about 6.49s
+constexpr const char* kStarmanBGMName = "starman";
+constexpr const char* kDebugStarmanBGMName = "debug_starman_hurry_loop";
 
 glm::vec2 GetPipeSize(const std::string& opening, int segments) {
     const float clampedSegments = static_cast<float>(std::max(1, segments));
@@ -237,10 +245,15 @@ bool ShouldStartPipeExitForSpawn(const PipeBlock& pipe,
 
     return false;
 }
+
+const char* StarBGMName(bool debugStar) {
+    return debugStar ? kDebugStarmanBGMName : kStarmanBGMName;
+}
 }
 
 void GameManager::ConfigurePlayer() {
     m_Player.SetControls(Player::DefaultControls());
+    m_Player.SetDebugEnabled(m_DebugMode); // 與目前 Debug mode 同步
 }
 
 void GameManager::ResetPlayerForNewGame() {
@@ -300,6 +313,12 @@ std::string GameManager::CurrentPlayerIconPath() const {
         : "player/Mario/right/Walk1/Walk1.png";
 }
 
+void GameManager::RefreshTopScoreFromSession() {
+    for (int i = 0; i < m_Session.GetPlayerCount(); ++i) {
+        m_TopScore = std::max(m_TopScore, m_Session.GetPlayerProgress(i).score);
+    }
+}
+
 // ─── Start ────────────────────────────────────────────────────────────────
 
 void GameManager::Start() {
@@ -351,6 +370,11 @@ void GameManager::Update() {
 
 void GameManager::UpdateTitle(float dt) {
     (void)dt;
+
+    // 標題畫面也可以按 ESC 進入暫停選單（可調音量 / 看按鍵說明 / 離開遊戲）。
+    if (UpdatePauseMenu()) {
+        return;
+    }
 
     if (Util::Input::IsKeyDown(Util::Keycode::UP) ||
         Util::Input::IsKeyDown(Util::Keycode::W) ||
@@ -430,57 +454,8 @@ void GameManager::UpdateIntroCutscene(float dt) {
 }
 
 void GameManager::UpdatePlaying(float dt) {
-    // ─── 暫停選單 ───────────────────────────────────────────────────────
-    // Note：Title 畫面的 Enter 在 UpdateTitle 裡處理，不會到達這裡。
-    // 先處理「已在暫停中」的選單輸入，再處理「按 ESC 開啟暫停」，
-    // 確保開啟暫停那一幀的 ESC 不會被同幀的「ESC 恢復」立即取消。
-    if (m_Paused) {
-        // ESC：直接恢復遊戲
-        if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
-            ResumePause();
-            return;
-        }
-
-        // 上/下方向鍵（含 W/S）移動游標，0..2 環繞
-        const bool moveUp = Util::Input::IsKeyDown(Util::Keycode::UP) ||
-                            Util::Input::IsKeyDown(Util::Keycode::W);
-        const bool moveDown = Util::Input::IsKeyDown(Util::Keycode::DOWN) ||
-                              Util::Input::IsKeyDown(Util::Keycode::S);
-        if (moveUp || moveDown) {
-            const int delta = moveDown ? 1 : -1;
-            m_PauseSelectionIndex = (m_PauseSelectionIndex + delta + 3) % 3;
-            ClearOverlayObjects();
-            BuildPauseOverlay();
-        }
-
-        // Enter / Space：確認選中項
-        if (Util::Input::IsKeyDown(Util::Keycode::RETURN) ||
-            Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
-            switch (m_PauseSelectionIndex) {
-                case 0: // 繼續遊戲
-                    ResumePause();
-                    break;
-                case 1: // 回到遊戲選單（標題）
-                    ClearOverlayObjects();
-                    m_Paused = false;
-                    EnterTitleScreen(); // 內含 ResetBGMState 與完整重置
-                    break;
-                case 2: // 離開遊戲
-                    m_QuitRequested = true;
-                    LOG_INFO("Quit requested from pause menu.");
-                    break;
-            }
-            return;
-        }
-
-        m_Renderer.Update();
-        return;
-    }
-
-    // 未暫停時按 ESC：開啟暫停選單（本幀直接渲染後返回，不更新世界）
-    if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
-        EnterPause();
-        m_Renderer.Update();
+    // 暫停選單（ESC 開啟 / 操作）；回傳 true 表示本幀由暫停接管，不更新世界。
+    if (UpdatePauseMenu()) {
         return;
     }
 
@@ -503,9 +478,19 @@ void GameManager::UpdatePlaying(float dt) {
         m_Audio.PlaySFX(jumpSfx);
     }
 
-    if (m_Player.ConsumeStarEndedEvent()) {
+    bool debugStarEvent = false;
+    if (m_Player.ConsumeStarStartedEvent(debugStarEvent)) {
         if (!m_LevelCleared) {
-            m_Audio.EndEventBGM("starman");
+            m_Audio.PlayEventBGM(StarBGMName(debugStarEvent));
+        }
+        LOG_INFO("Star started (debug={}), playing '{}' BGM.",
+                 debugStarEvent,
+                 StarBGMName(debugStarEvent));
+    }
+
+    if (m_Player.ConsumeStarEndedEvent(debugStarEvent)) {
+        if (!m_LevelCleared) {
+            m_Audio.EndEventBGM(StarBGMName(debugStarEvent));
         }
         LOG_INFO("Star ended, restoring managed BGM.");
     }
@@ -571,16 +556,14 @@ void GameManager::UpdatePlaying(float dt) {
             m_BrickDebris.end());
 
         if (m_Player.ConsumeShootRequest()) {
-            if (m_Fireballs.size() < 2) {
-                const glm::vec2 playerPos = m_Player.GetPosition();
-                const glm::vec2 playerSize = m_Player.GetSize();
-                const bool movingLeft = m_Player.IsFacingLeft();
-                glm::vec2 spawnPos = {
-                    movingLeft ? playerPos.x - 10.0f : playerPos.x + playerSize.x - 6.0f,
-                    playerPos.y + 12.0f
-                };
-                SpawnFireball(spawnPos, movingLeft);
-            }
+            const glm::vec2 playerPos = m_Player.GetPosition();
+            const glm::vec2 playerSize = m_Player.GetSize();
+            const bool movingLeft = m_Player.IsFacingLeft();
+            glm::vec2 spawnPos = {
+                movingLeft ? playerPos.x - 10.0f : playerPos.x + playerSize.x - 6.0f,
+                playerPos.y + 12.0f
+            };
+            SpawnFireball(spawnPos, movingLeft);
         }
 
         UpdateCameraForPlayer();
@@ -853,6 +836,22 @@ void GameManager::ClearOverlayObjects() {
 }
 
 bool GameManager::HandleLevelCheatShortcut() {
+    // Debug mode 關閉時，1~8 作弊功能鍵全部停用
+    if (!m_DebugMode) {
+        return false;
+    }
+
+    // 按鈕 8 作弊：所有玩家生命值 +3（不跳關、不重置場景，回傳 false 讓遊戲照常進行）
+    if (Util::Input::IsKeyDown(Util::Keycode::NUM_8)) {
+        for (int i = 0; i < m_Session.GetPlayerCount(); ++i) {
+            auto& progress = m_Session.GetPlayerProgress(i);
+            progress.lives += 3;
+        }
+        LOG_INFO("Cheat activated: all players lives +3 (players={})",
+                 m_Session.GetPlayerCount());
+        return false;
+    }
+
     int targetIndex = -1;
 
     if (Util::Input::IsKeyDown(Util::Keycode::NUM_1)) {
@@ -868,23 +867,26 @@ bool GameManager::HandleLevelCheatShortcut() {
     }
 
     const auto& target = kLevelChain[targetIndex];
-    m_SelectedInitialLevelName = target.levelName;
-    m_SelectedWorldLabel = target.worldLabel;
 
     LOG_INFO("Level cheat activated: key={} level='{}' world='{}'",
-             targetIndex + 4,
+             targetIndex + 1,
              target.levelName,
              target.worldLabel);
+
+    // 先把 4/5/6 這類 debug 形態切換寫回 session，避免 1/2/3 跳關後
+    // EnterLevelIntro() 又用舊的 progress.form 覆蓋回原狀態。
+    SavePlayerProgress();
 
     // 保留統計的跳關：模仿 AdvanceToNextLevel，但直接跳到 targetIndex，
     // 刻意不呼叫 StartNewGame()/ResetNewGame()，以免歸零金幣、分數與命數。
     m_CurrentLevelIndex = targetIndex;
-    for (int i = 0; i < m_Session.GetPlayerCount(); ++i) {
-        auto& progress = m_Session.GetPlayerProgress(i);
-        progress.levelName = kLevelChain[targetIndex].levelName;
-        progress.currentLevel = std::string{}; // 退回鏈錨點
-        progress.checkpoint = std::nullopt;
-        // 不動 score / coins / lives → 保留統計
+    auto& progress = m_Session.CurrentPlayer();
+    progress.levelName = kLevelChain[targetIndex].levelName;
+    progress.currentLevel = std::string{}; // 退回鏈錨點
+    progress.checkpoint = std::nullopt;
+    // 保留 score / coins；但若已 game over（生命 <= 0），補回 3 條以便繼續遊玩
+    if (progress.lives <= 0) {
+        progress.lives = 3;
     }
     m_LastCheckpoint = std::nullopt;
     m_CheckpointRespawnOverride = std::nullopt;
@@ -901,14 +903,10 @@ void GameManager::StartNewGame() {
     m_LastCheckpoint = std::nullopt;
     m_CheckpointRespawnOverride = std::nullopt;
 
-    // 找到標題畫面選的關卡在關卡鏈中的位置
-    m_CurrentLevelIndex = 0; // 預設從頭
-    for (int i = 0; i < static_cast<int>(kLevelChain.size()); ++i) {
-        if (kLevelChain[i].levelName == m_SelectedInitialLevelName) {
-            m_CurrentLevelIndex = i;
-            break;
-        }
-    }
+    // 從標題畫面開始的新遊戲一律從關卡鏈第一關開始。
+    // Debug 跳關只影響當前 session，不能成為下一場新遊戲的起點。
+    m_CurrentLevelIndex = 0;
+    m_SelectedInitialLevelName = kLevelChain.front().levelName;
 
     // 套用關卡鏈的關卡名稱到目前關卡欄位
     m_SelectedWorldLabel = kLevelChain[m_CurrentLevelIndex].worldLabel;
@@ -1098,6 +1096,7 @@ PipeBlock* GameManager::FindIntroCutscenePipe() const {
 
 void GameManager::EnterTitleScreen() {
     ResetSceneObjects();
+    RefreshTopScoreFromSession();
     m_LevelCleared = false;
     m_LevelClearPlayer = &m_Player;
     m_WaitingForTimeUpDeath = false;
@@ -1109,6 +1108,9 @@ void GameManager::EnterTitleScreen() {
     m_LevelClearCastleFlagSpawned = false;
     m_TitleSelectionIndex = 0;
     m_SelectedPlayerCount = 1;
+    m_CurrentLevelIndex = -1;
+    m_SelectedInitialLevelName = kLevelChain.front().levelName;
+    m_SelectedWorldLabel = kLevelChain.front().worldLabel;
     ResetPlayerForNewGame();
     // 回標題畫面時停止所有音樂並清空 BGM 狀態
     m_Audio.ResetBGMState();
@@ -1121,7 +1123,8 @@ void GameManager::EnterTitleScreen() {
     m_Player.SetOnGround(true);
     BuildScene();
     m_Hud.Init(m_Renderer, m_SelectedWorldLabel, "MARIO");
-    m_Hud.Update(0, 0, -1);
+    const auto& marioProgress = m_Session.GetPlayerProgress(0);
+    m_Hud.Update(marioProgress.score, 0, -1);
     BuildTitleOverlay();
 
     m_FlowState = FlowState::Title;
@@ -1204,6 +1207,7 @@ void GameManager::AdvanceToNextLevel() {
         // 重置進度 index，讓下次開始新遊戲從第一關開始
         m_CurrentLevelIndex = -1;
         EnterTitleScreen();
+        DrawScene(false);
         return;
     }
 
@@ -1222,11 +1226,8 @@ void GameManager::AdvanceToNextLevel() {
              kLevelChain[nextIndex].levelName,
              kLevelChain[nextIndex].worldLabel);
 
-    if (m_Session.GetPlayerCount() > 1) {
-        m_Session.SwitchToNextAlivePlayer();
-    }
-
     EnterLevelIntro();
+    DrawScene(false);
 }
 
 // 把 NES 像素座標換算成螢幕座標（視窗 960×720、GAME_SCALE=3）：
@@ -1259,11 +1260,132 @@ void GameManager::BuildTitleOverlay() {
     AddOverlayText("1 PLAYER GAME", kTitleFontSize, NesToScreen(140.0f, 148.0f), kTitleTextZ);
     AddOverlayText("2 PLAYER GAME", kTitleFontSize, NesToScreen(140.0f, 164.0f), kTitleTextZ);
 
-    AddOverlayText("TOP- 000000", kTitleFontSize, NesToScreen(132.0f, 188.0f), kTitleTextZ);
+    AddOverlayText("TOP- " + FormatScore6(m_TopScore), kTitleFontSize, NesToScreen(132.0f, 188.0f), kTitleTextZ);
+}
+
+std::vector<GameManager::PauseAction> GameManager::PauseMenuActions() const {
+    std::vector<PauseAction> actions = {
+        PauseAction::Resume, PauseAction::Volume, PauseAction::Controls, PauseAction::DebugMode};
+    if (!m_PausedFromTitle) {
+        actions.push_back(PauseAction::BackToTitle); // 標題畫面無需「回到主選單」
+    }
+    actions.push_back(PauseAction::Quit);
+    return actions;
+}
+
+std::string GameManager::PauseActionLabel(PauseAction action) const {
+    switch (action) {
+        case PauseAction::Resume:      return "CONTINUE";
+        case PauseAction::Volume:      return "VOLUME ( " + std::to_string(m_Audio.GetVolumePercent() / 10) + " )";
+        case PauseAction::Controls:    return "CONTROLS";
+        case PauseAction::DebugMode:   return std::string("DEBUG MODE  ") + (m_DebugMode ? "ON" : "OFF");
+        case PauseAction::BackToTitle: return "BACK TO MENU";
+        case PauseAction::Quit:        return "QUIT GAME";
+    }
+    return "";
+}
+
+bool GameManager::UpdatePauseMenu() {
+    if (m_Paused) {
+        // ── 二級「按鍵說明」畫面：ESC 返回主選單，其餘只渲染 ──
+        if (m_PauseScreen == PauseScreen::Controls) {
+            if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
+                m_PauseScreen = PauseScreen::Main;
+                RebuildPauseOverlay();
+            }
+            m_Renderer.Update();
+            return true;
+        }
+
+        // ── 主選單 ──
+        // ESC：直接恢復遊戲
+        if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
+            ResumePause();
+            return true;
+        }
+
+        const auto actions = PauseMenuActions();
+        const int count = static_cast<int>(actions.size());
+
+        // 上/下方向鍵（含 W/S）移動游標，環繞
+        const bool moveUp = Util::Input::IsKeyDown(Util::Keycode::UP) ||
+                            Util::Input::IsKeyDown(Util::Keycode::W);
+        const bool moveDown = Util::Input::IsKeyDown(Util::Keycode::DOWN) ||
+                              Util::Input::IsKeyDown(Util::Keycode::S);
+        if (moveUp || moveDown) {
+            const int delta = moveDown ? 1 : -1;
+            m_PauseSelectionIndex = (m_PauseSelectionIndex + delta + count) % count;
+            RebuildPauseOverlay();
+        }
+
+        const PauseAction current = actions[m_PauseSelectionIndex];
+
+        // 左/右方向鍵（含 A/D）：在「音量」列調整音量，或在「DEBUG MODE」列切換開關
+        const bool leftPressed = Util::Input::IsKeyDown(Util::Keycode::LEFT) ||
+                                 Util::Input::IsKeyDown(Util::Keycode::A);
+        const bool rightPressed = Util::Input::IsKeyDown(Util::Keycode::RIGHT) ||
+                                  Util::Input::IsKeyDown(Util::Keycode::D);
+        if (current == PauseAction::Volume && (leftPressed || rightPressed)) {
+            m_Audio.SetVolumePercent(m_Audio.GetVolumePercent() + (rightPressed ? 10 : -10));
+            RebuildPauseOverlay();
+        } else if (current == PauseAction::DebugMode && (leftPressed || rightPressed)) {
+            SetDebugMode(!m_DebugMode);
+            RebuildPauseOverlay();
+        }
+
+        // Enter / Space：確認選中項
+        if (Util::Input::IsKeyDown(Util::Keycode::RETURN) ||
+            Util::Input::IsKeyDown(Util::Keycode::SPACE)) {
+            switch (current) {
+                case PauseAction::Resume:
+                    ResumePause();
+                    break;
+                case PauseAction::Volume:
+                    break; // 用左右鍵調整
+                case PauseAction::Controls:
+                    m_PauseScreen = PauseScreen::Controls;
+                    RebuildPauseOverlay();
+                    break;
+                case PauseAction::DebugMode:
+                    SetDebugMode(!m_DebugMode); // Enter 也可切換
+                    RebuildPauseOverlay();
+                    break;
+                case PauseAction::BackToTitle:
+                    ClearOverlayObjects();
+                    m_Paused = false;
+                    EnterTitleScreen(); // 內含 ResetBGMState 與完整重置
+                    break;
+                case PauseAction::Quit:
+                    m_QuitRequested = true;
+                    LOG_INFO("Quit requested from pause menu.");
+                    break;
+            }
+            return true;
+        }
+
+        m_Renderer.Update();
+        return true;
+    }
+
+    // 未暫停時按 ESC：開啟暫停選單（本幀直接渲染後返回，不更新世界）
+    if (Util::Input::IsKeyDown(Util::Keycode::ESCAPE)) {
+        EnterPause();
+        m_Renderer.Update();
+        return true;
+    }
+    return false;
+}
+
+void GameManager::SetDebugMode(bool enabled) {
+    m_DebugMode = enabled;
+    m_Player.SetDebugEnabled(enabled); // 同步 Player 端的 4~7 變身作弊鍵
+    LOG_INFO("Debug mode {}.", enabled ? "enabled" : "disabled");
 }
 
 void GameManager::EnterPause() {
     m_Paused = true;
+    m_PausedFromTitle = (m_FlowState == FlowState::Title);
+    m_PauseScreen = PauseScreen::Main;
     m_PauseSelectionIndex = 0;
     m_Audio.PauseBGM();
     m_Audio.PlaySFX("pause");
@@ -1272,8 +1394,10 @@ void GameManager::EnterPause() {
     for (auto& p : m_ScorePopups) {
         if (p.obj) p.obj->SetVisible(false);
     }
-    BuildPauseOverlay();
-    LOG_INFO("Game paused.");
+    // RebuildPauseOverlay 會先 ClearOverlayObjects（清掉標題畫面既有的 logo / 選單），
+    // 再建立暫停選單，避免兩層 overlay 疊在一起。
+    RebuildPauseOverlay();
+    LOG_INFO("Game paused. fromTitle={}", m_PausedFromTitle);
 }
 
 void GameManager::ResumePause() {
@@ -1284,47 +1408,99 @@ void GameManager::ResumePause() {
         if (p.obj) p.obj->SetVisible(true);
     }
     m_Audio.ResumeBGM();
+    // 若是在標題畫面暫停，恢復時要把標題的 logo 與選單重建回來
+    if (m_PausedFromTitle) {
+        BuildTitleOverlay();
+    }
     LOG_INFO("Game resumed.");
 }
 
 void GameManager::BuildPauseOverlay() {
-    constexpr int kPauseFontSize = 24; // NES 8px 字 × GAME_SCALE(3)
+    constexpr int kPauseFontSize = 24;
     constexpr float kPauseBackdropZ = 15.0f;
+    const std::string fontPath = MakeAssetPath("font/Super Mario Bros. NES.ttf");
 
-    // 半透明黑底（沿用串場黑圖），讓選單在遊戲畫面上清楚可讀
+    // 半透明黑底（沿用串場黑圖），讓選單在畫面上清楚可讀
     const auto context = Core::Context::GetInstance();
     const float windowW = static_cast<float>(context->GetWindowWidth());
     const float windowH = static_cast<float>(context->GetWindowHeight());
     AddOverlayImage("ui/title/black.png", {0.0f, 0.0f}, {windowW, windowH}, kPauseBackdropZ);
 
     // 標題 PAUSED（水平置中）
-    AddOverlayText("PAUSED", kPauseFontSize, NesToScreen(128.0f, 92.0f), kTitleTextZ);
+    AddOverlayText("PAUSED", fontPath, kPauseFontSize, NesToScreen(128.0f, 80.0f), kTitleTextZ);
 
-    // 三個選項：文字物件是「中心錨點」，寬度各異。
-    // 文字物件是「中心錨點」：每行各自水平置中（中心 x=0），游標跟著選中行的左緣外側走。
-    const std::string fontPath = MakeAssetPath("font/Super Mario Bros. NES.ttf");
-    const std::array<const char*, 3> labels = {"CONTINUE", "BACK TO MENU", "QUIT GAME"};
-    const std::array<float, 3> rowNesY = {120.0f, 140.0f, 160.0f};
+    // 選項：以「動作清單」決定數量與文字（標題畫面少一項 BACK TO MENU）。
+    // 文字物件是中心錨點，每行各自水平置中；游標跟著選中行左緣外側走。
+    const auto actions = PauseMenuActions();
+    const std::size_t n = actions.size();
+    constexpr float kRowStep = 18.0f; // NES px
+    const float firstY = 140.0f - kRowStep * static_cast<float>(n - 1) * 0.5f; // 以 y=140 為中心垂直置中
 
-    std::array<std::shared_ptr<Util::Text>, 3> texts;
-    for (std::size_t i = 0; i < labels.size(); ++i) {
+    std::vector<std::shared_ptr<Util::Text>> texts(n);
+    for (std::size_t i = 0; i < n; ++i) {
         texts[i] = std::make_shared<Util::Text>(
-            fontPath, kPauseFontSize, labels[i], Util::Color(255, 255, 255));
-        const float centerY = NesToScreen(0.0f, rowNesY[i]).y;
+            fontPath, kPauseFontSize, PauseActionLabel(actions[i]), Util::Color(255, 255, 255));
+        const float centerY = NesToScreen(0.0f, firstY + kRowStep * static_cast<float>(i)).y;
         auto obj = std::make_shared<Util::GameObject>(texts[i], kTitleTextZ);
-        obj->m_Transform.translation = {0.0f, centerY}; // 每行各自水平置中
+        obj->m_Transform.translation = {0.0f, centerY};
         obj->SetVisible(true);
         m_OverlayObjects.push_back(obj);
         m_Renderer.AddChild(obj);
     }
 
-    // 游標：跟著「選中行」的左緣外側走（各行寬度不同），垂直對齊該行
-    constexpr float kCursorGap = 14.0f;                       // 游標右緣與文字左緣的間距（screen px）
-    const float cursorHalfW = 8.0f * GAME_SCALE * 0.5f;       // cursor 圖 8px × GAME_SCALE
-    const float selectedHalfW = texts[m_PauseSelectionIndex]->GetSize().x * 0.5f;
+    // 游標：跟著「選中行」的左緣外側走，垂直對齊該行
+    constexpr float kCursorGap = 14.0f;
+    const float cursorHalfW = 8.0f * GAME_SCALE * 0.5f;
+    const int sel = std::clamp(m_PauseSelectionIndex, 0, static_cast<int>(n) - 1);
+    const float selectedHalfW = texts[sel]->GetSize().x * 0.5f;
     const float cursorX = -selectedHalfW - kCursorGap - cursorHalfW;
-    const float cursorY = NesToScreen(0.0f, rowNesY[m_PauseSelectionIndex]).y;
+    const float cursorY = NesToScreen(0.0f, firstY + kRowStep * static_cast<float>(sel)).y;
     AddOverlayImage("ui/title/cursor.png", {cursorX, cursorY}, {GAME_SCALE, GAME_SCALE}, kTitleTextZ);
+}
+
+void GameManager::BuildControlsOverlay() {
+    constexpr int kHeaderFontSize = 24;
+    constexpr int kLineFontSize = 18;
+    constexpr float kPauseBackdropZ = 15.0f;
+
+    const auto context = Core::Context::GetInstance();
+    const float windowW = static_cast<float>(context->GetWindowWidth());
+    const float windowH = static_cast<float>(context->GetWindowHeight());
+    AddOverlayImage("ui/title/black.png", {0.0f, 0.0f}, {windowW, windowH}, kPauseBackdropZ);
+
+    // 標題
+    AddOverlayText("CONTROLS", kHeaderFontSize, NesToScreen(128.0f, 40.0f), kTitleTextZ);
+
+    // 每行「KEY - ACTION」皆水平置中。僅使用字型確定支援的字元（A-Z 0-9 空白 dash 括號）。
+    // CHEATS 標題：Debug mode 關閉時加上「( DEBUG OFF )」提示。
+    const std::string cheatsHeader = m_DebugMode ? "CHEATS" : "CHEATS ( DEBUG OFF )";
+    struct Line { std::string text; float y; };
+    const std::array<Line, 9> lines = {{
+        {"BASIC",                           64.0f},
+        {"MOVE - ARROWS OR A D",            82.0f},
+        {"JUMP - SPACE UP OR W",            98.0f},
+        {"RUN AND FIRE - Z",               114.0f},
+        {"CROUCH - DOWN OR S",             130.0f},
+        {cheatsHeader,                      156.0f},
+        {"1 2 3 - WARP TO 1-1 1-2 1-3",    174.0f},
+        {"4 5 6 7 - SMALL SUPER FIRE STAR", 190.0f},
+        {"8 - ADD 3 LIVES",                206.0f},
+    }};
+    for (const auto& line : lines) {
+        AddOverlayText(line.text, kLineFontSize, NesToScreen(128.0f, line.y), kTitleTextZ);
+    }
+
+    // 返回提示
+    AddOverlayText("ESC - BACK", kLineFontSize, NesToScreen(128.0f, 228.0f), kTitleTextZ);
+}
+
+void GameManager::RebuildPauseOverlay() {
+    ClearOverlayObjects();
+    if (m_PauseScreen == PauseScreen::Controls) {
+        BuildControlsOverlay();
+    } else {
+        BuildPauseOverlay();
+    }
 }
 
 void GameManager::BuildLevelIntroOverlay() {
@@ -1367,7 +1543,11 @@ void GameManager::BuildGameOverOverlay() {
 }
 
 void GameManager::AddOverlayText(const std::string& text, int fontSize, glm::vec2 position, float zIndex) {
-    const std::string fontPath = MakeAssetPath("font/Super Mario Bros. NES.ttf");
+    AddOverlayText(text, MakeAssetPath("font/Super Mario Bros. NES.ttf"), fontSize, position, zIndex);
+}
+
+void GameManager::AddOverlayText(const std::string& text, const std::string& fontPath,
+                                 int fontSize, glm::vec2 position, float zIndex) {
     const auto drawable = std::make_shared<Util::Text>(
         fontPath,
         fontSize,
@@ -1568,7 +1748,7 @@ void GameManager::ChangeLevel(const std::string& levelName, std::optional<glm::v
     // 場景切換（水管進入子關卡）後若瑪利歐仍在星星無敵狀態，
     // 恢復無敵 BGM —— 無論身處哪個場景，無敵期間都要播無敵音樂。
     if (m_Player.IsStarInvincible()) {
-        m_Audio.PlayEventBGM("starman");
+        m_Audio.PlayEventBGM(StarBGMName(m_Player.IsDebugStarInvincible()));
     }
 
     if (spawnOverride.has_value()) {
@@ -1911,10 +2091,15 @@ void GameManager::CheckBlockCollision(Player& player) {
     // 頂點附近（|vy|→0）只算物理接觸、不觸發 OnHit；仍有明顯上衝速度才視為蓄意撞磚。
     // 不能用「穿透深度」判定：單幀位移上限只有 ~251/60 ≈ 4.2px，比深度門檻還小，
     // 任何頂磚都會被當成擦頂 → OnHit 永遠不觸發。改用上升速度才可靠。
-    // 110px/s：配合跳躍初速 255，把擊碎上限卡在第 6 格。
+    // 110px/s：配合跳躍初速 255，把大馬利歐的擊碎上限卡在第 6 格。
     // 大馬利歐站地滿跳撞各格的上升速度：第6格≈148(碎)、第7格≈86(不碎)，門檻取中間值。
     // 頂點附近速度趨近 0 → 擦到不觸發（想跳上去站平台、不撞破那層磚）。
-    constexpr float MIN_BONK_TRIGGER_SPEED = 110.0f;
+    //
+    // 小馬利歐矮 16px、跳躍初速相同，碰到同一排磚時頭要多飛 16px，撞擊瞬間的
+    // 上升速度因重力多衰減而常落在 110 以下 → 會被誤判成擦頂，導致「小馬利歐
+    // 頂不死磚上的敵人」。因此小馬利歐用較低門檻補回這段高度差造成的速度損失。
+    const float MIN_BONK_TRIGGER_SPEED =
+        (player.GetForm() == Player::Form::SMALL) ? 70.0f : 110.0f;
 
     // ── Pass 1：找到唯一的 hitFromBelow 候選 ─────────────────────────────
     // 選擇標準：水平重疊量最大的方塊 = 馬力歐「最正對」的那格。
@@ -2466,7 +2651,7 @@ void GameManager::CheckItemCollision() {
                         SpawnScorePopup(1000, iPos);
                         m_Audio.PlaySFX("powerup");  // 吃到道具音效
                         // 吃星後切換為 Starman BGM（星星時間結束後恢復，在 UpdatePlaying 偵測）
-                        m_Audio.PlayEventBGM("starman");
+                        m_Audio.PlayEventBGM(kStarmanBGMName);
                     }
                 }
             }
@@ -2637,18 +2822,8 @@ void GameManager::CheckFireballCollision() {
 
             if (CollisionUtils::CheckAABB(fPos, fSize, enemy->GetPosition(), enemy->GetSize())) {
                 const glm::vec2 ePos = enemy->GetPosition();
-                auto* paratroopa = dynamic_cast<KoopaParatroopa*>(enemy.get());
-                if (paratroopa && paratroopa->HasWings()) {
-                    paratroopa->Stomp();
-                    m_Session.AddScore(kParatroopaDemoteScore);
-                    SpawnScorePopup(kParatroopaDemoteScore, ePos);
-                    fireball->Explode();
-                    LOG_INFO("Fireball demoted KoopaParatroopa: score={} fireballPos={} enemyPos={}",
-                             kParatroopaDemoteScore, fPos, ePos);
-                    break;
-                }
-
-                // Koopa 系列：觸發翻轉死亡，得 200 分；其他敵人（Goomba 等）得 100 分
+                // Koopa 系列（含飛行龜）：火球直接觸發翻轉死亡，得 200 分；其他敵人（Goomba 等）得 100 分
+                // 飛行龜的 Die() 會自動掉翅膀再翻肚（見 KoopaParatroopa::Die）。
                 auto* koopa = dynamic_cast<Koopa*>(enemy.get());
                 const bool isKoopa = (koopa != nullptr);
                 const bool flipLeft = fVel.x < 0.0f; // 火球飛行方向決定翻轉朝向

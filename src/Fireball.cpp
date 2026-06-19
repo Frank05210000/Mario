@@ -4,7 +4,7 @@
 
 Fireball::Fireball(glm::vec2 pos, bool movingLeft) {
     m_Position = pos;
-    m_Size = {16.0f, 16.0f}; // 假設火球大小大約為 16x16
+    m_Size = {8.0f, 8.0f};
     
     std::vector<std::string> animPaths = {
         MakeAssetPath("item/effect/fireball/small/fireball-1.png"),
@@ -27,7 +27,7 @@ Fireball::Fireball(glm::vec2 pos, bool movingLeft) {
 
     const float speedX = 320.0f;
     m_Gravity = 1400.0f;
-    m_BounceForce = 170.0f;
+    m_BounceForce = 140.0f;
     m_Velocity.x = movingLeft ? -speedX : speedX;
     m_Velocity.y = 0.0f;
 }

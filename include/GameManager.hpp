@@ -99,13 +99,24 @@ private:
     void EnterLevelClearPause();        // 進入結算後停頓狀態
     void AdvanceToNextLevel();          // 推進到下一關（或回標題）
     void BuildTitleOverlay();
-    void BuildPauseOverlay();   // 暫停選單 overlay（CONTINUE / BACK TO MENU / QUIT GAME）
-    void EnterPause();          // 進入暫停：暫停 BGM、播放音效、建立選單
-    void ResumePause();         // 離開暫停：清除選單、恢復 BGM
+    // ─── 暫停選單（可在標題與遊玩中觸發）──────────────────────────────
+    // 選單項目以「動作」表示；標題畫面時不顯示「回到主選單」。
+    enum class PauseAction { Resume, Volume, Controls, DebugMode, BackToTitle, Quit };
+    std::vector<PauseAction> PauseMenuActions() const;
+    std::string PauseActionLabel(PauseAction action) const;
+    bool UpdatePauseMenu();        // 統一處理暫停輸入；回傳 true 表示本幀由暫停接管（呼叫端應 return）
+    void BuildPauseOverlay();      // 暫停主選單 overlay
+    void BuildControlsOverlay();   // 暫停二級選單：按鍵說明
+    void RebuildPauseOverlay();    // 依目前的 m_PauseScreen 清除並重建對應 overlay
+    void EnterPause();             // 進入暫停：暫停 BGM、播放音效、建立選單
+    void ResumePause();            // 離開暫停：清除選單、恢復 BGM（標題則還原標題選單）
+    void SetDebugMode(bool enabled); // 設定 Debug mode 並同步給 Player（4~7 變身鍵）
     void BuildLevelIntroOverlay();
     void BuildTimeUpOverlay();
     void BuildGameOverOverlay();
     void AddOverlayText(const std::string& text, int fontSize, glm::vec2 position, float zIndex = 30.0f);
+    // 指定字型版本（可傳入不同字型路徑）
+    void AddOverlayText(const std::string& text, const std::string& fontPath, int fontSize, glm::vec2 position, float zIndex = 30.0f);
     void AddOverlayImage(const std::string& assetPath, glm::vec2 position, glm::vec2 scale, float zIndex = 30.0f);
     void ClearOverlayObjects();
     void ConfigurePlayer();
@@ -118,6 +129,7 @@ private:
     std::string CurrentPlayerWorldLabel() const;
     void SyncCurrentLevelFromSession();
     std::string CurrentPlayerIconPath() const;
+    void RefreshTopScoreFromSession();
     void UpdateTitle(float dt);
     void UpdateLevelIntro(float dt);
     void UpdateIntroCutscene(float dt);
@@ -206,6 +218,7 @@ private:
     float m_StateTimer = 0.0f;
     float m_LevelClearTransitionTimer = 0.0f;
     std::vector<std::shared_ptr<Util::GameObject>> m_OverlayObjects;
+    int m_TopScore = 0;                     // 本次程式執行期間保留的最高分
 
     bool  m_LevelCleared = false;          // 是否已觸碰旗杆（防止重複計分）
     bool  m_LevelClearCastleFlagSpawned = false; // 過關 BGM 播完後是否已生成城堡旗
@@ -215,12 +228,17 @@ private:
     float m_DeathSequenceTimer = 0.0f;     // 死亡 BGM / 死亡動畫流程同步計時
     bool  m_HurryUpTriggered = false;       // 剩餘時間低於 100 後只切換一次 hurry-up BGM
     bool  m_Paused = false;                // 暫停狀態（只在 Playing 下有效）
-    int   m_PauseSelectionIndex = 0;       // 暫停選單游標：0=繼續 1=回選單 2=離開
+    // 暫停選單目前顯示的畫面：主選單 or 二級「按鍵說明」
+    enum class PauseScreen { Main, Controls };
+    PauseScreen m_PauseScreen = PauseScreen::Main;
+    int   m_PauseSelectionIndex = 0;       // 主選單游標索引（對應 PauseMenuActions() 的順序）
+    bool  m_PausedFromTitle = false;       // 是否從標題畫面進入暫停（決定是否顯示「回到主選單」）
+    bool  m_DebugMode = true;              // Debug mode：開啟時 1~8 作弊功能鍵才有作用（預設開啟）
     bool  m_QuitRequested = false;         // 暫停選單選了「離開遊戲」（App 讀取後結束）
     // 受傷縮小變身動畫結束後需要啟動的傷害無敵計時（秒）；0 = 無待定
     float m_PendingDamageInvincibility = 0.0f;
     Player* m_LevelClearPlayer = &m_Player;
-    std::string m_SelectedInitialLevelName = "1-1_ground_1"; // 標題選關用（不影響遊戲中推進）
+    std::string m_SelectedInitialLevelName = "1-1_ground_1"; // 新遊戲的起始關卡，回標題時重設
     std::string m_SelectedWorldLabel = "1-1";
     int m_TitleSelectionIndex = 0; // 0 = 1 PLAYER GAME, 1 = 2 PLAYER GAME
     int m_SelectedPlayerCount = 1;

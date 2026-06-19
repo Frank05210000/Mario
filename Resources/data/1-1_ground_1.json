@@ -4,6 +4,12 @@
   "levelHeight": 240,
   "objects": [
     {
+      "type": "HiddenBlock",
+      "x": 1024.0,
+      "y": 128.0,
+      "itemType": "OneUp"
+    },
+    {
       "type": "MultiCoinBlock",
       "x": 1504.0,
       "y": 144.0,
@@ -231,6 +237,66 @@
       "y": 192.0,
       "width": 16.0,
       "height": 16.0
+    },
+    {
+      "type": "Wall",
+      "x": 2192.0,
+      "y": 160.0
+    },
+    {
+      "type": "Wall",
+      "x": 2176.0,
+      "y": 176.0
+    },
+    {
+      "type": "Wall",
+      "x": 2192.0,
+      "y": 176.0
+    },
+    {
+      "type": "Wall",
+      "x": 2160.0,
+      "y": 192.0
+    },
+    {
+      "type": "Wall",
+      "x": 2176.0,
+      "y": 192.0
+    },
+    {
+      "type": "Wall",
+      "x": 2192.0,
+      "y": 192.0
+    },
+    {
+      "type": "Wall",
+      "x": 2240.0,
+      "y": 160.0
+    },
+    {
+      "type": "Wall",
+      "x": 2240.0,
+      "y": 176.0
+    },
+    {
+      "type": "Wall",
+      "x": 2256.0,
+      "y": 176.0
+    },
+    {
+      "type": "Wall",
+      "x": 2240.0,
+      "y": 192.0
+    },
+    {
+      "type": "Wall",
+      "x": 2256.0,
+      "y": 192.0
+    },
+    {
+      "type": "Wall",
+      "x": 2272.0,
+      "y": 192.0
     },
     {
       "type": "Wall",
@@ -842,7 +908,7 @@
       "type": "Flag",
       "x": 3168.0,
       "y": 192.0,
-      "clearWalkTiles": 6.0,
+      "clearWalkTiles": 5.0,
       "castleFlagBaseTiles": 4.0
     }
   ],
