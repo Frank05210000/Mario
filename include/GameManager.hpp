@@ -243,7 +243,7 @@ private:
     int m_TitleSelectionIndex = 0; // 0 = 1 PLAYER GAME, 1 = 2 PLAYER GAME
     int m_SelectedPlayerCount = 1;
 
-    // ─── 關卡鏈（Batch A）─────────────────────────────────────────────────
+    // ─── 關卡鏈 ───────────────────────────────────────────────────────────
     // 每個元素：{levelName, worldLabel}
     // 最後一關過關後 AdvanceToNextLevel() 回標題
     struct LevelEntry { std::string levelName; std::string worldLabel; };

@@ -31,7 +31,7 @@
 #include "OneUpMushroomItem.hpp"
 #include "StarmanItem.hpp"
 
-// ─── 關卡鏈定義（Batch A）────────────────────────────────────────────────
+// ─── 關卡鏈定義 ───────────────────────────────────────────────────────────
 // 過關順序：1-1 → 1-2 → 1-3 → 回標題
 // 新增關卡只需在此陣列末尾追加元素
 const std::vector<GameManager::LevelEntry> GameManager::kLevelChain = {

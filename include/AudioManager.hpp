@@ -21,11 +21,11 @@
  *   overworld.mp3、underground.mp3、starman.mp3、
  *   overworld_hurry.mp3、underground_hurry.mp3、
  *   level_clear.mp3、death.mp3、game_over.mp3
- *   debug_starman_hurry_loop 例外對應 Resources/music/Bgm/16. Invincibility Theme (Hurry Up!)_loopVerison.mp3
+ *   debug_starman_hurry_loop.mp3
  *
  * SFX 檔名約定（放在 Resources/Asset/audio/sfx/）：
  *   jump_small.mp3、jump_super.mp3、stomp.mp3、coin.mp3、
- *   powerup.mp3、powerdown.mp3、powerup_appears.mp3、brick_break.mp3、bump.mp3、
+ *   powerup.mp3、powerup_appears.mp3、brick_break.mp3、bump.mp3、
  *   kick.mp3、fireball.mp3、pipe.mp3、1up.mp3、flagpole.mp3、
  *   countdown_tick.mp3
  */

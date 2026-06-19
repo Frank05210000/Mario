@@ -10,15 +10,11 @@ namespace {
 constexpr int kSfxChannelCount = 32;
 constexpr unsigned int kCoinSfxCooldownMs = 35;
 constexpr const char* kDebugStarBGMName = "debug_starman_hurry_loop";
-constexpr const char* kDebugStarBGMPath = "16. Invincibility Theme (Hurry Up!)_loopVerison.mp3";
 }
 
 // ─── 路徑組裝輔助 ────────────────────────────────────────────────────────────
 
 std::string AudioManager::MakeBGMPath(const std::string& name) {
-    if (name == kDebugStarBGMName) {
-        return (std::filesystem::path(RESOURCE_DIR) / "music" / "Bgm" / kDebugStarBGMPath).string();
-    }
     return MakeAssetPath("audio/bgm/" + name + ".mp3");
 }
 

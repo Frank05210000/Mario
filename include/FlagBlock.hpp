@@ -13,7 +13,7 @@
  * 計分邏輯：
  *   玩家碰到旗杆時，依接觸高度回傳不同分數（越高越多）。
  *
- * Batch A 新增：旗球下降動畫
+ * 旗球下降動畫
  *   觸碰旗杆後呼叫 StartDescent()，球從杆頂滑向杆底。
  *   TODO: 目前 Resources/Asset/item/flag/ 只有 ball.png，沒有旗幟 flag sprite。
  *         若後續取得 flag.png，可在此加入子 GameObject 同步下移。

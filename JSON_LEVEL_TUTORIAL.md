@@ -28,7 +28,7 @@ This means the object's top-left corner is 128 pixels from the left edge and
 
 ```json
 {
-  "backgroundImage": "level_image/1-1/ground.png",
+  "backgroundImage": "level_image/1-1/1-1_ground_1.png",
   "theme": "ground",
   "levelWidth": 640,
   "levelHeight": 240,
@@ -421,8 +421,8 @@ used across the top.
 
 ## Complete Example
 
-See `Resources/data/tutorial.json` for a small runnable example that includes every major
-object type supported by the current loader.
+See the playable files in `Resources/data/` for complete examples of the supported
+object types and level transitions.
 
 ## Loading Flow
 

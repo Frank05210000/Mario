@@ -8,5 +8,5 @@ Runtime data is centralized here.
 Level JSON `backgroundImage` values are relative to `Resources/Asset/`, for example:
 
 ```json
-"backgroundImage": "level_image/1-1/ground.png"
+"backgroundImage": "level_image/1-1/1-1_ground_1.png"
 ```

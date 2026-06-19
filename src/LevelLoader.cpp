@@ -31,7 +31,7 @@ LevelData LevelLoader::Load(const std::string& jsonPath) {
     LevelData data;
 
     // 2. 讀背景圖路徑
-    //    JSON 格式：{ "backgroundImage": "level_image/1-1/ground.png" }
+    //    JSON 格式：{ "backgroundImage": "level_image/1-1/1-1_ground_1.png" }
     //    路徑相對於 Resources/Asset/；舊的 "Asset/..." 前綴仍相容。
     std::string rawPath = j.value("backgroundImage", "");
     const std::string prefix = "Asset/";
