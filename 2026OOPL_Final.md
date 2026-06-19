@@ -32,7 +32,7 @@
   - 1P 使用 Mario；2P 採輪流遊玩，使用同一個玩家物件切換 Mario/Luigi 外觀，並分別保存 lives、score、coins、level、form 與 checkpoint。
 - **關卡目標**
   - 玩家從關卡起點往右前進，避開坑洞、敵人與障礙。
-  - 碰到終點旗杆後會依接觸高度計分，接著自動滑下旗杆、走進城堡、結算剩餘時間並進入下一關。
+  - 碰到終點旗桿後會依接觸高度計分，接著自動滑下旗桿、走進城堡、結算剩餘時間並進入下一關。
 - **敵人互動**
   - 踩踏 Goomba 會將它壓扁並消滅。
   - Koopa 被踩後會縮成龜殼；靜止龜殼可被踢出並擊倒其他敵人，且支援連續擊殺計分。
@@ -83,9 +83,9 @@
 | 蘑菇變身 | <img src="Screenshot/mushroom_transform.jpg" width="360"> | Small Mario 取得蘑菇後播放形態切換動畫並變成 Super Mario。 |
 | 水管傳送 | <img src="Screenshot/pipe_transport.jpg" width="360"> | 玩家依水管開口方向進入水管，再載入地下子關卡與指定出生點。 |
 | Fire Mario | <img src="Screenshot/fire_mario.jpg" width="360"> | Fire Mario 按 `Z` 發射火球；火球受重力影響、落地反彈並可消滅敵人。 |
-| 頂磚攻擊 | <img src="Screenshot/block_bump_kill.jpg" width="360"> | Super/Fire Mario 可打碎磚塊；頂起敵人腳下的反應方塊也能將敵人擊倒。 |
+| 頂磚攻擊 | <img src="Screenshot/block_bump_kill.jpg" width="360"> | Super/Fire Mario 可打碎磚塊；從下方頂起敵人腳下的方塊，也能將敵人擊倒。 |
 | 星星無敵 | <img src="Screenshot/star_invincible.jpg" width="360"> | 無敵期間輪替角色配色、播放專用音樂，碰到敵人時直接擊倒並計算連殺分數。 |
-| 終點旗杆 | <img src="Screenshot/flagpole.jpg" width="360"> | 依碰旗高度給分，接著播放降旗、滑杆、進城及時間結算流程。 |
+| 終點旗桿 | <img src="Screenshot/flagpole.jpg" width="360"> | 依碰觸旗桿的高度給分，接著播放降旗、滑下旗桿、進城及時間結算流程。 |
 
 ## 程式設計
 
@@ -211,7 +211,7 @@ classDiagram
 程式只在需要「子類別特有功能」時使用安全的 RTTI 向下轉型 `dynamic_cast`。例如：
 
 - 將 `Block*` 轉為 `PipeBlock*`，讀取目的關卡與水管開口。
-- 將 `Block*` 轉為 `FlagBlock*`，依玩家碰觸高度計算旗杆分數。
+- 將 `Block*` 轉為 `FlagBlock*`，依玩家碰觸高度計算旗桿分數。
 - 將 `Enemy*` 轉為 `Koopa*`，判斷龜殼狀態、踢殼及連殺計數。
 - 將 `Block*` 轉為 `MovingPlatformBlock*`，取得該幀位移量並帶著玩家移動。
 
