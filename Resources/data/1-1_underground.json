@@ -359,7 +359,7 @@
       "y": 176.0,
       "segments": 2,
       "opening": "up",
-      "targetLevel": "1-1",
+      "targetLevel": "1-1_ground_1",
       "targetSpawn": {
         "x": 2608.0,
         "y": 144.0

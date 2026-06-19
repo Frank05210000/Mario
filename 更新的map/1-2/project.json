@@ -2530,9 +2530,9 @@
           "",
           "",
           {
-            "type": "Brick",
-            "itemType": "Coin",
-            "_editorOrder": 694
+            "type": "MultiCoinBlock",
+            "coinCount": 10,
+            "_editorOrder": 931
           },
           "",
           "",
@@ -3498,11 +3498,7 @@
           "",
           "",
           "",
-          {
-            "type": "EnemySpawn",
-            "enemyType": "Goomba",
-            "_editorOrder": 736
-          },
+          "",
           "",
           {
             "type": "Wall",
@@ -3783,8 +3779,8 @@
           "",
           "",
           {
-            "type": "PlayerSpawn",
-            "_editorOrder": 791
+            "type": "Checkpoint",
+            "_editorOrder": 932
           },
           "",
           "",
@@ -3797,7 +3793,11 @@
           "",
           "",
           "",
-          "",
+          {
+            "type": "EnemySpawn",
+            "enemyType": "Goomba",
+            "_editorOrder": 930
+          },
           {
             "type": "EnemySpawn",
             "enemyType": "Goomba",
@@ -3940,7 +3940,10 @@
             "enemyType": "Goomba",
             "_editorOrder": 746
           },
-          "",
+          {
+            "type": "Checkpoint",
+            "_editorOrder": 929
+          },
           {
             "type": "EnemySpawn",
             "enemyType": "Goomba",
@@ -5813,14 +5816,38 @@
           "",
           "",
           "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
+          {
+            "type": "Coin",
+            "_editorOrder": 147
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 148
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 149
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 150
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 151
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 152
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 153
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 154
+          },
           "",
           {
             "type": "Brick",
@@ -5883,9 +5910,9 @@
             "_editorOrder": 10
           },
           {
-            "type": "UsedOnHitBrickBlock",
-            "itemType": "Coin",
-            "_editorOrder": 1
+            "type": "MultiCoinBlock",
+            "coinCount": 10,
+            "_editorOrder": 137
           },
           {
             "type": "Brick",
@@ -5978,15 +6005,42 @@
           },
           "",
           "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
+          {
+            "type": "Coin",
+            "_editorOrder": 138
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 139
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 140
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 141
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 142
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 143
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 144
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 145
+          },
+          {
+            "type": "Coin",
+            "_editorOrder": 146
+          },
           "",
           "",
           "",

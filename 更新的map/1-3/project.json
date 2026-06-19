@@ -1771,10 +1771,6 @@
           "",
           "",
           "",
-          "",
-          "",
-          "",
-          "",
           {
             "type": "MovingPlatform",
             "segments": 3,
@@ -1782,9 +1778,13 @@
             "moveMode": "oscillate",
             "moveTiles": 6,
             "moveSpeed": 35.0,
-            "startDirection": "left",
-            "_editorOrder": 167
+            "startDirection": "right",
+            "_editorOrder": 198
           },
+          "",
+          "",
+          "",
+          "",
           "",
           "",
           "",
@@ -2337,7 +2337,10 @@
           "",
           "",
           "",
-          "",
+          {
+            "type": "Checkpoint",
+            "_editorOrder": 197
+          },
           "",
           "",
           "",

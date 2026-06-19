@@ -907,46 +907,39 @@
       "itemType": "None"
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2720.0,
-      "y": 32.0,
-      "itemType": "None"
+      "y": 32.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2736.0,
-      "y": 32.0,
-      "itemType": "None"
+      "y": 32.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2752.0,
-      "y": 32.0,
-      "itemType": "None"
+      "y": 32.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2768.0,
-      "y": 32.0,
-      "itemType": "None"
+      "y": 32.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2784.0,
-      "y": 32.0,
-      "itemType": "None"
+      "y": 32.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2800.0,
-      "y": 32.0,
-      "itemType": "None"
+      "y": 32.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2816.0,
-      "y": 32.0,
-      "itemType": "None"
+      "y": 32.0
     },
     {
       "type": "Brick",
@@ -1051,46 +1044,39 @@
       "itemType": "None"
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2720.0,
-      "y": 48.0,
-      "itemType": "None"
+      "y": 48.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2736.0,
-      "y": 48.0,
-      "itemType": "None"
+      "y": 48.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2752.0,
-      "y": 48.0,
-      "itemType": "None"
+      "y": 48.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2768.0,
-      "y": 48.0,
-      "itemType": "None"
+      "y": 48.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2784.0,
-      "y": 48.0,
-      "itemType": "None"
+      "y": 48.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2800.0,
-      "y": 48.0,
-      "itemType": "None"
+      "y": 48.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2816.0,
-      "y": 48.0,
-      "itemType": "None"
+      "y": 48.0
     },
     {
       "type": "Brick",
@@ -1201,46 +1187,39 @@
       "itemType": "None"
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2720.0,
-      "y": 64.0,
-      "itemType": "None"
+      "y": 64.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2736.0,
-      "y": 64.0,
-      "itemType": "None"
+      "y": 64.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2752.0,
-      "y": 64.0,
-      "itemType": "None"
+      "y": 64.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2768.0,
-      "y": 64.0,
-      "itemType": "None"
+      "y": 64.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2784.0,
-      "y": 64.0,
-      "itemType": "None"
+      "y": 64.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2800.0,
-      "y": 64.0,
-      "itemType": "None"
+      "y": 64.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2816.0,
-      "y": 64.0,
-      "itemType": "None"
+      "y": 64.0
     },
     {
       "type": "Brick",
@@ -1341,46 +1320,39 @@
       "y": 80.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2720.0,
-      "y": 80.0,
-      "itemType": "None"
+      "y": 80.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2736.0,
-      "y": 80.0,
-      "itemType": "None"
+      "y": 80.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2752.0,
-      "y": 80.0,
-      "itemType": "None"
+      "y": 80.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2768.0,
-      "y": 80.0,
-      "itemType": "None"
+      "y": 80.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2784.0,
-      "y": 80.0,
-      "itemType": "None"
+      "y": 80.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2800.0,
-      "y": 80.0,
-      "itemType": "None"
+      "y": 80.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2816.0,
-      "y": 80.0,
-      "itemType": "None"
+      "y": 80.0
     },
     {
       "type": "Brick",
@@ -1433,56 +1405,49 @@
     {
       "type": "MovingPlatform",
       "x": 2480.0,
-      "y": 256.0,
+      "y": 208.0,
       "moveAxis": "vertical",
       "moveMode": "verticalWrap",
       "startDirection": "up",
-      "moveTiles": 20,
-      "startOffsetTiles": 10,
+      "moveTiles": 14,
       "moveSpeed": 35.0,
-      "segments": 3
+      "segments": 3,
+      "startOffsetTiles": 7
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2720.0,
-      "y": 96.0,
-      "itemType": "None"
+      "y": 96.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2736.0,
-      "y": 96.0,
-      "itemType": "None"
+      "y": 96.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2752.0,
-      "y": 96.0,
-      "itemType": "None"
+      "y": 96.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2768.0,
-      "y": 96.0,
-      "itemType": "None"
+      "y": 96.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2784.0,
-      "y": 96.0,
-      "itemType": "None"
+      "y": 96.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2800.0,
-      "y": 96.0,
-      "itemType": "None"
+      "y": 96.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2816.0,
-      "y": 96.0,
-      "itemType": "None"
+      "y": 96.0
     },
     {
       "type": "Brick",
@@ -1607,55 +1572,49 @@
     {
       "type": "MovingPlatform",
       "x": 2240.0,
-      "y": 112.0,
+      "y": 16.0,
       "moveAxis": "vertical",
       "moveMode": "verticalWrap",
       "startDirection": "down",
-      "moveTiles": 4,
+      "moveTiles": 14,
       "moveSpeed": 35.0,
-      "segments": 3
+      "segments": 3,
+      "startOffsetTiles": 6
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2720.0,
-      "y": 112.0,
-      "itemType": "None"
+      "y": 112.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2736.0,
-      "y": 112.0,
-      "itemType": "None"
+      "y": 112.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2752.0,
-      "y": 112.0,
-      "itemType": "None"
+      "y": 112.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2768.0,
-      "y": 112.0,
-      "itemType": "None"
+      "y": 112.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2784.0,
-      "y": 112.0,
-      "itemType": "None"
+      "y": 112.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2800.0,
-      "y": 112.0,
-      "itemType": "None"
+      "y": 112.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2816.0,
-      "y": 112.0,
-      "itemType": "None"
+      "y": 112.0
     },
     {
       "type": "Brick",
@@ -1664,10 +1623,10 @@
       "itemType": "None"
     },
     {
-      "type": "Brick",
+      "type": "MultiCoinBlock",
       "x": 464.0,
       "y": 128.0,
-      "itemType": "Coin"
+      "coinCount": 10
     },
     {
       "type": "Brick",
@@ -1875,46 +1834,39 @@
       "segments": 2
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2720.0,
-      "y": 128.0,
-      "itemType": "None"
+      "y": 128.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2736.0,
-      "y": 128.0,
-      "itemType": "None"
+      "y": 128.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2752.0,
-      "y": 128.0,
-      "itemType": "None"
+      "y": 128.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2768.0,
-      "y": 128.0,
-      "itemType": "None"
+      "y": 128.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2784.0,
-      "y": 128.0,
-      "itemType": "None"
+      "y": 128.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2800.0,
-      "y": 128.0,
-      "itemType": "None"
+      "y": 128.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2816.0,
-      "y": 128.0,
-      "itemType": "None"
+      "y": 128.0
     },
     {
       "type": "Brick",
@@ -2113,12 +2065,11 @@
       "itemType": "None"
     },
     {
-      "type": "EnterablePipe",
+      "type": "PipeCollision",
       "x": 1744.0,
       "y": 144.0,
-      "opening": "up",
-      "segments": 2,
-      "targetLevel": "1-2_underground_2"
+      "width": 32.0,
+      "height": 32.0
     },
     {
       "type": "EnemySpawn",
@@ -2143,46 +2094,39 @@
       "y": 144.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2720.0,
-      "y": 144.0,
-      "itemType": "None"
+      "y": 144.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2736.0,
-      "y": 144.0,
-      "itemType": "None"
+      "y": 144.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2752.0,
-      "y": 144.0,
-      "itemType": "None"
+      "y": 144.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2768.0,
-      "y": 144.0,
-      "itemType": "None"
+      "y": 144.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2784.0,
-      "y": 144.0,
-      "itemType": "None"
+      "y": 144.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2800.0,
-      "y": 144.0,
-      "itemType": "None"
+      "y": 144.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2816.0,
-      "y": 144.0,
-      "itemType": "None"
+      "y": 144.0
     },
     {
       "type": "Brick",
@@ -2269,106 +2213,89 @@
       "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2560.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2576.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2592.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2608.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2624.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2640.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2656.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2672.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2688.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2704.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2720.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2736.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2752.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2768.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2784.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2800.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2816.0,
-      "y": 160.0,
-      "itemType": "None"
+      "y": 160.0
     },
     {
       "type": "Brick",
@@ -2475,106 +2402,89 @@
       "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2560.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2576.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2592.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2608.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2624.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2640.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2656.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2672.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2688.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2704.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2720.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2736.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2752.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2768.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2784.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2800.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2816.0,
-      "y": 176.0,
-      "itemType": "None"
+      "y": 176.0
     },
     {
       "type": "Brick",
@@ -2736,132 +2646,126 @@
       "variant": "red"
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2560.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2576.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2592.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2608.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2624.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2640.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2656.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2672.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2688.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2704.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2720.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2736.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2752.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2768.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2784.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2800.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
-      "type": "Brick",
+      "type": "Wall",
       "x": 2816.0,
-      "y": 192.0,
-      "itemType": "None"
+      "y": 192.0
     },
     {
       "type": "MovingPlatform",
       "x": 2480.0,
-      "y": 256.0,
+      "y": 208.0,
       "moveAxis": "vertical",
       "moveMode": "verticalWrap",
       "startDirection": "up",
-      "moveTiles": 20,
+      "moveTiles": 14,
       "moveSpeed": 35.0,
       "segments": 3
     },
     {
       "type": "MovingPlatform",
       "x": 2240.0,
-      "y": 224.0,
+      "y": 16.0,
       "moveAxis": "vertical",
       "moveMode": "verticalWrap",
       "startDirection": "down",
-      "moveTiles": 4,
+      "moveTiles": 14,
       "moveSpeed": 35.0,
-      "segments": 3
+      "segments": 3,
+      "startOffsetTiles": 13
     }
   ],
   "playerSpawn": {
     "x": 48.0,
     "y": 192.0
-  }
+  },
+  "checkpoints": [
+    {
+      "x": 48.0,
+      "y": 192.0
+    },
+    {
+      "x": 1584.0,
+      "y": 192.0
+    }
+  ]
 }

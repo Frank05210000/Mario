@@ -303,13 +303,12 @@
     },
     {
       "type": "MovingPlatform",
-      "x": 1504.0,
+      "x": 1440.0,
       "y": 144.0,
       "moveAxis": "horizontal",
       "moveMode": "oscillate",
-      "startDirection": "left",
+      "startDirection": "right",
       "moveTiles": 6,
-      "startOffsetTiles": 6,
       "moveSpeed": 35.0,
       "segments": 3
     },
@@ -500,7 +499,7 @@
       "type": "Flag",
       "x": 2432.0,
       "y": 192.0,
-      "clearWalkTiles": 7.0,
+      "clearWalkTiles": 5.0,
       "castleFlagBaseTiles": 10.0
     },
     {
@@ -531,5 +530,11 @@
   "playerSpawn": {
     "x": 32.0,
     "y": 192.0
-  }
+  },
+  "checkpoints": [
+    {
+      "x": 1088.0,
+      "y": 192.0
+    }
+  ]
 }

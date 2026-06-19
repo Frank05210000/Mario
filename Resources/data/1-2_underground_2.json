@@ -11,6 +11,444 @@
       "height": 32.0
     },
     {
+      "type": "PipeCollision",
+      "x": 240.0,
+      "y": 32.0,
+      "width": 32.0,
+      "height": 176.0
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 48.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 64.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 80.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 96.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 112.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 128.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 144.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 160.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 176.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 192.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 208.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 224.0,
+      "y": 32.0
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 48.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 64.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 80.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 96.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 112.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 128.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 144.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 160.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 176.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 192.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 208.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 224.0,
+      "y": 48.0
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 48.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 64.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 80.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 96.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 112.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 128.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 144.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 160.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 176.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 192.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 208.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 224.0,
+      "y": 64.0
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 48.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 64.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 80.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 96.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 112.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 128.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 144.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 160.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 176.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 192.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 208.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 224.0,
+      "y": 80.0
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 96.0
+    },
+    {
+      "type": "Brick",
+      "x": 208.0,
+      "y": 96.0
+    },
+    {
+      "type": "Brick",
+      "x": 224.0,
+      "y": 96.0
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 112.0
+    },
+    {
+      "type": "Brick",
+      "x": 208.0,
+      "y": 112.0
+    },
+    {
+      "type": "Brick",
+      "x": 224.0,
+      "y": 112.0
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 128.0
+    },
+    {
+      "type": "Coin",
+      "x": 64.0,
+      "y": 128.0
+    },
+    {
+      "type": "Coin",
+      "x": 80.0,
+      "y": 128.0
+    },
+    {
+      "type": "Coin",
+      "x": 96.0,
+      "y": 128.0
+    },
+    {
+      "type": "Coin",
+      "x": 112.0,
+      "y": 128.0
+    },
+    {
+      "type": "Coin",
+      "x": 128.0,
+      "y": 128.0
+    },
+    {
+      "type": "Coin",
+      "x": 144.0,
+      "y": 128.0
+    },
+    {
+      "type": "Coin",
+      "x": 160.0,
+      "y": 128.0
+    },
+    {
+      "type": "Coin",
+      "x": 176.0,
+      "y": 128.0
+    },
+    {
+      "type": "Brick",
+      "x": 208.0,
+      "y": 128.0
+    },
+    {
+      "type": "Brick",
+      "x": 224.0,
+      "y": 128.0
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 144.0
+    },
+    {
+      "type": "Brick",
+      "x": 48.0,
+      "y": 144.0
+    },
+    {
+      "type": "Brick",
+      "x": 64.0,
+      "y": 144.0
+    },
+    {
+      "type": "Brick",
+      "x": 80.0,
+      "y": 144.0
+    },
+    {
+      "type": "Brick",
+      "x": 96.0,
+      "y": 144.0
+    },
+    {
+      "type": "Brick",
+      "x": 112.0,
+      "y": 144.0
+    },
+    {
+      "type": "Brick",
+      "x": 128.0,
+      "y": 144.0
+    },
+    {
+      "type": "Brick",
+      "x": 144.0,
+      "y": 144.0
+    },
+    {
+      "type": "Brick",
+      "x": 160.0,
+      "y": 144.0
+    },
+    {
+      "type": "Brick",
+      "x": 176.0,
+      "y": 144.0
+    },
+    {
+      "type": "MultiCoinBlock",
+      "x": 192.0,
+      "y": 144.0,
+      "coinCount": 10
+    },
+    {
+      "type": "Brick",
+      "x": 208.0,
+      "y": 144.0
+    },
+    {
+      "type": "Brick",
+      "x": 224.0,
+      "y": 144.0
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 160.0
+    },
+    {
+      "type": "Brick",
+      "x": 208.0,
+      "y": 160.0
+    },
+    {
+      "type": "Brick",
+      "x": 224.0,
+      "y": 160.0
+    },
+    {
+      "type": "Brick",
+      "x": 0.0,
+      "y": 176.0
+    },
+    {
       "type": "EnterablePipe",
       "x": 208.0,
       "y": 176.0,
@@ -18,117 +456,59 @@
       "segments": 2,
       "targetLevel": "1-2_underground_1",
       "targetSpawn": {
-        "x": 1752.0,
-        "y": 144.0
+        "x": 1848.0,
+        "y": 184.0
       }
     },
     {
-      "type": "QuestionBlock",
-      "x": 64.0,
-      "y": 128.0,
-      "itemType": "Coin"
+      "type": "Brick",
+      "x": 0.0,
+      "y": 192.0
     },
     {
-      "type": "QuestionBlock",
-      "x": 80.0,
-      "y": 128.0,
-      "itemType": "Coin"
-    },
-    {
-      "type": "QuestionBlock",
-      "x": 96.0,
-      "y": 128.0,
-      "itemType": "Coin"
-    },
-    {
-      "type": "QuestionBlock",
-      "x": 112.0,
-      "y": 128.0,
-      "itemType": "Coin"
-    },
-    {
-      "type": "QuestionBlock",
-      "x": 128.0,
-      "y": 128.0,
-      "itemType": "Coin"
-    },
-    {
-      "type": "QuestionBlock",
-      "x": 144.0,
-      "y": 128.0,
-      "itemType": "Coin"
-    },
-    {
-      "type": "QuestionBlock",
-      "x": 160.0,
-      "y": 128.0,
-      "itemType": "Coin"
-    },
-    {
-      "type": "QuestionBlock",
-      "x": 176.0,
-      "y": 128.0,
-      "itemType": "Coin"
-    },
-    {
-      "type": "QuestionBlock",
-      "x": 192.0,
-      "y": 144.0,
-      "itemType": "Coin"
-    },
-    {
-      "type": "QuestionBlock",
+      "type": "Coin",
       "x": 48.0,
-      "y": 192.0,
-      "itemType": "Coin"
+      "y": 192.0
     },
     {
-      "type": "QuestionBlock",
+      "type": "Coin",
       "x": 64.0,
-      "y": 192.0,
-      "itemType": "Coin"
+      "y": 192.0
     },
     {
-      "type": "QuestionBlock",
+      "type": "Coin",
       "x": 80.0,
-      "y": 192.0,
-      "itemType": "Coin"
+      "y": 192.0
     },
     {
-      "type": "QuestionBlock",
+      "type": "Coin",
       "x": 96.0,
-      "y": 192.0,
-      "itemType": "Coin"
+      "y": 192.0
     },
     {
-      "type": "QuestionBlock",
+      "type": "Coin",
       "x": 112.0,
-      "y": 192.0,
-      "itemType": "Coin"
+      "y": 192.0
     },
     {
-      "type": "QuestionBlock",
+      "type": "Coin",
       "x": 128.0,
-      "y": 192.0,
-      "itemType": "Coin"
+      "y": 192.0
     },
     {
-      "type": "QuestionBlock",
+      "type": "Coin",
       "x": 144.0,
-      "y": 192.0,
-      "itemType": "Coin"
+      "y": 192.0
     },
     {
-      "type": "QuestionBlock",
+      "type": "Coin",
       "x": 160.0,
-      "y": 192.0,
-      "itemType": "Coin"
+      "y": 192.0
     },
     {
-      "type": "QuestionBlock",
+      "type": "Coin",
       "x": 176.0,
-      "y": 192.0,
-      "itemType": "Coin"
+      "y": 192.0
     }
   ],
   "playerSpawn": {
