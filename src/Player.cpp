@@ -253,13 +253,16 @@ void Player::Update(float deltaTime) {
             // 2. 根據速度更新水平位置
             m_Position.x += m_Velocity.x * deltaTime;
 
-            // 3. 雙段重力：上升按住跳鍵用弱重力，放開或下降用強重力（防穿地終端速度 400）
+            // 3. 三段重力：上升弱重力、頂點短暫滯空、下降強重力。
             if (!m_OnGround) {
                 bool jumpHeld = AnyPressed(m_Controls.jump);
                 if (!jumpHeld && m_Velocity.y < 0.0f) m_JumpCut = true;  // 放開即鎖定強重力
-                float g = (m_Velocity.y < 0.0f && jumpHeld && !m_JumpCut)
-                              ? GRAVITY_RISE
-                              : GRAVITY_FALL;
+                float g = GRAVITY_FALL;
+                if (m_Velocity.y < 0.0f && jumpHeld && !m_JumpCut) {
+                    g = GRAVITY_RISE;
+                } else if (m_Velocity.y >= 0.0f && m_Velocity.y <= PLAYER_APEX_HANG_SPEED) {
+                    g = GRAVITY_APEX;
+                }
                 m_Velocity.y = std::min(m_Velocity.y + g * deltaTime, MAX_FALL_SPEED);
                 m_Position.y += m_Velocity.y * deltaTime;
             }
@@ -302,9 +305,10 @@ void Player::Update(float deltaTime) {
                     m_IsSlidingDown = false;
                     m_IsWalkingToCastle = true;
 
-                    // 走到城堡門中心：此刻 m_Position.x = poleX + 0.5 格，
-                    // 每關終點可用 Flag.clearWalkTiles 校正城堡距離。
-                    m_WalkTargetX = m_Position.x + m_LevelClearWalkTiles * TILE_SIZE;
+                    // clearWalkTiles 表示「旗杆 X 到城堡門中心」的 tile 距離。
+                    // 此刻 Mario 已在 poleX + 0.5 格，所以實際步行距離要扣掉半格。
+                    m_WalkTargetX = m_Position.x +
+                                    std::max(0.0f, m_LevelClearWalkTiles) * TILE_SIZE;
                     // 沒入門內的最終位置：門中心再往內 0.5 格，讓 sprite 沒進門洞。
                     m_DoorEnterX  = m_WalkTargetX + 0.5f * TILE_SIZE;
 
@@ -563,7 +567,8 @@ void Player::UpdateAnimation() {
 
     if (m_State == State::EnteringPipe || m_State == State::ExitingPipe) {
         if (m_PipeOpening == "up" || m_PipeOpening == "down") {
-            SetVisual(visuals.duck);
+            // 垂直鑽管時不換成蹲下圖，沿用當前形態的待機（站立）圖
+            SetVisual(visuals.idle);
         } else {
             SetVisual(visuals.walk);
         }
@@ -713,18 +718,8 @@ void Player::HandleInput(float deltaTime) {
 
     // 跳躍（只有站在地上才能跳）
     const bool jumpDown = AnyDown(m_Controls.jump);
-    const bool jumpHeld = AnyPressed(m_Controls.jump);
-    // ── 診斷用 log（找到跳躍問題後可移除）──
-    // 只要偵測到跳鍵（剛按下或持續按住）就印出當下狀態，看是哪個條件擋掉跳躍。
-    if (jumpDown || jumpHeld) {
-        LOG_INFO("[JUMP DBG] down={} held={} onGround={} vel=({:.1f},{:.1f}) pos=({:.1f},{:.1f}) L={} R={}",
-                 jumpDown, jumpHeld, m_OnGround,
-                 m_Velocity.x, m_Velocity.y, m_Position.x, m_Position.y,
-                 pressingLeft, pressingRight);
-    }
     if (m_OnGround && jumpDown) {
         Jump();
-        LOG_INFO("[JUMP DBG] >>> Jump() fired, vel.y={:.1f}", m_Velocity.y);
     }
 
     // 射擊火球（只有 FIRE 形態可以，預設 Z 鍵）
@@ -734,9 +729,9 @@ void Player::HandleInput(float deltaTime) {
 }
 
 void Player::Jump() {
-    float launch = PLAYER_JUMP_VELOCITY;                              // 250
+    float launch = PLAYER_JUMP_VELOCITY;
     if (std::abs(m_Velocity.x) > PLAYER_RUN_JUMP_THRESHOLD)          // |vx| > 90
-        launch += PLAYER_JUMP_RUN_BONUS;                              // +30 → 280
+        launch += PLAYER_JUMP_RUN_BONUS;
     m_Velocity.y = -launch;
     m_JumpCut = false;
     m_OnGround = false;
@@ -921,9 +916,9 @@ void Player::SetForm(Form form) {
 void Player::Downgrade() {
     switch (m_Form) {
         case Form::FIRE:
-            // 觸發縮小變身動畫：FIRE -> SUPER（全場凍結 ~1 秒）
-            StartTransformAnimation(Form::FIRE, Form::SUPER);
-            LOG_INFO("Player downgraded: FIRE -> SUPER (transform animation)");
+            // SMB1 規則：火焰瑪利歐受傷直接縮回小瑪利歐。
+            StartTransformAnimation(Form::FIRE, Form::SMALL);
+            LOG_INFO("Player downgraded: FIRE -> SMALL (transform animation)");
             break;
         case Form::SUPER:
             // 觸發縮小變身動畫：SUPER -> SMALL（全場凍結 ~1 秒）

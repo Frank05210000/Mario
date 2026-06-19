@@ -54,8 +54,7 @@ void PiranhaPlant::Update(float deltaTime) {
     constexpr float HIDDEN_PAUSE    = 1.0f;
     constexpr float EXTENDED_PAUSE  = 1.2f;
 
-    // 判斷玩家是否在水管正上方 / 附近
-    const bool playerNear = std::abs(m_PlayerX - m_PipeX) <= PLAYER_NEAR_RANGE;
+    const bool playerStandingOnPipe = IsPlayerStandingOnPipeMouth();
 
     switch (m_State) {
         case State::HiddenPause:
@@ -64,8 +63,8 @@ void PiranhaPlant::Update(float deltaTime) {
             SetVisible(false);
             m_StateTimer += deltaTime;
             if (m_StateTimer >= HIDDEN_PAUSE) {
-                // 玩家在附近時不升出（重置計時，繼續等待）
-                if (playerNear) {
+                // 玩家站在管口時不升出（重置計時，繼續等待）
+                if (playerStandingOnPipe) {
                     m_StateTimer = 0.0f;
                     break;
                 }
@@ -75,13 +74,7 @@ void PiranhaPlant::Update(float deltaTime) {
             break;
 
         case State::Rising:
-            // 升出途中若玩家靠近，立即縮回
             SetVisible(true);  // 開始升出時顯示
-            if (playerNear) {
-                m_StateTimer = 0.0f;
-                m_State      = State::Lowering;
-                break;
-            }
             m_Position.y = std::max(m_ExtendedY, m_Position.y - MOVE_SPEED * deltaTime);
             if (m_Position.y <= m_ExtendedY) {
                 m_Position.y = m_ExtendedY;
@@ -111,6 +104,16 @@ void PiranhaPlant::Update(float deltaTime) {
             }
             break;
     }
+}
+
+bool PiranhaPlant::IsPlayerStandingOnPipeMouth() const {
+    const float playerCenterX = m_PlayerPosition.x + m_PlayerSize.x * 0.5f;
+    const float playerBottom = m_PlayerPosition.y + m_PlayerSize.y;
+    const bool horizontallyOverMouth =
+        std::abs(playerCenterX - m_PipeX) <= PLAYER_NEAR_RANGE;
+    const bool standingAtMouthHeight =
+        std::abs(playerBottom - m_HiddenY) <= PLAYER_STANDING_Y_TOLERANCE;
+    return horizontallyOverMouth && standingAtMouthHeight;
 }
 
 Enemy::StompOutcome PiranhaPlant::Stomp() {

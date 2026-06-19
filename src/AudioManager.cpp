@@ -5,6 +5,10 @@
 
 #include <filesystem>
 
+namespace {
+constexpr int kSfxChannelCount = 32;
+}
+
 // ─── 路徑組裝輔助 ────────────────────────────────────────────────────────────
 
 std::string AudioManager::MakeBGMPath(const std::string& name) {
@@ -36,6 +40,7 @@ std::string AudioManager::HurryBGMName(const std::string& areaName) {
 
 AudioManager::AudioManager()
     : m_CurrentBGMName("") {
+    Mix_AllocateChannels(kSfxChannelCount);
     // 無需預載任何資源；一切按需載入，缺檔優雅降級
     LOG_INFO("AudioManager initialized.");
 }
@@ -154,13 +159,13 @@ void AudioManager::RefreshAreaBGM() {
 
 // ─── SFX 控制 ────────────────────────────────────────────────────────────────
 
-void AudioManager::PlaySFX(const std::string& name, int loop) {
+void AudioManager::PlaySFX(const std::string& name, int loop, int durationMs) {
     // 先查快取
     auto it = m_SfxCache.find(name);
     if (it != m_SfxCache.end()) {
         // 快取命中：可能是已驗證存在的 SFX，或是已標記為「缺檔」的 nullptr
         if (it->second) {
-            it->second->Play(loop);
+            it->second->Play(loop, durationMs);
         }
         // nullptr 表示音檔不存在，直接靜音（不重複 warn）
         return;
@@ -178,7 +183,7 @@ void AudioManager::PlaySFX(const std::string& name, int loop) {
     try {
         auto sfx = std::make_shared<Util::SFX>(path);
         m_SfxCache[name] = sfx;
-        sfx->Play(loop);
+        sfx->Play(loop, durationMs);
         LOG_INFO("AudioManager: PlaySFX '{}' (loop={})", name, loop);
     } catch (const std::exception& e) {
         LOG_WARN("AudioManager: Failed to play SFX '{}': {}", name, e.what());

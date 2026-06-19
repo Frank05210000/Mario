@@ -52,9 +52,9 @@ public:
         std::array<Util::Keycode, 3> jump  = {Util::Keycode::SPACE, Util::Keycode::UP, Util::Keycode::W};
         std::array<Util::Keycode, 3> run   = {Util::Keycode::Z, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
         std::array<Util::Keycode, 3> fire  = {Util::Keycode::Z, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-        std::array<Util::Keycode, 3> debugSmall = {Util::Keycode::NUM_1, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-        std::array<Util::Keycode, 3> debugSuper = {Util::Keycode::NUM_2, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
-        std::array<Util::Keycode, 3> debugFire  = {Util::Keycode::NUM_3, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> debugSmall = {Util::Keycode::NUM_4, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> debugSuper = {Util::Keycode::NUM_5, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
+        std::array<Util::Keycode, 3> debugFire  = {Util::Keycode::NUM_6, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
         std::array<Util::Keycode, 3> debugStar  = {Util::Keycode::NUM_7, Util::Keycode::UNKNOWN, Util::Keycode::UNKNOWN};
     };
 
@@ -82,7 +82,7 @@ public:
     Form GetForm() const { return m_Form; }
     void SetForm(Form form);
 
-    // 受傷降級 (FIRE->SUPER->SMALL->死)
+    // 受傷降級 (FIRE->SMALL->死, SUPER->SMALL->死)
     void Downgrade();
 
     void StartDamageInvincibility(float duration = 2.0f);

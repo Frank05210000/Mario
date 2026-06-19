@@ -52,7 +52,8 @@ public:
     // ─── SFX 控制 ─────────────────────────────────────────────────
     // name：不含副檔名與路徑，例如 "jump_small"
     // loop：0 播一次（預設），-1 無限
-    void PlaySFX(const std::string& name, int loop = 0);
+    // durationMs：-1 播完整音檔；正數會在指定毫秒後停止該次播放
+    void PlaySFX(const std::string& name, int loop = 0, int durationMs = -1);
 
     // ─── 查詢 ──────────────────────────────────────────────────────
     // 目前正在播放哪個 BGM（name，空字串代表沒在播）

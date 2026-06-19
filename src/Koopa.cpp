@@ -10,8 +10,9 @@
 
 Koopa::Koopa(float startX, float startY, Variant variant, const ThemeAssets& assets)
     : m_Variant(variant) {
-    m_Position = {startX, startY - TILE_SIZE};
-    m_Size = {TILE_SIZE, TILE_SIZE * 2.0f};
+    const float footY = startY + TILE_SIZE;
+    m_Position = {startX, footY - kStandingCollisionHeight};
+    m_Size = {kKoopaWidth, kStandingCollisionHeight};
     m_Transform.scale = {GAME_SCALE, GAME_SCALE};
 
     LoadSprites(assets);
@@ -114,17 +115,11 @@ void Koopa::EnterStationaryShell() {
     m_Velocity.x = 0.0f;
     SetDrawable(m_ShellImage);
 
-    if (m_Size.y > TILE_SIZE) {
-        m_Position.y += m_Size.y - TILE_SIZE;
-        m_Size.y = TILE_SIZE;
-    }
+    SetCollisionHeightPreservingBottom(kShellCollisionHeight);
 }
 
 void Koopa::EnterWalking() {
-    if (m_Size.y < TILE_SIZE * 2.0f) {
-        m_Position.y -= TILE_SIZE * 2.0f - m_Size.y;
-        m_Size.y = TILE_SIZE * 2.0f;
-    }
+    SetCollisionHeightPreservingBottom(kStandingCollisionHeight);
     m_State = State::Walking;
     m_ReviveTimer = 0.0f;
     m_ShellChainCount = 0;
@@ -143,10 +138,7 @@ void Koopa::Kick(bool kickLeft) {
 
 void Koopa::Die(bool flipLeft) {
     if (m_State == State::Defeated || !m_IsAlive) return;
-    if (m_Size.y > TILE_SIZE) {
-        m_Position.y += m_Size.y - TILE_SIZE;
-        m_Size.y = TILE_SIZE;
-    }
+    SetCollisionHeightPreservingBottom(kShellCollisionHeight);
     m_State = State::Defeated;
     m_ReviveTimer = 0.0f;
     m_ShellChainCount = 0;
@@ -158,7 +150,20 @@ void Koopa::Die(bool flipLeft) {
 }
 
 void Koopa::Draw(const Camera& camera) {
-    Enemy::Draw(camera);
+    if (!m_IsAlive) {
+        SetVisible(false);
+        return;
+    }
+
+    SetVisible(true);
+    const float drawHeight =
+        m_State == State::Walking ? kStandingVisualHeight : m_Size.y;
+    const float bottomY = m_Position.y + m_Size.y;
+    const glm::vec2 centerPos = {
+        m_Position.x + m_Size.x * 0.5f,
+        bottomY - drawHeight * 0.5f,
+    };
+    m_Transform.translation = camera.WorldToScreen(centerPos);
 }
 
 void Koopa::UpdateDrawable() {
@@ -169,4 +174,10 @@ void Koopa::UpdateDrawable() {
     } else {
         SetDrawable(m_Velocity.x > 0.0f ? m_WalkRightAnim : m_WalkLeftAnim);
     }
+}
+
+void Koopa::SetCollisionHeightPreservingBottom(float height) {
+    const float bottomY = m_Position.y + m_Size.y;
+    m_Size.y = height;
+    m_Position.y = bottomY - m_Size.y;
 }

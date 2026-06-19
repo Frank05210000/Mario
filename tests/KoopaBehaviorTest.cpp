@@ -49,6 +49,22 @@ TEST(KoopaBehaviorTest, ShellSpeedUsesWorldCoordinates) {
     EXPECT_FLOAT_EQ(KOOPA_SHELL_SPEED, 180.0f);
 }
 
+TEST(KoopaBehaviorTest, ContactLeftOfShellKicksRight) {
+    EXPECT_FALSE(Koopa::KickLeftFromContact(95.0f, 100.0f, true));
+}
+
+TEST(KoopaBehaviorTest, ContactRightOfShellKicksLeft) {
+    EXPECT_TRUE(Koopa::KickLeftFromContact(105.0f, 100.0f, false));
+}
+
+TEST(KoopaBehaviorTest, CenterContactUsesFacingLeft) {
+    EXPECT_TRUE(Koopa::KickLeftFromContact(100.25f, 100.0f, true));
+}
+
+TEST(KoopaBehaviorTest, CenterContactUsesFacingRight) {
+    EXPECT_FALSE(Koopa::KickLeftFromContact(99.75f, 100.0f, false));
+}
+
 TEST(KoopaBehaviorTest, RuntimeAssetsExist) {
     const std::string root = std::string(RESOURCE_DIR) + "/Asset/enemy/Koopa/";
     const char* paths[] = {

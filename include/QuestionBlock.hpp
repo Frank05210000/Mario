@@ -13,6 +13,7 @@ public:
 
     Type GetType() const override { return Type::Question; }
     bool IsSolid() const override { return true; }
+    bool BumpsContentsAbove() const override { return true; }
 
     /* 每幀更新：推進彈跳計時器 */
     void Update(float deltaTime) override;

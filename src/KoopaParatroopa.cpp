@@ -14,8 +14,8 @@ KoopaParatroopa::KoopaParatroopa(float startX,
                                  FlightMode flightMode,
                                  const ThemeAssets& assets)
     : Koopa(startX, startY, variant, assets),
-      m_FlightMode(flightMode),
-      m_BaseY(startY - TILE_SIZE) {
+      m_FlightMode(flightMode) {
+    m_BaseY = m_Position.y;
     LoadFlightSprites(assets);
     UpdateFlightDrawable();
 }

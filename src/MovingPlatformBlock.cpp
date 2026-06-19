@@ -1,6 +1,7 @@
 #include "MovingPlatformBlock.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 namespace {
 int DirectionSignForAxis(const std::string& moveAxis, const std::string& startDirection) {
@@ -58,14 +59,16 @@ void MovingPlatformBlock::Update(float deltaTime) {
     const float offset = rawOffset * static_cast<float>(m_StartSign);
 
     if (m_MoveMode == "verticalWrap" && m_MoveAxis == "vertical") {
-        // 循環模式：行程盡頭直接瞬移回另一端。
+        // 循環模式：超出行程後回到另一端，保留 overshoot 讓速度不在端點頓一下。
         // 注意：瞬移量不得計入 m_FrameDelta，否則站在平台上的玩家會被一起傳送；
         // 乘客應該留在原地（平台從腳下消失，下一幀自然下落）。
         m_FrameDelta = m_Position - previousPosition; // 只含平滑移動量
-        if (offset > m_MoveDistance) {
-            m_Position = m_StartPosition;
-        } else if (offset < 0.0f) {
-            m_Position = m_StartPosition + axis * (m_MoveDistance * static_cast<float>(m_StartSign));
+        if (offset > m_MoveDistance || offset < 0.0f) {
+            float wrappedOffset = std::fmod(offset, m_MoveDistance);
+            if (wrappedOffset < 0.0f) {
+                wrappedOffset += m_MoveDistance;
+            }
+            m_Position = m_StartPosition + axis * (wrappedOffset * static_cast<float>(m_StartSign));
         }
         return;
     }

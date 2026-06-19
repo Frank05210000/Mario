@@ -51,16 +51,18 @@ constexpr float CASTLE_FLAG_SPEED = 32.0f; // 小旗升起速度（世界像素/
 constexpr float GAME_SCALE = 3.0f;
 
 // ─── 玩家物理：垂直（世界像素/秒；未乘 GAME_SCALE）────────────────
-constexpr float PLAYER_JUMP_VELOCITY      = 250.0f;  // 跳躍初速；全按住 ≈ 4.4 tiles
-constexpr float PLAYER_JUMP_RUN_BONUS     =  30.0f;  // 跑跳加成 → 280 ≈ 5.4 tiles
+constexpr float PLAYER_JUMP_VELOCITY      = 255.0f;  // 腳峰值約 72px ≈ 4.5 tiles，過 4 tile 牆餘裕約 8px（如 1-2 地下）
+constexpr float PLAYER_JUMP_RUN_BONUS     =   0.0f;  // 跑跳不再加高，靠水平跑速拉出原版距離
 constexpr float PLAYER_RUN_JUMP_THRESHOLD =  90.0f;  // |vx| 超過走路極速才吃 bonus
-constexpr float GRAVITY_RISE              = 450.0f;  // 上升中且按住跳：弱重力
-constexpr float GRAVITY_FALL              = 1250.0f; // 放開跳 或 vy>=0：強重力（2.78x）
-constexpr float MAX_FALL_SPEED            = 400.0f;  // 終端速度：400/30 ≈ 13.3px < 16
+constexpr float GRAVITY_RISE              = 450.0f;  // 上升中且按住跳：弱重力（= SMB1 走路 $20 → 450）
+constexpr float GRAVITY_APEX              = 350.0f;  // 頂點附近短暫弱重力，讓第 4 格附近多停一下
+constexpr float PLAYER_APEX_HANG_SPEED    =  45.0f;  // |vy| 低於此值時進入頂點滯空區
+constexpr float GRAVITY_FALL              = 1550.0f; // 放開跳 或 vy>=0：強重力（≈ SMB1 $70 → 1575，下降俐落不飄）
+constexpr float MAX_FALL_SPEED            = 290.0f;  // 終端速度：≈ SMB1 ~4.5px/f（原 400 偏高，失重感太強）
 
 // ─── 玩家物理：水平 ───────────────────────────────────────────────────────
 constexpr float PLAYER_MAX_WALK_SPEED     =  90.0f;  // 走路最高速（NES ≈ 93.75）
-constexpr float PLAYER_MAX_RUN_SPEED      = 160.0f;  // 奔跑最高速（NES ≈ 153.75；現值 175 偏滑）
+constexpr float PLAYER_MAX_RUN_SPEED      = 145.0f;  // 奔跑最高速；配合 4.25 格跳高後跑跳距離 ≈ SMB1
 constexpr float PLAYER_ACCELERATION       = 200.0f;  // 水平加速度（沿用現值）
 constexpr float PLAYER_RUN_ACCEL_MULT     =   1.5f;  // 地面奔跑加速度倍率（沿用現有 *1.5 邏輯）
 constexpr float PLAYER_SKID_DECEL         = 400.0f;  // 轉向煞車（打滑，沿用現值）

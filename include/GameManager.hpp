@@ -67,6 +67,9 @@ public:
      */
     void Update();
 
+    /* 暫停選單選了「離開遊戲」時為 true，App 讀取後結束程式 */
+    bool IsQuitRequested() const { return m_QuitRequested; }
+
 private:
     enum class FlowState {
         Title,
@@ -96,6 +99,9 @@ private:
     void EnterLevelClearPause();        // 進入結算後停頓狀態
     void AdvanceToNextLevel();          // 推進到下一關（或回標題）
     void BuildTitleOverlay();
+    void BuildPauseOverlay();   // 暫停選單 overlay（CONTINUE / BACK TO MENU / QUIT GAME）
+    void EnterPause();          // 進入暫停：暫停 BGM、播放音效、建立選單
+    void ResumePause();         // 離開暫停：清除選單、恢復 BGM
     void BuildLevelIntroOverlay();
     void BuildTimeUpOverlay();
     void BuildGameOverOverlay();
@@ -112,7 +118,6 @@ private:
     std::string CurrentPlayerWorldLabel() const;
     void SyncCurrentLevelFromSession();
     std::string CurrentPlayerIconPath() const;
-    float GetClosestAlivePlayerX(glm::vec2 position) const;
     void UpdateTitle(float dt);
     void UpdateLevelIntro(float dt);
     void UpdateIntroCutscene(float dt);
@@ -132,6 +137,9 @@ private:
 
     // 處理敵人與方塊、地形的物理碰撞
     void CheckEnemyBlockCollision();
+
+    // 處理一般敵人彼此側向碰撞：互相推開並掉頭，滑行龜殼另由殼擊殺流程處理
+    void CheckEnemyEnemyCollision();
 
     // 負責統籌與產生物件
     void SpawnItem(const std::string& itemType, glm::vec2 position, Player* sourcePlayer = nullptr);
@@ -202,15 +210,17 @@ private:
     bool  m_LevelCleared = false;          // 是否已觸碰旗杆（防止重複計分）
     bool  m_LevelClearCastleFlagSpawned = false; // 過關 BGM 播完後是否已生成城堡旗
     bool  m_WaitingForTimeUpDeath = false; // 時間到後等待玩家死亡動畫播完再進 TimeUp
+    bool  m_WaitingForVoidDeath = false;   // 未受傷直接墜入虛空：補播死亡 BGM 並停留相同時間
     bool  m_PlayerWasDying = false;        // 上幀是否已在死亡狀態（偵測死亡事件用）
     float m_DeathSequenceTimer = 0.0f;     // 死亡 BGM / 死亡動畫流程同步計時
     bool  m_HurryUpTriggered = false;       // 剩餘時間低於 100 後只切換一次 hurry-up BGM
     bool  m_Paused = false;                // 暫停狀態（只在 Playing 下有效）
-    std::shared_ptr<Util::GameObject> m_PauseOverlay; // 「PAUSED」文字 overlay
+    int   m_PauseSelectionIndex = 0;       // 暫停選單游標：0=繼續 1=回選單 2=離開
+    bool  m_QuitRequested = false;         // 暫停選單選了「離開遊戲」（App 讀取後結束）
     // 受傷縮小變身動畫結束後需要啟動的傷害無敵計時（秒）；0 = 無待定
     float m_PendingDamageInvincibility = 0.0f;
     Player* m_LevelClearPlayer = &m_Player;
-    std::string m_SelectedInitialLevelName = "1-1"; // 標題選關用（不影響遊戲中推進）
+    std::string m_SelectedInitialLevelName = "1-1_ground_1"; // 標題選關用（不影響遊戲中推進）
     std::string m_SelectedWorldLabel = "1-1";
     int m_TitleSelectionIndex = 0; // 0 = 1 PLAYER GAME, 1 = 2 PLAYER GAME
     int m_SelectedPlayerCount = 1;

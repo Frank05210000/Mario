@@ -42,7 +42,7 @@ public:
      *
      * @param score     玩家當前分數
      * @param coins     玩家收集的金幣數
-     * @param timeLeft  關卡剩餘時間（秒，-1 表示不顯示）
+     * @param timeLeft  關卡剩餘時間（秒，-1 表示只顯示 TIME 標題）
      */
     void Update(int score, int coins, int timeLeft = -1);
 

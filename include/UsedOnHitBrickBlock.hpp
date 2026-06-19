@@ -11,6 +11,7 @@ public:
 
     Type GetType() const override { return Type::UsedOnHitBrick; }
     bool IsSolid() const override { return true; }
+    bool BumpsContentsAbove() const override { return true; }
     void Update(float deltaTime) override;
     BlockHitResult OnHit(Player* player) override;
 

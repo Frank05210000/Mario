@@ -9,8 +9,7 @@ public:
 
     Type GetType() const override { return Type::TreePlatform; }
     bool IsSolid() const override { return true; }
-    bool IsOneWay() const override { return true; }  // 原版樹平台可從下方穿過
-    // 不繪製：樹的外觀已包含在背景圖中，這裡只提供碰撞。
+    // 不繪製：樹的外觀已包含在背景圖中，這裡只提供一般 solid block 碰撞。
 };
 
 #endif

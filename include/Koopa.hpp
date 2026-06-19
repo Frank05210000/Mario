@@ -71,6 +71,15 @@ public:
                    : State::ShellIdle);
     }
 
+    static constexpr bool KickLeftFromContact(float playerCenterX,
+                                              float shellCenterX,
+                                              bool playerFacingLeft) {
+        constexpr float kCenterTieThreshold = 0.5f;
+        if (playerCenterX < shellCenterX - kCenterTieThreshold) return false;
+        if (playerCenterX > shellCenterX + kCenterTieThreshold) return true;
+        return playerFacingLeft;
+    }
+
     int ConsumeShellChainIndex() { return m_ShellChainCount++; }
     int GetShellChainCount() const { return m_ShellChainCount; }
 
@@ -79,6 +88,12 @@ protected:
     void LoadSprites(const ThemeAssets& assets);
     void EnterWalking();
     void EnterStationaryShell();
+    void SetCollisionHeightPreservingBottom(float height);
+
+    static constexpr float kKoopaWidth = TILE_SIZE;
+    static constexpr float kStandingVisualHeight = TILE_SIZE * 2.0f;
+    static constexpr float kStandingCollisionHeight = TILE_SIZE * 1.0f;
+    static constexpr float kShellCollisionHeight = TILE_SIZE;
 
     std::shared_ptr<Util::Animation> m_WalkLeftAnim;
     std::shared_ptr<Util::Animation> m_WalkRightAnim;

@@ -15,6 +15,7 @@ public:
     // 揭露前，玩家可以穿過它走路/站立，但往上跳的碰撞
     // 仍會在 CheckBlockCollision Pass 1 特別處理，讓頂碰觸發 OnHit。
     bool IsSolid() const override { return m_IsUsed; }
+    bool BumpsContentsAbove() const override { return true; }
 
     // 查詢方塊是否已被揭露（=已被從下方頂過一次）
     bool IsRevealed() const { return m_IsUsed; }

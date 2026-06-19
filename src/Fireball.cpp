@@ -27,9 +27,9 @@ Fireball::Fireball(glm::vec2 pos, bool movingLeft) {
 
     const float speedX = 320.0f;
     m_Gravity = 1400.0f;
-    m_BounceForce = 220.0f;
+    m_BounceForce = 170.0f;
     m_Velocity.x = movingLeft ? -speedX : speedX;
-    m_Velocity.y = -60.0f;
+    m_Velocity.y = 0.0f;
 }
 
 void Fireball::Update(float deltaTime) {

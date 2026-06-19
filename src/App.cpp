@@ -13,13 +13,14 @@ void App::Start() {
 void App::Update() {
     m_GameManager.Update();      // 每幀更新遊戲
 
-    // 按 ESC 或關閉視窗時結束
-    const bool escapeReleased = Util::Input::IsKeyUp(Util::Keycode::ESCAPE);
+    // ESC 不再直接關閉遊戲：交給 GameManager 的暫停選單處理。
+    // 結束遊戲只剩兩種來源：視窗關閉鈕，或暫停選單選了「QUIT GAME」。
     const bool windowExitRequested = Util::Input::IfExit();
-    if (escapeReleased || windowExitRequested) {
-        LOG_INFO("App exit requested. escape={} windowExit={}",
-                 escapeReleased,
-                 windowExitRequested);
+    const bool quitFromPauseMenu = m_GameManager.IsQuitRequested();
+    if (windowExitRequested || quitFromPauseMenu) {
+        LOG_INFO("App exit requested. windowExit={} pauseMenuQuit={}",
+                 windowExitRequested,
+                 quitFromPauseMenu);
         m_CurrentState = State::END;
     }
 }

@@ -48,7 +48,7 @@ static const std::array<std::string, 3> kCoinFramePaths = {
     MakeAssetPath("ui/hud_coin/misc_3__hud_coin1_3.png"),
 };
 static constexpr std::array<int, 4> kCoinAnimationFrames = {0, 1, 2, 1};
-static constexpr int kCoinAnimationFrameTicks = 8;
+static constexpr int kCoinAnimationFrameTicks = 16;
 
 // ─── 輔助：建立一個包有 Text 的 GameObject ────────────────────────────────
 static std::shared_ptr<Util::GameObject> MakeTextObj(
@@ -139,8 +139,18 @@ void HUD::Update(int score, int coins, int timeLeft) {
         m_LastCoins = coins;
     }
 
-    // 時間（傳入 -1 時顯示空）
-    if (timeLeft >= 0 && timeLeft != m_LastTimeLeft) {
+    // 時間（傳入 -1 時保留 TIME 標題，但不顯示數字）
+    if (timeLeft < 0) {
+        m_TimeObj->SetVisible(true);
+        if (m_LastTimeLeft != -1) {
+            m_TimeText->SetText("TIME\n    ");
+            m_LastTimeLeft = -1;
+        }
+        return;
+    }
+
+    m_TimeObj->SetVisible(true);
+    if (timeLeft != m_LastTimeLeft) {
         m_TimeText->SetText("TIME\n " + FormatTime(timeLeft));
         m_LastTimeLeft = timeLeft;
     }

@@ -17,7 +17,8 @@ struct PlayerProgress {
     int lives = 3;
     int score = 0;
     int coins = 0;
-    std::string levelName = "1-1";
+    std::string levelName = "1-1";        // 關卡鏈錨點：用於過關推進（必須對得上 kLevelChain）
+    std::string currentLevel;             // 實際所在子關卡（含水管進入的子關卡）：死亡重生用；空字串時退回 levelName
     Player::Form form = Player::Form::SMALL;
     std::optional<glm::vec2> checkpoint;
 };

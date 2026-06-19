@@ -11,6 +11,7 @@ public:
 
     Type GetType() const override { return Type::MultiCoin; }
     bool IsSolid() const override { return true; }
+    bool BumpsContentsAbove() const override { return true; }
     BlockHitResult OnHit(Player* player) override;
 
 private:

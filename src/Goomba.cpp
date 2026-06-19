@@ -10,6 +10,7 @@
 Goomba::Goomba(float startX, float startY, const ThemeAssets& assets) {
     m_Position = {startX, startY};
     m_Size     = {TILE_SIZE, TILE_SIZE};
+    m_Velocity.x = -m_WalkSpeed;
     m_Transform.scale = {GAME_SCALE, GAME_SCALE};
 
     m_WalkAnim = std::make_shared<Util::Animation>(

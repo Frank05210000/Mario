@@ -61,7 +61,7 @@ public:
     void SetGrounded(bool grounded) { m_IsGrounded = grounded; }
 
 protected:
-    float m_WalkSpeed = 40.0f;  // 行走速度（像素/秒），子類別可覆蓋（原版 NES 栗寶寶 ≈ 0.75 tiles/s × 16 × 3 ≈ 36，取 40）
+    float m_WalkSpeed = 30.0f;  // 行走速度（像素/秒），所有水平移動敵人共用
     bool m_IsGrounded = false;
 
 private:
