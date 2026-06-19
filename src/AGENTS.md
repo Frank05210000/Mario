@@ -55,7 +55,7 @@
 - 玩家踩 enemy 由 `CheckStompCollision()` 處理。
   - 必須是向下速度，且 previous bottom 在 enemy top 附近。
   - `Enemy::Stomp()` 回傳 `StompOutcome`；飛行龜掉翅膀、Koopa 縮殼、滑殼停止分開處理。
-  - 靜止 Koopa shell 從側面碰到會被 kick；從上方踩會停止或重置復活計時。
+  - 靜止 Koopa shell 從側面碰到會被 kick；從上方踩也會依踩踏位置 kick，踩在中心附近時依玩家面向決定方向。
   - 滑行殼的連殺計數由每一顆 Koopa 自己持有，停止或死亡時才重置。
   - 其他側碰會讓玩家 `Downgrade()`，若沒死則啟動短暫 damage invincibility。
 - 掉出 `levelHeight + 50` 會判定死亡或清除。

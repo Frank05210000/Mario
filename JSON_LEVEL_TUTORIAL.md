@@ -370,9 +370,10 @@ the game computes the pole height from `FLAG_POLE_TILES`.
 }
 ```
 
-- `clearWalkTiles` is optional and defaults to `6.0`. It controls how many
-  tiles Mario walks from the flag pole after sliding down, before entering the
-  castle door.
+- `clearWalkTiles` is optional and defaults to `6.0`. It controls the tile
+  distance from the flag pole X to the castle door center. Mario slides down at
+  `poleX + 0.5 tile`, so the actual walking distance is this value minus half a
+  tile.
 - `castleFlagBaseTiles` is optional and defaults to `4.0`. It controls the
   castle flag base height above the flag-pole ground. Use larger values for
   tall castle backgrounds such as 1-3.

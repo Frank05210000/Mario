@@ -39,7 +39,7 @@
 - `Goomba`：16x16，被踩直接死亡。
 - `Koopa`
   - 狀態為 `Walking`、`ShellIdle`、`ShellReviving`、`ShellSliding`、`Defeated`。
-  - 初始 16x32；縮殼後 16x16 並保持腳底位置。滑殼被踩會停止，靜止殼側碰會被踢。
+  - 站立視覺 16x32，但碰撞箱是底部對齊的 16x24；縮殼後 16x16 並保持腳底位置。滑殼被踩會停止，靜止殼側碰會被踢。
   - 靜止殼約 5 秒後復活，最後 1.5 秒顯示復活警告圖。
   - `Defeated` 狀態仍更新翻面拋物線，但 `CanCollide()` 為 false。
 - `KoopaParatroopa`：第一次踩踏只掉翅膀並變回同色 Koopa，第二次才縮殼。

@@ -82,7 +82,7 @@
   - `targetSpawn` 可覆蓋切關後玩家位置。
 - `FlagBlock`
   - JSON y 是旗杆底部；內部用 `FLAG_POLE_TILES` 往上推算碰撞高度。
-  - 可選 `clearWalkTiles` 控制碰旗後走到城堡門的距離，預設 6。
+  - 可選 `clearWalkTiles` 控制旗杆 X 到城堡門中心的 tile 距離，預設 6。
   - 可選 `castleFlagBaseTiles` 控制城堡小旗底部離地高度，預設 4；高城堡如 1-3 需設更大。
 - `MovingPlatformBlock`
   - JSON 用一格起點 anchor + `segments` 表示平台長度，`moveTiles` 表示移動距離。
